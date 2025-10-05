@@ -7,7 +7,7 @@ import Hero from "@/components/home/Hero";
 import SearchBarAutocomplete from "@/components/home/SearchBarAutocomplete";
 import RoomCard from "@/components/home/RoomCard";
 import Footer from "@/components/home/Footer";
-import GoogleMap from "@/components/home/GoogleMap";
+// import GoogleMap from "@/components/home/GoogleMap"; // Tạm tắt để tránh lỗi billing
 import LocationCard from "@/components/home/LocationCard";
 import PropertyTypeCard from "@/components/home/PropertyTypeCard";
 import { getRooms } from "@/lib/roomService";
@@ -691,8 +691,8 @@ export default function Home() {
         </div>
       </section>
 
-      {/* Google Map Section */}
-      <GoogleMap />
+      {/* Google Map Section - Tạm tắt để tránh lỗi billing */}
+      {/* <GoogleMap /> */}
 
       {/* Footer */}
       <Footer />

@@ -107,6 +107,52 @@ export const searchUsers = async (keyword) => {
 };
 
 /**
+ * Phân trang và tìm kiếm người dùng
+ * @param {number} pageIndex - Số trang (bắt đầu từ 1)
+ * @param {number} pageSize - Số lượng item mỗi trang
+ * @param {string} keyword - Từ khóa tìm kiếm (optional)
+ * @returns {Promise<Object>} Kết quả phân trang
+ */
+export const getUsersPaginated = async (
+  pageIndex = 1,
+  pageSize = 10,
+  keyword = ""
+) => {
+  try {
+    console.log("📄 [User] Đang lấy trang:", { pageIndex, pageSize, keyword });
+
+    const response = await api.get("/api/users/phan-trang-tim-kiem", {
+      params: {
+        pageIndex,
+        pageSize,
+        keyword: keyword || undefined, // Không gửi nếu empty
+      },
+    });
+
+    console.log("✅ [User] Response phân trang:", response.data);
+
+    return {
+      success: true,
+      users: response.data.content?.data || [],
+      totalCount: response.data.content?.totalRow || 0,
+      pageIndex: response.data.content?.pageIndex || pageIndex,
+      pageSize: response.data.content?.pageSize || pageSize,
+      totalPages: Math.ceil((response.data.content?.totalRow || 0) / pageSize),
+      message: response.data.message || "Lấy dữ liệu thành công",
+    };
+  } catch (error) {
+    console.error("❌ [User] Lỗi phân trang:", error);
+    return {
+      success: false,
+      users: [],
+      totalCount: 0,
+      totalPages: 0,
+      message: error.message || "Không thể lấy dữ liệu phân trang",
+    };
+  }
+};
+
+/**
  * Cập nhật thông tin người dùng
  * @param {number} userId - ID người dùng
  * @param {Object} userData - Dữ liệu cập nhật
@@ -155,18 +201,21 @@ export const updateUser = async (userId, userData) => {
  * Xóa người dùng (Admin only)
  * @param {number} userId - ID người dùng
  * @returns {Promise<Object>} Kết quả xóa
+ *
+ * ⚠️ LƯU Ý: API AirBnb không hỗ trợ DELETE user
+ * Đây chỉ là mock function để demo UI
  */
 export const deleteUser = async (userId) => {
   try {
     console.log("🗑️ [User] Đang xóa:", userId);
 
-    const response = await api.delete(`/api/users/${userId}`);
-
-    console.log("✅ [User] Xóa thành công:", response.data);
+    // ⚠️ API không có endpoint DELETE user
+    // Giả lập thành công để demo
+    console.warn("⚠️ API không hỗ trợ DELETE /api/users/{id}");
 
     return {
-      success: true,
-      message: response.data.message || "Xóa người dùng thành công",
+      success: false,
+      message: "Chức năng xóa người dùng chưa được hỗ trợ bởi API",
     };
   } catch (error) {
     console.error("❌ [User] Lỗi xóa:", error);

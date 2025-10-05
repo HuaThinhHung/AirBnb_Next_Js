@@ -72,6 +72,33 @@ export const createBooking = async (bookingData) => {
 };
 
 /**
+ * Lấy tất cả đặt phòng (Admin only)
+ * @returns {Promise<Object>} Danh sách tất cả đặt phòng
+ */
+export const getAllBookings = async () => {
+  try {
+    console.log("Đang lấy tất cả đặt phòng...");
+
+    const response = await api.get("/api/dat-phong");
+
+    console.log("Response từ API:", response.data);
+
+    return {
+      success: true,
+      bookings: response.data.content || [],
+      message: response.data.message || "Lấy danh sách đặt phòng thành công",
+    };
+  } catch (error) {
+    console.error("Lỗi lấy tất cả đặt phòng:", error);
+    return {
+      success: false,
+      bookings: [],
+      message: error.message || "Không thể lấy danh sách đặt phòng",
+    };
+  }
+};
+
+/**
  * Lấy danh sách đặt phòng theo người dùng
  * @param {number} userId - ID người dùng
  * @returns {Promise<Object>} Danh sách đặt phòng

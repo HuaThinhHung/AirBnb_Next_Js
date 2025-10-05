@@ -40,7 +40,7 @@ export default function Navbar() {
   };
 
   return (
-    <nav className="bg-white shadow-md border-b border-gray-100 sticky top-0 z-50 backdrop-blur-lg bg-white/95">
+    <nav className="bg-white/95 shadow-md border-b border-gray-100 sticky top-0 z-50 backdrop-blur-lg">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <div className="flex justify-between items-center h-20">
           {/* Logo */}

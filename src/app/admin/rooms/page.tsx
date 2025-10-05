@@ -1,13 +1,9 @@
 "use client";
 
 import { useState, useEffect } from "react";
-import {
-  getRooms,
-  deleteRoom,
-  createRoom,
-  updateRoom,
-} from "@/lib/roomService";
+import { getRooms, deleteRoom } from "@/lib/roomService";
 import { getLocations } from "@/lib/locationService";
+import Link from "next/link";
 
 interface Room {
   id: number;
@@ -42,557 +38,481 @@ export default function AdminRoomsPage() {
   const [rooms, setRooms] = useState<Room[]>([]);
   const [locations, setLocations] = useState<Location[]>([]);
   const [loading, setLoading] = useState(true);
-  const [error, setError] = useState<string | null>(null);
-  const [searchKeyword, setSearchKeyword] = useState("");
-  const [deleteLoading, setDeleteLoading] = useState<number | null>(null);
-  const [showModal, setShowModal] = useState(false);
-  const [editingRoom, setEditingRoom] = useState<Room | null>(null);
+  const [searchTerm, setSearchTerm] = useState("");
+  const [selectedLocation, setSelectedLocation] = useState<number | null>(null);
+  const [currentPage, setCurrentPage] = useState(1);
+  const [totalPages, setTotalPages] = useState(1);
+  const [totalRows, setTotalRows] = useState(0);
+  const pageSize = 10;
 
-  // Form data
-  const [formData, setFormData] = useState({
-    tenPhong: "",
-    khach: 1,
-    phongNgu: 1,
-    giuong: 1,
-    phongTam: 1,
-    moTa: "",
-    giaTien: 0,
-    mayGiat: false,
-    banLa: false,
-    tivi: false,
-    dieuHoa: false,
-    wifi: false,
-    bep: false,
-    doXe: false,
-    hoBoi: false,
-    banUi: false,
-    maViTri: 1,
-  });
-
-  // 🔧 BYPASS MODE: Load dữ liệu trực tiếp, không check auth
   useEffect(() => {
-    loadRooms();
-    loadLocations();
+    fetchLocations();
   }, []);
 
-  const loadRooms = async () => {
-    try {
-      setLoading(true);
-      setError(null);
+  useEffect(() => {
+    fetchRooms();
+  }, [currentPage, searchTerm, selectedLocation]);
 
-      const result = (await getRooms()) as {
-        success: boolean;
-        rooms: Room[];
-        message?: string;
-      };
-
-      if (result.success) {
-        setRooms(result.rooms);
-      } else {
-        setError(result.message || "Có lỗi xảy ra");
-      }
-    } catch (err) {
-      setError("Có lỗi xảy ra khi tải danh sách phòng");
-    } finally {
-      setLoading(false);
+  const fetchLocations = async () => {
+    const result = (await getLocations()) as {
+      success: boolean;
+      locations: Location[];
+    };
+    if (result.success) {
+      setLocations(result.locations);
     }
   };
 
-  const loadLocations = async () => {
-    try {
-      const result = (await getLocations()) as {
-        success: boolean;
-        locations: Location[];
-      };
+  const fetchRooms = async () => {
+    setLoading(true);
+    const result = (await getRooms({
+      pageIndex: currentPage,
+      pageSize,
+      keyword: searchTerm,
+    })) as {
+      success: boolean;
+      rooms: Room[];
+      pagination?: { totalPages: number; totalRow: number };
+    };
 
-      if (result.success) {
-        setLocations(result.locations);
-      }
-    } catch (err) {
-      console.error("Lỗi tải vị trí:", err);
-    }
-  };
+    if (result.success) {
+      let filteredRooms = result.rooms;
 
-  // Xử lý xóa phòng
-  const handleDeleteRoom = async (roomId: number, roomName: string) => {
-    if (!confirm(`Bạn có chắc chắn muốn xóa phòng "${roomName}"?`)) {
-      return;
-    }
-
-    try {
-      setDeleteLoading(roomId);
-
-      const result = (await deleteRoom(roomId)) as {
-        success: boolean;
-        message?: string;
-      };
-
-      if (result.success) {
-        loadRooms();
-        alert("Xóa phòng thành công!");
-      } else {
-        alert(`Lỗi: ${result.message || "Không thể xóa phòng"}`);
-      }
-    } catch (err) {
-      alert("Có lỗi xảy ra khi xóa phòng");
-    } finally {
-      setDeleteLoading(null);
-    }
-  };
-
-  // Mở modal thêm/sửa
-  const openModal = (room?: Room) => {
-    if (room) {
-      setEditingRoom(room);
-      setFormData({
-        tenPhong: room.tenPhong,
-        khach: room.khach,
-        phongNgu: room.phongNgu,
-        giuong: room.giuong,
-        phongTam: room.phongTam,
-        moTa: room.moTa,
-        giaTien: room.giaTien,
-        mayGiat: room.mayGiat,
-        banLa: room.banLa,
-        tivi: room.tivi,
-        dieuHoa: room.dieuHoa,
-        wifi: room.wifi,
-        bep: room.bep,
-        doXe: room.doXe,
-        hoBoi: room.hoBoi,
-        banUi: room.banUi,
-        maViTri: room.maViTri,
-      });
-    } else {
-      setEditingRoom(null);
-      setFormData({
-        tenPhong: "",
-        khach: 1,
-        phongNgu: 1,
-        giuong: 1,
-        phongTam: 1,
-        moTa: "",
-        giaTien: 0,
-        mayGiat: false,
-        banLa: false,
-        tivi: false,
-        dieuHoa: false,
-        wifi: false,
-        bep: false,
-        doXe: false,
-        hoBoi: false,
-        banUi: false,
-        maViTri: locations[0]?.id || 1,
-      });
-    }
-    setShowModal(true);
-  };
-
-  // Xử lý submit form
-  const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
-
-    try {
-      setLoading(true);
-
-      let result;
-      if (editingRoom) {
-        result = (await updateRoom(editingRoom.id, formData)) as {
-          success: boolean;
-          message?: string;
-        };
-      } else {
-        result = (await createRoom(formData)) as {
-          success: boolean;
-          message?: string;
-        };
-      }
-
-      if (result.success) {
-        alert(
-          editingRoom
-            ? "Cập nhật phòng thành công!"
-            : "Tạo phòng mới thành công!"
+      // Client-side filter by location if selected
+      if (selectedLocation) {
+        filteredRooms = filteredRooms.filter(
+          (room) => room.maViTri === selectedLocation
         );
-        setShowModal(false);
-        loadRooms();
-      } else {
-        alert(`Lỗi: ${result.message}`);
       }
-    } catch (err) {
-      alert("Có lỗi xảy ra");
-    } finally {
-      setLoading(false);
+
+      setRooms(filteredRooms);
+      setTotalPages(result.pagination?.totalPages || 1);
+      setTotalRows(result.pagination?.totalRow || 0);
+    }
+    setLoading(false);
+  };
+
+  const handleDelete = async (roomId: number, roomName: string) => {
+    if (!confirm(`Bạn có chắc muốn xóa phòng "${roomName}"?`)) return;
+
+    const result = (await deleteRoom(roomId)) as {
+      success: boolean;
+      message?: string;
+    };
+    if (result.success) {
+      alert("✅ Xóa phòng thành công!");
+      fetchRooms();
+    } else {
+      alert("❌ Lỗi: " + (result.message || "Không thể xóa phòng"));
     }
   };
 
-  // Filter rooms
-  const filteredRooms = rooms.filter((room) =>
-    room.tenPhong.toLowerCase().includes(searchKeyword.toLowerCase())
-  );
+  const getLocationName = (maViTri: number) => {
+    const location = locations.find((loc) => loc.id === maViTri);
+    return location
+      ? `${location.tenViTri}, ${location.tinhThanh}`
+      : "Chưa có vị trí";
+  };
+
+  const formatPrice = (price: number) => {
+    return new Intl.NumberFormat("vi-VN", {
+      style: "currency",
+      currency: "VND",
+    }).format(price);
+  };
 
   return (
     <div className="min-h-screen bg-gray-50">
       {/* Header */}
-      <div className="bg-white shadow-sm border-b">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="flex justify-between items-center py-6">
-            <div>
-              <h1 className="text-2xl font-bold text-gray-900">
-                Quản lý Phòng
-              </h1>
-              <p className="text-gray-600">
-                Danh sách tất cả phòng trong hệ thống
-              </p>
-            </div>
-            <button
-              onClick={() => openModal()}
-              className="bg-blue-600 hover:bg-blue-700 text-white px-6 py-3 rounded-lg font-medium transition-colors duration-200"
+      <div className="bg-white border-b border-gray-200 px-6 py-4">
+        <div className="flex items-center justify-between">
+          <div>
+            <h1 className="text-2xl font-bold text-gray-900">Quản lý phòng</h1>
+            <p className="text-sm text-gray-500 mt-1">
+              {totalRows > 0 ? (
+                <>
+                  Hiển thị {(currentPage - 1) * pageSize + 1} -{" "}
+                  {Math.min(currentPage * pageSize, totalRows)} của {totalRows}{" "}
+                  phòng
+                </>
+              ) : (
+                "Chưa có phòng nào"
+              )}
+            </p>
+          </div>
+          <Link
+            href="/admin/rooms/create"
+            className="flex items-center gap-2 px-6 py-3 bg-blue-600 hover:bg-blue-700 text-white font-semibold rounded-lg transition-colors shadow-md"
+          >
+            <svg
+              className="w-5 h-5"
+              fill="none"
+              stroke="currentColor"
+              viewBox="0 0 24 24"
             >
-              + Thêm phòng mới
-            </button>
-          </div>
+              <path
+                strokeLinecap="round"
+                strokeLinejoin="round"
+                strokeWidth={2}
+                d="M12 4v16m8-8H4"
+              />
+            </svg>
+            Thêm phòng mới
+          </Link>
         </div>
       </div>
 
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-        {/* Search */}
-        <div className="mb-6">
-          <input
-            type="text"
-            placeholder="Tìm kiếm theo tên phòng..."
-            value={searchKeyword}
-            onChange={(e) => setSearchKeyword(e.target.value)}
-            className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
-          />
-        </div>
-
-        {/* Loading/Error States */}
-        {loading && (
-          <div className="text-center py-12">
-            <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600 mx-auto"></div>
-            <p className="mt-4 text-gray-600">Đang tải dữ liệu...</p>
+      {/* Filters */}
+      <div className="bg-white border-b border-gray-200 px-6 py-4">
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+          {/* Search */}
+          <div className="md:col-span-2">
+            <input
+              type="text"
+              placeholder="🔍 Tìm kiếm theo tên phòng..."
+              value={searchTerm}
+              onChange={(e) => {
+                setSearchTerm(e.target.value);
+                setCurrentPage(1);
+              }}
+              className="w-full px-4 py-2 border-2 border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 text-gray-900"
+            />
           </div>
-        )}
 
-        {error && (
-          <div className="p-6 bg-red-50 border border-red-200 text-red-800 rounded-xl">
-            <h2 className="text-xl font-bold mb-2">Lỗi</h2>
-            <p>{error}</p>
-          </div>
-        )}
-
-        {/* Rooms Grid */}
-        {!loading && !error && (
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-            {filteredRooms.map((room) => (
-              <div
-                key={room.id}
-                className="bg-white rounded-xl shadow-md hover:shadow-lg transition-shadow duration-200 overflow-hidden"
-              >
-                {/* Room Image */}
-                <div className="h-48 bg-gray-200">
-                  <img
-                    src={
-                      room.hinhAnh ||
-                      "https://images.unsplash.com/photo-1566073771259-6a8506099945?q=80&w=800&auto=format&fit=crop"
-                    }
-                    alt={room.tenPhong}
-                    className="w-full h-full object-cover"
-                    onError={(e) => {
-                      (e.target as HTMLImageElement).src =
-                        "https://images.unsplash.com/photo-1566073771259-6a8506099945?q=80&w=800&auto=format&fit=crop";
-                    }}
-                  />
-                </div>
-
-                {/* Room Info */}
-                <div className="p-4">
-                  <h3 className="text-lg font-semibold text-gray-900 mb-2 line-clamp-1">
-                    {room.tenPhong}
-                  </h3>
-                  <p className="text-sm text-gray-600 mb-3 line-clamp-2">
-                    {room.moTa}
-                  </p>
-
-                  {/* Room Details */}
-                  <div className="grid grid-cols-2 gap-2 mb-3 text-sm">
-                    <div className="text-gray-600">👥 {room.khach} khách</div>
-                    <div className="text-gray-600">🛏️ {room.giuong} giường</div>
-                    <div className="text-gray-600">
-                      🚪 {room.phongNgu} phòng ngủ
-                    </div>
-                    <div className="text-gray-600">
-                      🚿 {room.phongTam} phòng tắm
-                    </div>
-                  </div>
-
-                  {/* Price */}
-                  <div className="text-xl font-bold text-blue-600 mb-4">
-                    ${room.giaTien}
-                    <span className="text-sm text-gray-500">/đêm</span>
-                  </div>
-
-                  {/* Actions */}
-                  <div className="flex gap-2">
-                    <button
-                      onClick={() => openModal(room)}
-                      className="flex-1 bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-lg text-sm font-medium transition-colors duration-200"
-                    >
-                      Sửa
-                    </button>
-                    <button
-                      onClick={() => handleDeleteRoom(room.id, room.tenPhong)}
-                      disabled={deleteLoading === room.id}
-                      className="flex-1 bg-red-600 hover:bg-red-700 text-white px-4 py-2 rounded-lg text-sm font-medium transition-colors duration-200 disabled:opacity-50"
-                    >
-                      {deleteLoading === room.id ? "Đang xóa..." : "Xóa"}
-                    </button>
-                  </div>
-                </div>
-              </div>
+          {/* Filter by Location */}
+          <select
+            value={selectedLocation || ""}
+            onChange={(e) => {
+              setSelectedLocation(
+                e.target.value ? Number(e.target.value) : null
+              );
+              setCurrentPage(1);
+            }}
+            className="px-4 py-2 border-2 border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 text-gray-900"
+          >
+            <option value="">📍 Tất cả vị trí</option>
+            {locations.map((location) => (
+              <option key={location.id} value={location.id}>
+                {location.tenViTri}, {location.tinhThanh}
+              </option>
             ))}
-          </div>
-        )}
-
-        {!loading && !error && filteredRooms.length === 0 && (
-          <div className="text-center py-12">
-            <p className="text-gray-500">Không tìm thấy phòng nào</p>
-          </div>
-        )}
+          </select>
+        </div>
       </div>
 
-      {/* Modal Thêm/Sửa Phòng */}
-      {showModal && (
-        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
-          <div className="bg-white rounded-xl shadow-2xl max-w-4xl w-full max-h-[90vh] overflow-y-auto">
-            <div className="p-6">
-              <h2 className="text-2xl font-bold text-gray-900 mb-6">
-                {editingRoom ? "Sửa phòng" : "Thêm phòng mới"}
-              </h2>
-
-              <form onSubmit={handleSubmit} className="space-y-6">
-                {/* Tên phòng */}
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-2">
-                    Tên phòng *
-                  </label>
-                  <input
-                    type="text"
-                    value={formData.tenPhong}
-                    onChange={(e) =>
-                      setFormData({ ...formData, tenPhong: e.target.value })
-                    }
-                    required
-                    className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
-                  />
-                </div>
-
-                {/* Mô tả */}
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-2">
-                    Mô tả
-                  </label>
-                  <textarea
-                    value={formData.moTa}
-                    onChange={(e) =>
-                      setFormData({ ...formData, moTa: e.target.value })
-                    }
-                    rows={3}
-                    className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
-                  />
-                </div>
-
-                {/* Grid 4 cột */}
-                <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-                  <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-2">
-                      Số khách
-                    </label>
-                    <input
-                      type="number"
-                      value={formData.khach}
-                      onChange={(e) =>
-                        setFormData({
-                          ...formData,
-                          khach: parseInt(e.target.value),
-                        })
-                      }
-                      min="1"
-                      className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
-                    />
-                  </div>
-
-                  <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-2">
-                      Phòng ngủ
-                    </label>
-                    <input
-                      type="number"
-                      value={formData.phongNgu}
-                      onChange={(e) =>
-                        setFormData({
-                          ...formData,
-                          phongNgu: parseInt(e.target.value),
-                        })
-                      }
-                      min="1"
-                      className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
-                    />
-                  </div>
-
-                  <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-2">
-                      Giường
-                    </label>
-                    <input
-                      type="number"
-                      value={formData.giuong}
-                      onChange={(e) =>
-                        setFormData({
-                          ...formData,
-                          giuong: parseInt(e.target.value),
-                        })
-                      }
-                      min="1"
-                      className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
-                    />
-                  </div>
-
-                  <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-2">
-                      Phòng tắm
-                    </label>
-                    <input
-                      type="number"
-                      value={formData.phongTam}
-                      onChange={(e) =>
-                        setFormData({
-                          ...formData,
-                          phongTam: parseInt(e.target.value),
-                        })
-                      }
-                      min="1"
-                      className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
-                    />
-                  </div>
-                </div>
-
-                {/* Giá và Vị trí */}
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                  <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-2">
-                      Giá tiền ($/đêm) *
-                    </label>
-                    <input
-                      type="number"
-                      value={formData.giaTien}
-                      onChange={(e) =>
-                        setFormData({
-                          ...formData,
-                          giaTien: parseInt(e.target.value),
-                        })
-                      }
-                      min="0"
-                      required
-                      className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
-                    />
-                  </div>
-
-                  <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-2">
-                      Vị trí *
-                    </label>
-                    <select
-                      value={formData.maViTri}
-                      onChange={(e) =>
-                        setFormData({
-                          ...formData,
-                          maViTri: parseInt(e.target.value),
-                        })
-                      }
-                      required
-                      className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
-                    >
-                      {locations.map((location) => (
-                        <option key={location.id} value={location.id}>
-                          {location.tenViTri} - {location.tinhThanh}
-                        </option>
-                      ))}
-                    </select>
-                  </div>
-                </div>
-
-                {/* Tiện nghi */}
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-3">
-                    Tiện nghi
-                  </label>
-                  <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-4">
-                    {[
-                      { key: "mayGiat", label: "Máy giặt" },
-                      { key: "banLa", label: "Bàn là" },
-                      { key: "tivi", label: "Tivi" },
-                      { key: "dieuHoa", label: "Điều hòa" },
-                      { key: "wifi", label: "Wifi" },
-                      { key: "bep", label: "Bếp" },
-                      { key: "doXe", label: "Đỗ xe" },
-                      { key: "hoBoi", label: "Hồ bơi" },
-                      { key: "banUi", label: "Bàn ủi" },
-                    ].map((amenity) => (
-                      <label
-                        key={amenity.key}
-                        className="flex items-center space-x-2 cursor-pointer"
-                      >
-                        <input
-                          type="checkbox"
-                          checked={
-                            formData[
-                              amenity.key as keyof typeof formData
-                            ] as boolean
-                          }
-                          onChange={(e) =>
-                            setFormData({
-                              ...formData,
-                              [amenity.key]: e.target.checked,
-                            })
-                          }
-                          className="w-4 h-4 text-blue-600 border-gray-300 rounded focus:ring-blue-500"
-                        />
-                        <span className="text-sm text-gray-700">
-                          {amenity.label}
-                        </span>
-                      </label>
-                    ))}
-                  </div>
-                </div>
-
-                {/* Buttons */}
-                <div className="flex gap-4 pt-4">
-                  <button
-                    type="button"
-                    onClick={() => setShowModal(false)}
-                    className="flex-1 px-6 py-3 border border-gray-300 text-gray-700 rounded-lg font-medium hover:bg-gray-50 transition-colors duration-200"
-                  >
-                    Hủy
-                  </button>
-                  <button
-                    type="submit"
-                    disabled={loading}
-                    className="flex-1 px-6 py-3 bg-blue-600 hover:bg-blue-700 text-white rounded-lg font-medium transition-colors duration-200 disabled:opacity-50"
-                  >
-                    {loading
-                      ? "Đang xử lý..."
-                      : editingRoom
-                      ? "Cập nhật"
-                      : "Tạo mới"}
-                  </button>
-                </div>
-              </form>
+      {/* Content */}
+      <div className="px-6 py-8">
+        {loading ? (
+          <div className="flex items-center justify-center py-20">
+            <div className="text-center">
+              <div className="inline-block animate-spin rounded-full h-16 w-16 border-b-4 border-blue-600 mb-4"></div>
+              <p className="text-gray-600">Đang tải...</p>
             </div>
           </div>
-        </div>
-      )}
+        ) : rooms.length === 0 ? (
+          <div className="text-center py-20">
+            <div className="text-6xl mb-4">🏠</div>
+            <p className="text-xl text-gray-600">Không tìm thấy phòng nào</p>
+            <Link
+              href="/admin/rooms/create"
+              className="inline-block mt-4 text-blue-600 hover:underline"
+            >
+              Thêm phòng mới
+            </Link>
+          </div>
+        ) : (
+          <>
+            {/* Table */}
+            <div className="bg-white rounded-lg shadow-sm border border-gray-200 overflow-hidden">
+              <div className="overflow-x-auto">
+                <table className="w-full">
+                  <thead className="bg-gray-50 border-b border-gray-200">
+                    <tr>
+                      <th className="px-4 py-3 text-left text-xs font-semibold text-gray-700 uppercase tracking-wider w-24">
+                        Hình ảnh
+                      </th>
+                      <th className="px-4 py-3 text-left text-xs font-semibold text-gray-700 uppercase tracking-wider">
+                        Thông tin phòng
+                      </th>
+                      <th className="px-4 py-3 text-left text-xs font-semibold text-gray-700 uppercase tracking-wider w-48">
+                        Vị trí
+                      </th>
+                      <th className="px-4 py-3 text-right text-xs font-semibold text-gray-700 uppercase tracking-wider w-32">
+                        Giá/đêm
+                      </th>
+                      <th className="px-4 py-3 text-center text-xs font-semibold text-gray-700 uppercase tracking-wider w-32">
+                        Hành động
+                      </th>
+                    </tr>
+                  </thead>
+                  <tbody className="divide-y divide-gray-100 bg-white">
+                    {rooms.map((room) => (
+                      <tr
+                        key={room.id}
+                        className="hover:bg-gray-50 transition-colors"
+                      >
+                        <td className="px-4 py-4">
+                          {room.hinhAnh ? (
+                            <img
+                              src={room.hinhAnh}
+                              alt={room.tenPhong}
+                              className="w-16 h-16 object-cover rounded-lg border border-gray-200 shadow-sm"
+                            />
+                          ) : (
+                            <div className="w-16 h-16 flex items-center justify-center bg-gradient-to-br from-blue-100 to-cyan-100 rounded-lg">
+                              <svg
+                                className="w-8 h-8 text-blue-600"
+                                fill="none"
+                                stroke="currentColor"
+                                viewBox="0 0 24 24"
+                              >
+                                <path
+                                  strokeLinecap="round"
+                                  strokeLinejoin="round"
+                                  strokeWidth={2}
+                                  d="M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-6 0a1 1 0 001-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 001 1m-6 0h6"
+                                />
+                              </svg>
+                            </div>
+                          )}
+                        </td>
+                        <td className="px-4 py-4">
+                          <div className="font-semibold text-gray-900 mb-1">
+                            {room.tenPhong}
+                          </div>
+                          <div className="flex flex-wrap gap-x-4 gap-y-1 text-xs text-gray-600">
+                            <span className="flex items-center gap-1">
+                              <svg
+                                className="w-3.5 h-3.5"
+                                fill="none"
+                                stroke="currentColor"
+                                viewBox="0 0 24 24"
+                              >
+                                <path
+                                  strokeLinecap="round"
+                                  strokeLinejoin="round"
+                                  strokeWidth={2}
+                                  d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0zm6 3a2 2 0 11-4 0 2 2 0 014 0zM7 10a2 2 0 11-4 0 2 2 0 014 0z"
+                                />
+                              </svg>
+                              {room.khach} khách
+                            </span>
+                            <span className="flex items-center gap-1">
+                              <svg
+                                className="w-3.5 h-3.5"
+                                fill="none"
+                                stroke="currentColor"
+                                viewBox="0 0 24 24"
+                              >
+                                <path
+                                  strokeLinecap="round"
+                                  strokeLinejoin="round"
+                                  strokeWidth={2}
+                                  d="M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-6 0a1 1 0 001-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 001 1m-6 0h6"
+                                />
+                              </svg>
+                              {room.phongNgu} phòng ngủ
+                            </span>
+                            <span className="flex items-center gap-1">
+                              <svg
+                                className="w-3.5 h-3.5"
+                                fill="none"
+                                stroke="currentColor"
+                                viewBox="0 0 24 24"
+                              >
+                                <path
+                                  strokeLinecap="round"
+                                  strokeLinejoin="round"
+                                  strokeWidth={2}
+                                  d="M3 10h18M7 15h1m4 0h1m-7 4h12a3 3 0 003-3V8a3 3 0 00-3-3H6a3 3 0 00-3 3v8a3 3 0 003 3z"
+                                />
+                              </svg>
+                              {room.giuong} giường
+                            </span>
+                            <span className="flex items-center gap-1">
+                              <svg
+                                className="w-3.5 h-3.5"
+                                fill="none"
+                                stroke="currentColor"
+                                viewBox="0 0 24 24"
+                              >
+                                <path
+                                  strokeLinecap="round"
+                                  strokeLinejoin="round"
+                                  strokeWidth={2}
+                                  d="M8 14v3m4-3v3m4-3v3M3 21h18M3 10h18M3 7l9-4 9 4M4 10h16v11H4V10z"
+                                />
+                              </svg>
+                              {room.phongTam} phòng tắm
+                            </span>
+                          </div>
+                          <div className="text-xs text-gray-400 mt-1">
+                            ID: #{room.id}
+                          </div>
+                        </td>
+                        <td className="px-4 py-4">
+                          <div className="flex items-start gap-2">
+                            <svg
+                              className="w-4 h-4 text-gray-400 mt-0.5 flex-shrink-0"
+                              fill="none"
+                              stroke="currentColor"
+                              viewBox="0 0 24 24"
+                            >
+                              <path
+                                strokeLinecap="round"
+                                strokeLinejoin="round"
+                                strokeWidth={2}
+                                d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z"
+                              />
+                              <path
+                                strokeLinecap="round"
+                                strokeLinejoin="round"
+                                strokeWidth={2}
+                                d="M15 11a3 3 0 11-6 0 3 3 0 016 0z"
+                              />
+                            </svg>
+                            <span className="text-sm text-gray-700 line-clamp-2">
+                              {getLocationName(room.maViTri)}
+                            </span>
+                          </div>
+                        </td>
+                        <td className="px-4 py-4 text-right">
+                          <div className="font-bold text-blue-600 text-sm">
+                            {formatPrice(room.giaTien)}
+                          </div>
+                          <div className="text-xs text-gray-500">mỗi đêm</div>
+                        </td>
+                        <td className="px-6 py-4">
+                          <div className="flex items-center justify-center gap-2">
+                            <Link
+                              href={`/admin/rooms/${room.id}`}
+                              className="p-2 bg-blue-50 hover:bg-blue-100 text-blue-600 rounded-lg transition-colors"
+                              title="Xem chi tiết"
+                            >
+                              <svg
+                                className="w-5 h-5"
+                                fill="none"
+                                stroke="currentColor"
+                                viewBox="0 0 24 24"
+                              >
+                                <path
+                                  strokeLinecap="round"
+                                  strokeLinejoin="round"
+                                  strokeWidth={2}
+                                  d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"
+                                />
+                                <path
+                                  strokeLinecap="round"
+                                  strokeLinejoin="round"
+                                  strokeWidth={2}
+                                  d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z"
+                                />
+                              </svg>
+                            </Link>
+                            <Link
+                              href={`/admin/rooms/${room.id}/edit`}
+                              className="p-2 bg-yellow-50 hover:bg-yellow-100 text-yellow-600 rounded-lg transition-colors"
+                              title="Chỉnh sửa"
+                            >
+                              <svg
+                                className="w-5 h-5"
+                                fill="none"
+                                stroke="currentColor"
+                                viewBox="0 0 24 24"
+                              >
+                                <path
+                                  strokeLinecap="round"
+                                  strokeLinejoin="round"
+                                  strokeWidth={2}
+                                  d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"
+                                />
+                              </svg>
+                            </Link>
+                            <button
+                              onClick={() =>
+                                handleDelete(room.id, room.tenPhong)
+                              }
+                              className="p-2 bg-red-50 hover:bg-red-100 text-red-600 rounded-lg transition-colors"
+                              title="Xóa"
+                            >
+                              <svg
+                                className="w-5 h-5"
+                                fill="none"
+                                stroke="currentColor"
+                                viewBox="0 0 24 24"
+                              >
+                                <path
+                                  strokeLinecap="round"
+                                  strokeLinejoin="round"
+                                  strokeWidth={2}
+                                  d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"
+                                />
+                              </svg>
+                            </button>
+                          </div>
+                        </td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+            </div>
+
+            {/* Pagination */}
+            {totalPages > 1 && (
+              <div className="flex items-center justify-center gap-2 mt-8">
+                {/* Previous */}
+                <button
+                  onClick={() => setCurrentPage((p) => Math.max(1, p - 1))}
+                  disabled={currentPage === 1}
+                  className="px-4 py-2 bg-white border border-gray-300 rounded-md hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed font-medium text-gray-700 transition-colors"
+                >
+                  ← Trước
+                </button>
+
+                {/* Page Numbers */}
+                {Array.from({ length: Math.min(5, totalPages) }, (_, i) => {
+                  let pageNum;
+                  if (totalPages <= 5) {
+                    pageNum = i + 1;
+                  } else if (currentPage <= 3) {
+                    pageNum = i + 1;
+                  } else if (currentPage >= totalPages - 2) {
+                    pageNum = totalPages - 4 + i;
+                  } else {
+                    pageNum = currentPage - 2 + i;
+                  }
+
+                  return (
+                    <button
+                      key={pageNum}
+                      onClick={() => setCurrentPage(pageNum)}
+                      className={`min-w-[40px] px-3 py-2 border rounded-md font-medium transition-colors ${
+                        currentPage === pageNum
+                          ? "bg-blue-600 text-white border-blue-600"
+                          : "bg-white text-gray-700 border-gray-300 hover:bg-gray-50"
+                      }`}
+                    >
+                      {pageNum}
+                    </button>
+                  );
+                })}
+
+                {/* Next */}
+                <button
+                  onClick={() =>
+                    setCurrentPage((p) => Math.min(totalPages, p + 1))
+                  }
+                  disabled={currentPage === totalPages}
+                  className="px-4 py-2 bg-white border border-gray-300 rounded-md hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed font-medium text-gray-700 transition-colors"
+                >
+                  Sau →
+                </button>
+              </div>
+            )}
+          </>
+        )}
+      </div>
     </div>
   );
 }

@@ -1,245 +1,315 @@
-'use client'
+"use client";
 
-import MetricsCard from '@/components/admin/MetricsCard'
-import DataTable from '@/components/admin/DataTable'
+import { useState, useEffect } from "react";
+import { getUsers } from "@/lib/userService";
+import { getRooms } from "@/lib/roomService";
+import { getLocations } from "@/lib/locationService";
+import Link from "next/link";
+import { useRouter } from "next/navigation";
 
-export default function AdminDashboard() {
-  // Sample data for metrics
-  const metrics = [
-    {
-      title: 'Total Users',
-      value: '2,543',
-      change: '+12.5%',
-      changeType: 'increase' as const,
-      color: 'blue' as const,
-      icon: (
-        <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4.354a4 4 0 110 5.292M15 21H3v-1a6 6 0 0112 0v1zm0 0h6v-1a6 6 0 00-9-5.197m13.5-9a2.5 2.5 0 11-5 0 2.5 2.5 0 015 0z" />
-        </svg>
-      )
-    },
-    {
-      title: 'Active Bookings',
-      value: '1,247',
-      change: '+8.2%',
-      changeType: 'increase' as const,
-      color: 'green' as const,
-      icon: (
-        <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" />
-        </svg>
-      )
-    },
-    {
-      title: 'Total Revenue',
-      value: '$45,678',
-      change: '+15.3%',
-      changeType: 'increase' as const,
-      color: 'purple' as const,
-      icon: (
-        <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1" />
-        </svg>
-      )
-    },
-    {
-      title: 'Available Rooms',
-      value: '89',
-      change: '-2.1%',
-      changeType: 'decrease' as const,
-      color: 'yellow' as const,
-      icon: (
-        <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4" />
-        </svg>
-      )
+export default function DashboardPage() {
+  const router = useRouter();
+  const [stats, setStats] = useState({
+    totalUsers: 0,
+    totalRooms: 0,
+    totalLocations: 0,
+    totalBookings: 0,
+  });
+  const [user, setUser] = useState<any>(null);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    // Get current user
+    const userStr = localStorage.getItem("user");
+    if (userStr) {
+      setUser(JSON.parse(userStr));
     }
-  ]
 
-  // Sample data for recent bookings
-  const recentBookings = [
+    fetchStats();
+  }, []);
+
+  const fetchStats = async () => {
+    setLoading(true);
+
+    // Fetch all data
+    const [usersResult, roomsResult, locationsResult] = await Promise.all([
+      getUsers(),
+      getRooms(),
+      getLocations(),
+    ]);
+
+    setStats({
+      totalUsers: usersResult.success ? usersResult.users.length : 0,
+      totalRooms: roomsResult.success ? roomsResult.rooms.length : 0,
+      totalLocations: locationsResult.success
+        ? locationsResult.locations.length
+        : 0,
+      totalBookings: 0, // Would need booking API
+    });
+
+    setLoading(false);
+  };
+
+  const handleLogout = () => {
+    localStorage.removeItem("user");
+    localStorage.removeItem("token");
+    localStorage.removeItem("authToken");
+    router.push("/");
+  };
+
+  const statsCards = [
     {
-      id: 'BK001',
-      guest: 'John Doe',
-      room: 'Deluxe Suite',
-      checkIn: '2024-01-15',
-      checkOut: '2024-01-18',
-      amount: 450,
-      status: 'active'
+      title: "Người dùng",
+      value: stats.totalUsers,
+      icon: "👥",
+      color: "from-blue-500 to-blue-600",
+      link: "/admin/users",
     },
     {
-      id: 'BK002',
-      guest: 'Sarah Wilson',
-      room: 'Standard Room',
-      checkIn: '2024-01-16',
-      checkOut: '2024-01-19',
-      amount: 320,
-      status: 'pending'
+      title: "Phòng",
+      value: stats.totalRooms,
+      icon: "🏠",
+      color: "from-green-500 to-green-600",
+      link: "/admin/rooms",
     },
     {
-      id: 'BK003',
-      guest: 'Mike Johnson',
-      room: 'Premium Suite',
-      checkIn: '2024-01-14',
-      checkOut: '2024-01-17',
-      amount: 680,
-      status: 'completed'
+      title: "Vị trí",
+      value: stats.totalLocations,
+      icon: "📍",
+      color: "from-purple-500 to-purple-600",
+      link: "/admin/locations",
     },
     {
-      id: 'BK004',
-      guest: 'Emily Davis',
-      room: 'Standard Room',
-      checkIn: '2024-01-18',
-      checkOut: '2024-01-21',
-      amount: 320,
-      status: 'cancelled'
+      title: "Đặt phòng",
+      value: stats.totalBookings,
+      icon: "📅",
+      color: "from-orange-500 to-orange-600",
+      link: "/admin/bookings",
     },
-    {
-      id: 'BK005',
-      guest: 'David Brown',
-      room: 'Deluxe Suite',
-      checkIn: '2024-01-20',
-      checkOut: '2024-01-23',
-      amount: 450,
-      status: 'active'
-    },
-    {
-      id: 'BK006',
-      guest: 'Lisa Anderson',
-      room: 'Premium Suite',
-      checkIn: '2024-01-22',
-      checkOut: '2024-01-25',
-      amount: 680,
-      status: 'pending'
-    }
-  ]
-
-  const bookingColumns = [
-    { key: 'id', label: 'Booking ID', sortable: true },
-    { key: 'guest', label: 'Guest Name', sortable: true },
-    { key: 'room', label: 'Room Type', sortable: true },
-    { key: 'checkIn', label: 'Check-in', sortable: true },
-    { key: 'checkOut', label: 'Check-out', sortable: true },
-    { key: 'amount', label: 'Amount', sortable: true },
-    { key: 'status', label: 'Status', sortable: true }
-  ]
-
-  const handleViewBooking = (booking: any) => {
-    console.log('View booking:', booking)
-    alert(`View booking details for ${booking.guest}`)
-  }
-
-  const handleEditBooking = (booking: any) => {
-    console.log('Edit booking:', booking)
-    alert(`Edit booking for ${booking.guest}`)
-  }
-
-  const handleDeleteBooking = (booking: any) => {
-    console.log('Delete booking:', booking)
-    if (confirm(`Are you sure you want to delete booking ${booking.id}?`)) {
-      alert(`Booking ${booking.id} deleted`)
-    }
-  }
+  ];
 
   return (
-    <div className="space-y-6">
-      {/* Page Header */}
-      <div>
-        <h1 className="text-3xl font-bold text-gray-900">Dashboard Overview</h1>
-        <p className="text-gray-600 mt-2">Monitor your hotel booking performance and manage operations</p>
-      </div>
-
-      {/* Metrics Cards */}
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
-        {metrics.map((metric, index) => (
-          <MetricsCard
-            key={index}
-            title={metric.title}
-            value={metric.value}
-            change={metric.change}
-            changeType={metric.changeType}
-            color={metric.color}
-            icon={metric.icon}
-          />
-        ))}
-      </div>
-
-      {/* Charts Section */}
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-        {/* Revenue Chart */}
-        <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-6">
-          <h3 className="text-lg font-semibold text-gray-900 mb-4">Revenue Overview</h3>
-          <div className="h-64 flex items-center justify-center bg-gradient-to-br from-blue-50 to-blue-100 rounded-lg">
-            <div className="text-center">
-              <svg className="w-16 h-16 text-blue-600 mx-auto mb-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z" />
-              </svg>
-              <p className="text-gray-600">Chart.js integration</p>
-              <p className="text-sm text-gray-500">Revenue trends over time</p>
+    <div className="min-h-screen bg-gradient-to-br from-gray-50 to-blue-50">
+      {/* Header */}
+      <div className="bg-white shadow-sm border-b border-gray-200">
+        <div className="max-w-7xl mx-auto px-6 py-4">
+          <div className="flex items-center justify-between">
+            <div>
+              <h1 className="text-3xl font-bold bg-gradient-to-r from-blue-600 to-cyan-600 bg-clip-text text-transparent">
+                Tổng quan hệ thống
+              </h1>
+              <p className="text-gray-600 mt-1">
+                Quản lý và theo dõi hoạt động của nền tảng
+              </p>
             </div>
-          </div>
-        </div>
-
-        {/* Occupancy Chart */}
-        <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-6">
-          <h3 className="text-lg font-semibold text-gray-900 mb-4">Room Occupancy</h3>
-          <div className="h-64 flex items-center justify-center bg-gradient-to-br from-green-50 to-green-100 rounded-lg">
-            <div className="text-center">
-              <svg className="w-16 h-16 text-green-600 mx-auto mb-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4" />
-              </svg>
-              <p className="text-gray-600">Chart.js integration</p>
-              <p className="text-sm text-gray-500">Room occupancy rates</p>
+            <div className="flex items-center gap-4">
+              <Link
+                href="/profile"
+                className="px-4 py-2 text-blue-600 hover:bg-blue-50 rounded-lg font-medium transition-colors"
+              >
+                Cập nhật thông tin
+              </Link>
+              <button
+                onClick={handleLogout}
+                className="px-4 py-2 bg-red-100 hover:bg-red-200 text-red-700 rounded-lg font-medium transition-colors"
+              >
+                Đăng xuất
+              </button>
             </div>
           </div>
         </div>
       </div>
 
-      {/* Recent Bookings Table */}
-      <DataTable
-        title="Recent Bookings"
-        columns={bookingColumns}
-        data={recentBookings}
-        actions={{
-          view: handleViewBooking,
-          edit: handleEditBooking,
-          delete: handleDeleteBooking
-        }}
-      />
+      {/* Main Content */}
+      <div className="max-w-7xl mx-auto px-6 py-8">
+        {/* Welcome Card */}
+        <div className="bg-gradient-to-r from-blue-600 to-cyan-600 rounded-2xl shadow-xl p-8 mb-8 text-white">
+          <div className="flex items-center justify-between">
+            <div>
+              <h2 className="text-3xl font-bold mb-2">
+                Xin chào, {user?.name || "Admin"} 👋
+              </h2>
+              <p className="text-blue-100 text-lg">
+                Chào mừng bạn quay trở lại với trang quản trị AirBnb
+              </p>
+            </div>
+            <div className="text-6xl">🎉</div>
+          </div>
+        </div>
 
-      {/* Quick Actions */}
-      <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-6">
-        <h3 className="text-lg font-semibold text-gray-900 mb-4">Quick Actions</h3>
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
-          <button className="flex items-center justify-center p-4 border border-gray-300 rounded-lg hover:bg-blue-50 hover:border-blue-300 transition-colors duration-200">
-            <svg className="w-6 h-6 text-blue-600 mr-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 6v6m0 0v6m0-6h6m-6 0H6" />
-            </svg>
-            <span className="font-medium text-gray-900">Add New Room</span>
-          </button>
-          
-          <button className="flex items-center justify-center p-4 border border-gray-300 rounded-lg hover:bg-green-50 hover:border-green-300 transition-colors duration-200">
-            <svg className="w-6 h-6 text-green-600 mr-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" />
-            </svg>
-            <span className="font-medium text-gray-900">New Booking</span>
-          </button>
-          
-          <button className="flex items-center justify-center p-4 border border-gray-300 rounded-lg hover:bg-yellow-50 hover:border-yellow-300 transition-colors duration-200">
-            <svg className="w-6 h-6 text-yellow-600 mr-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4.354a4 4 0 110 5.292M15 21H3v-1a6 6 0 0112 0v1zm0 0h6v-1a6 6 0 00-9-5.197m13.5-9a2.5 2.5 0 11-5 0 2.5 2.5 0 015 0z" />
-            </svg>
-            <span className="font-medium text-gray-900">Manage Users</span>
-          </button>
-          
-          <button className="flex items-center justify-center p-4 border border-gray-300 rounded-lg hover:bg-purple-50 hover:border-purple-300 transition-colors duration-200">
-            <svg className="w-6 h-6 text-purple-600 mr-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z" />
-            </svg>
-            <span className="font-medium text-gray-900">View Reports</span>
-          </button>
+        {/* Stats Cards */}
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
+          {loading
+            ? // Loading skeleton
+              Array.from({ length: 4 }).map((_, i) => (
+                <div
+                  key={i}
+                  className="bg-white rounded-xl shadow-sm border border-gray-200 p-6 animate-pulse"
+                >
+                  <div className="h-24 bg-gray-200 rounded"></div>
+                </div>
+              ))
+            : statsCards.map((stat, index) => (
+                <Link
+                  key={index}
+                  href={stat.link}
+                  className="group bg-white rounded-xl shadow-sm hover:shadow-xl border border-gray-200 p-6 transition-all duration-300 hover:scale-105"
+                >
+                  <div className="flex items-center justify-between mb-4">
+                    <div
+                      className={`w-14 h-14 bg-gradient-to-br ${stat.color} rounded-xl flex items-center justify-center text-3xl shadow-lg`}
+                    >
+                      {stat.icon}
+                    </div>
+                    <svg
+                      className="w-6 h-6 text-gray-400 group-hover:text-blue-600 transition-colors"
+                      fill="none"
+                      stroke="currentColor"
+                      viewBox="0 0 24 24"
+                    >
+                      <path
+                        strokeLinecap="round"
+                        strokeLinejoin="round"
+                        strokeWidth={2}
+                        d="M9 5l7 7-7 7"
+                      />
+                    </svg>
+                  </div>
+                  <h3 className="text-gray-600 text-sm font-medium mb-1">
+                    {stat.title}
+                  </h3>
+                  <p className="text-3xl font-bold text-gray-900">
+                    {stat.value}
+                  </p>
+                </Link>
+              ))}
+        </div>
+
+        {/* Charts & Activity Section */}
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-8">
+          {/* Chart Card */}
+          <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-6">
+            <h3 className="text-lg font-bold text-gray-900 mb-4">
+              📊 Thống kê đặt phòng theo vị trí
+            </h3>
+            <div className="h-64 flex items-center justify-center bg-gradient-to-br from-blue-50 to-cyan-50 rounded-lg">
+              <div className="text-center">
+                <div className="text-5xl mb-4">📈</div>
+                <p className="text-gray-600 font-medium">
+                  Biểu đồ sẽ hiển thị ở đây
+                </p>
+                <p className="text-sm text-gray-500 mt-2">
+                  Tích hợp Chart.js hoặc Recharts
+                </p>
+              </div>
+            </div>
+          </div>
+
+          {/* Recent Activity */}
+          <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-6">
+            <h3 className="text-lg font-bold text-gray-900 mb-4">
+              🔔 Hoạt động gần đây
+            </h3>
+            <div className="space-y-4">
+              {[
+                {
+                  icon: "👤",
+                  text: "Người dùng mới đăng ký",
+                  time: "5 phút trước",
+                  color: "blue",
+                },
+                {
+                  icon: "🏠",
+                  text: "Phòng mới được thêm",
+                  time: "15 phút trước",
+                  color: "green",
+                },
+                {
+                  icon: "📅",
+                  text: "Đặt phòng thành công",
+                  time: "30 phút trước",
+                  color: "purple",
+                },
+                {
+                  icon: "📍",
+                  text: "Cập nhật vị trí mới",
+                  time: "1 giờ trước",
+                  color: "orange",
+                },
+              ].map((activity, index) => (
+                <div
+                  key={index}
+                  className="flex items-center gap-4 p-3 hover:bg-gray-50 rounded-lg transition-colors"
+                >
+                  <div className="text-2xl">{activity.icon}</div>
+                  <div className="flex-1">
+                    <p className="text-sm font-medium text-gray-900">
+                      {activity.text}
+                    </p>
+                    <p className="text-xs text-gray-500">{activity.time}</p>
+                  </div>
+                </div>
+              ))}
+            </div>
+          </div>
+        </div>
+
+        {/* Quick Actions */}
+        <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-6">
+          <h3 className="text-lg font-bold text-gray-900 mb-6">
+            ⚡ Thao tác nhanh
+          </h3>
+          <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+            <Link
+              href="/admin/users/create"
+              className="flex flex-col items-center gap-3 p-6 border-2 border-gray-200 hover:border-blue-500 rounded-xl hover:bg-blue-50 transition-all group"
+            >
+              <div className="w-16 h-16 bg-blue-100 group-hover:bg-blue-200 rounded-full flex items-center justify-center text-3xl transition-colors">
+                👤
+              </div>
+              <span className="text-sm font-semibold text-gray-700 group-hover:text-blue-600 text-center">
+                Thêm người dùng
+              </span>
+            </Link>
+
+            <Link
+              href="/admin/rooms"
+              className="flex flex-col items-center gap-3 p-6 border-2 border-gray-200 hover:border-green-500 rounded-xl hover:bg-green-50 transition-all group"
+            >
+              <div className="w-16 h-16 bg-green-100 group-hover:bg-green-200 rounded-full flex items-center justify-center text-3xl transition-colors">
+                🏠
+              </div>
+              <span className="text-sm font-semibold text-gray-700 group-hover:text-green-600 text-center">
+                Quản lý phòng
+              </span>
+            </Link>
+
+            <Link
+              href="/admin/locations"
+              className="flex flex-col items-center gap-3 p-6 border-2 border-gray-200 hover:border-purple-500 rounded-xl hover:bg-purple-50 transition-all group"
+            >
+              <div className="w-16 h-16 bg-purple-100 group-hover:bg-purple-200 rounded-full flex items-center justify-center text-3xl transition-colors">
+                📍
+              </div>
+              <span className="text-sm font-semibold text-gray-700 group-hover:text-purple-600 text-center">
+                Quản lý vị trí
+              </span>
+            </Link>
+
+            <Link
+              href="/admin/bookings"
+              className="flex flex-col items-center gap-3 p-6 border-2 border-gray-200 hover:border-orange-500 rounded-xl hover:bg-orange-50 transition-all group"
+            >
+              <div className="w-16 h-16 bg-orange-100 group-hover:bg-orange-200 rounded-full flex items-center justify-center text-3xl transition-colors">
+                📅
+              </div>
+              <span className="text-sm font-semibold text-gray-700 group-hover:text-orange-600 text-center">
+                Quản lý đặt phòng
+              </span>
+            </Link>
+          </div>
         </div>
       </div>
     </div>
-  )
+  );
 }
