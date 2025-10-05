@@ -9,6 +9,17 @@ import {
   isAuthenticated,
 } from "@/lib/authService";
 
+// Development config
+const DEV_MODE = true; // Set to false to disable dev mode
+const MOCK_ADMIN = {
+  id: 999,
+  name: "Admin Dev",
+  email: "admin@dev.local",
+  role: "ADMIN",
+  phone: "0000000000",
+  gender: true,
+};
+
 /**
  * Custom Hook quản lý Authentication State
  * Cung cấp các function và state để xử lý đăng nhập, đăng ký, đăng xuất
@@ -26,6 +37,15 @@ export const useAuth = () => {
       try {
         setLoading(true);
         setError(null);
+
+        // 🔧 DEVELOPMENT MODE: Bypass authentication
+        if (DEV_MODE) {
+          console.log("🔧 DEV MODE: Using mock admin user");
+          console.log("Mock user:", MOCK_ADMIN);
+          setUser(MOCK_ADMIN);
+          setLoading(false);
+          return;
+        }
 
         if (isAuthenticated()) {
           const result = await getCurrentUser();

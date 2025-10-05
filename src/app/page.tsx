@@ -6,6 +6,7 @@ import Hero from "@/components/home/Hero";
 import RoomCard from "@/components/home/RoomCard";
 import Footer from "@/components/home/Footer";
 import GoogleMap from "@/components/home/GoogleMap";
+import { getRooms } from "@/lib/roomService";
 
 export default function Home() {
   const [isLoading, setIsLoading] = useState(false);
@@ -15,15 +16,29 @@ export default function Home() {
   const [newsletterEmail, setNewsletterEmail] = useState("");
   const [newsletterSuccess, setNewsletterSuccess] = useState(false);
 
+  // Lấy danh sách phòng từ API Cybersoft
   useEffect(() => {
     const fetchRooms = async () => {
       try {
-        const res = await fetch("/api/rooms");
-        if (!res.ok) throw new Error("Không thể lấy dữ liệu phòng");
-        const data = await res.json();
-        setRooms(data.content.slice(0, 4));
+        setLoadingRooms(true);
+        setError(null);
+
+        const result = (await getRooms()) as {
+          success: boolean;
+          rooms: any[];
+          message?: string;
+        };
+
+        if (result.success) {
+          console.log("✅ Đã lấy được phòng từ API:", result.rooms.length);
+          // Lấy 4 phòng đầu tiên để hiển thị
+          setRooms(result.rooms.slice(0, 4));
+        } else {
+          setError(result.message || "Không thể lấy dữ liệu phòng");
+        }
       } catch (err: any) {
-        setError(err.message);
+        console.error("❌ Lỗi fetch rooms:", err);
+        setError(err.message || "Có lỗi xảy ra khi tải dữ liệu");
       } finally {
         setLoadingRooms(false);
       }

@@ -1,57 +1,70 @@
-'use client'
+"use client";
 
-import { useEffect, useState } from 'react'
+import { useEffect, useState } from "react";
 import RoomCard from "@/components/home/RoomCard";
+import { getRooms } from "@/lib/roomService";
 
 export default function SearchPage() {
-  const [rooms, setRooms] = useState<any[]>([])
-  const [filteredRooms, setFilteredRooms] = useState<any[]>([])
-  const [loading, setLoading] = useState(true)
-  const [error, setError] = useState<string | null>(null)
+  const [rooms, setRooms] = useState<any[]>([]);
+  const [filteredRooms, setFilteredRooms] = useState<any[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
 
   // Các trường tìm kiếm
-  const [searchTerm, setSearchTerm] = useState('')
-  const [bedroom, setBedroom] = useState('')
-  const [bed, setBed] = useState('')
+  const [searchTerm, setSearchTerm] = useState("");
+  const [bedroom, setBedroom] = useState("");
+  const [bed, setBed] = useState("");
 
-  // Gọi API lấy danh sách phòng
+  // Gọi API lấy danh sách phòng từ Cybersoft
   useEffect(() => {
     const fetchRooms = async () => {
       try {
-        const res = await fetch('/api/rooms')
-        if (!res.ok) throw new Error('Không thể lấy dữ liệu phòng')
-        const data = await res.json()
-        setRooms(data.content || [])
-        setFilteredRooms(data.content || [])
+        setLoading(true);
+        setError(null);
+
+        const result = (await getRooms()) as {
+          success: boolean;
+          rooms: any[];
+          message?: string;
+        };
+
+        if (result.success) {
+          console.log("Đã lấy được phòng:", result.rooms);
+          setRooms(result.rooms);
+          setFilteredRooms(result.rooms);
+        } else {
+          setError(result.message || "Không thể lấy dữ liệu phòng");
+        }
       } catch (err: any) {
-        setError(err.message)
+        console.error("Lỗi fetch rooms:", err);
+        setError(err.message || "Có lỗi xảy ra khi tải dữ liệu");
       } finally {
-        setLoading(false)
+        setLoading(false);
       }
-    }
-    fetchRooms()
-  }, [])
+    };
+    fetchRooms();
+  }, []);
 
   // Hàm lọc dữ liệu
   useEffect(() => {
-    let result = rooms
+    let result = rooms;
 
     if (searchTerm) {
       result = result.filter((r) =>
         r.tenPhong.toLowerCase().includes(searchTerm.toLowerCase())
-      )
+      );
     }
 
     if (bedroom) {
-      result = result.filter((r) => r.phongNgu === Number(bedroom))
+      result = result.filter((r) => r.phongNgu === Number(bedroom));
     }
 
     if (bed) {
-      result = result.filter((r) => r.giuong === Number(bed))
+      result = result.filter((r) => r.giuong === Number(bed));
     }
 
-    setFilteredRooms(result)
-  }, [searchTerm, bedroom, bed, rooms])
+    setFilteredRooms(result);
+  }, [searchTerm, bedroom, bed, rooms]);
 
   return (
     <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-10">
@@ -120,5 +133,5 @@ export default function SearchPage() {
         </div>
       )}
     </div>
-  )
+  );
 }

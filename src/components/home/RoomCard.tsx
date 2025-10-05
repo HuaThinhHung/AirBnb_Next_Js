@@ -1,64 +1,79 @@
-'use client'
+"use client";
 
-import { useState } from 'react'
+import { useState } from "react";
 
 interface RoomCardProps {
-  id: number
-  title: string
-  location: string
-  price: number
-  rating: number
-  reviews: number
-  image: string
-  amenities: string[]
+  id: number;
+  title: string;
+  location: string;
+  price: number;
+  rating: number;
+  reviews: number;
+  image: string;
+  amenities: string[];
 }
 
-export default function RoomCard({ 
-  id, 
-  title, 
-  location, 
-  price, 
-  rating, 
-  reviews, 
-  image, 
-  amenities 
+export default function RoomCard({
+  id,
+  title,
+  location,
+  price,
+  rating,
+  reviews,
+  image,
+  amenities,
 }: RoomCardProps) {
-  const [isLiked, setIsLiked] = useState(false)
+  const [isLiked, setIsLiked] = useState(false);
+  const [imageError, setImageError] = useState(false);
 
   const handleLike = () => {
-    setIsLiked(!isLiked)
-  }
+    setIsLiked(!isLiked);
+  };
 
   const handleBookNow = () => {
-    alert(`Booking ${title} for $${price}/night`)
-  }
+    // Redirect to room detail page
+    window.location.href = `/rooms/${id}`;
+  };
+
+  const handleImageError = () => {
+    setImageError(true);
+  };
+
+  // Placeholder image nếu không có hình hoặc lỗi
+  const defaultImage =
+    "https://images.unsplash.com/photo-1566073771259-6a8506099945?q=80&w=800&auto=format&fit=crop";
 
   return (
     <div className="bg-white dark:bg-gray-800 rounded-2xl shadow-lg hover:shadow-xl transition-all duration-300 overflow-hidden group">
       {/* Image Container */}
-      <div className="relative h-64 overflow-hidden">
+      <div className="relative h-64 overflow-hidden bg-gray-200">
         <img
-          src={image}
+          src={imageError || !image ? defaultImage : image}
           alt={title}
+          onError={handleImageError}
           className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
         />
-        
+
         {/* Like Button */}
         <button
           onClick={handleLike}
           className="absolute top-4 right-4 p-2 bg-white dark:bg-gray-800 rounded-full shadow-lg hover:shadow-xl transition-all duration-200"
         >
-          <svg 
-            className={`w-5 h-5 ${isLiked ? 'text-red-500 fill-current' : 'text-gray-600 dark:text-gray-300'}`} 
-            fill="none" 
-            stroke="currentColor" 
+          <svg
+            className={`w-5 h-5 ${
+              isLiked
+                ? "text-red-500 fill-current"
+                : "text-gray-600 dark:text-gray-300"
+            }`}
+            fill="none"
+            stroke="currentColor"
             viewBox="0 0 24 24"
           >
-            <path 
-              strokeLinecap="round" 
-              strokeLinejoin="round" 
-              strokeWidth={2} 
-              d="M4.318 6.318a4.5 4.5 0 000 6.364L12 20.364l7.682-7.682a4.5 4.5 0 00-6.364-6.364L12 7.636l-1.318-1.318a4.5 4.5 0 00-6.364 0z" 
+            <path
+              strokeLinecap="round"
+              strokeLinejoin="round"
+              strokeWidth={2}
+              d="M4.318 6.318a4.5 4.5 0 000 6.364L12 20.364l7.682-7.682a4.5 4.5 0 00-6.364-6.364L12 7.636l-1.318-1.318a4.5 4.5 0 00-6.364 0z"
             />
           </svg>
         </button>
@@ -67,7 +82,9 @@ export default function RoomCard({
         <div className="absolute bottom-4 left-4 bg-white dark:bg-gray-800 px-3 py-1 rounded-full shadow-lg">
           <span className="text-lg font-bold text-gray-900 dark:text-white">
             ${price}
-            <span className="text-sm font-normal text-gray-600 dark:text-gray-400">/night</span>
+            <span className="text-sm font-normal text-gray-600 dark:text-gray-400">
+              /night
+            </span>
           </span>
         </div>
       </div>
@@ -79,9 +96,7 @@ export default function RoomCard({
           <h3 className="text-xl font-semibold text-gray-900 dark:text-white mb-1 line-clamp-1">
             {title}
           </h3>
-          <p className="text-gray-600 dark:text-gray-400 text-sm">
-            {location}
-          </p>
+          <p className="text-gray-600 dark:text-gray-400 text-sm">{location}</p>
         </div>
 
         {/* Rating */}
@@ -90,7 +105,11 @@ export default function RoomCard({
             {[...Array(5)].map((_, i) => (
               <svg
                 key={i}
-                className={`w-4 h-4 ${i < Math.floor(rating) ? 'text-yellow-400' : 'text-gray-300 dark:text-gray-600'}`}
+                className={`w-4 h-4 ${
+                  i < Math.floor(rating)
+                    ? "text-yellow-400"
+                    : "text-gray-300 dark:text-gray-600"
+                }`}
                 fill="currentColor"
                 viewBox="0 0 20 20"
               >
@@ -131,5 +150,5 @@ export default function RoomCard({
         </button>
       </div>
     </div>
-  )
+  );
 }
