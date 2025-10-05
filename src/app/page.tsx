@@ -6,7 +6,10 @@ import Hero from "@/components/home/Hero";
 import RoomCard from "@/components/home/RoomCard";
 import Footer from "@/components/home/Footer";
 import GoogleMap from "@/components/home/GoogleMap";
+import LocationCard from "@/components/home/LocationCard";
+import PropertyTypeCard from "@/components/home/PropertyTypeCard";
 import { getRooms } from "@/lib/roomService";
+import { getLocations } from "@/lib/locationService";
 
 export default function Home() {
   const [isLoading, setIsLoading] = useState(false);
@@ -15,6 +18,10 @@ export default function Home() {
   const [error, setError] = useState<string | null>(null);
   const [newsletterEmail, setNewsletterEmail] = useState("");
   const [newsletterSuccess, setNewsletterSuccess] = useState(false);
+
+  // States cho locations
+  const [locations, setLocations] = useState<any[]>([]);
+  const [loadingLocations, setLoadingLocations] = useState(true);
 
   // Lấy danh sách phòng từ API Cybersoft
   useEffect(() => {
@@ -44,6 +51,34 @@ export default function Home() {
       }
     };
     fetchRooms();
+  }, []);
+
+  // Lấy danh sách vị trí từ API
+  useEffect(() => {
+    const fetchLocations = async () => {
+      try {
+        setLoadingLocations(true);
+
+        const result = (await getLocations()) as {
+          success: boolean;
+          locations: any[];
+          message?: string;
+        };
+
+        if (result.success) {
+          console.log("✅ Đã lấy được vị trí từ API:", result.locations.length);
+          // Lấy 8 vị trí đầu tiên để hiển thị
+          setLocations(result.locations.slice(0, 8));
+        } else {
+          console.log("⚠️ Không thể lấy vị trí:", result.message);
+        }
+      } catch (err: any) {
+        console.error("❌ Lỗi fetch locations:", err);
+      } finally {
+        setLoadingLocations(false);
+      }
+    };
+    fetchLocations();
   }, []);
 
   // Sample testimonials data
@@ -109,6 +144,74 @@ export default function Home() {
 
       {/* Hero Section */}
       <Hero />
+
+      {/* Khám phá những điểm đến gần đây */}
+      <section className="py-16 bg-white">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+          <h2 className="text-2xl md:text-3xl font-bold text-gray-900 mb-8">
+            Khám phá những điểm đến gần đây
+          </h2>
+
+          {loadingLocations ? (
+            <div className="text-center py-12">
+              <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600 mx-auto"></div>
+              <p className="mt-4 text-gray-600">Đang tải vị trí...</p>
+            </div>
+          ) : (
+            <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-4 sm:gap-6">
+              {locations.map((location) => (
+                <LocationCard
+                  key={location.id}
+                  id={location.id}
+                  name={location.tenViTri}
+                  province={location.tinhThanh}
+                  country={location.quocGia}
+                  image={location.hinhAnh}
+                  distance={`${
+                    Math.floor(Math.random() * 50) + 10
+                  } phút lái xe`}
+                />
+              ))}
+            </div>
+          )}
+        </div>
+      </section>
+
+      {/* Ở bất cứ đâu */}
+      <section className="py-16 bg-gray-50">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+          <h2 className="text-2xl md:text-3xl font-bold text-gray-900 mb-8">
+            Ở bất cứ đâu
+          </h2>
+
+          <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-6">
+            <PropertyTypeCard
+              title="Toàn bộ nhà"
+              subtitle="Không gian riêng tư"
+              image="https://images.unsplash.com/photo-1566073771259-6a8506099945?q=80&w=800&auto=format&fit=crop"
+              count="2,641 nhà"
+            />
+            <PropertyTypeCard
+              title="Chỗ ở độc đáo"
+              subtitle="Những nơi đặc biệt"
+              image="https://images.unsplash.com/photo-1519046904884-53103b34b206?q=80&w=800&auto=format&fit=crop"
+              count="1,214 chỗ ở"
+            />
+            <PropertyTypeCard
+              title="Trang trại và thiên nhiên"
+              subtitle="Gần gũi thiên nhiên"
+              image="https://images.unsplash.com/photo-1542718610-a1d656d1884c?q=80&w=800&auto=format&fit=crop"
+              count="892 trang trại"
+            />
+            <PropertyTypeCard
+              title="Cho phép mang theo thú cưng"
+              subtitle="Thú cưng được chào đón"
+              image="https://images.unsplash.com/photo-1548199973-03cce0bbc87b?q=80&w=800&auto=format&fit=crop"
+              count="3,451 chỗ ở"
+            />
+          </div>
+        </div>
+      </section>
 
       {/* Featured Rooms Section */}
       <section className="py-20 bg-blue-100">
