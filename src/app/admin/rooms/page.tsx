@@ -1,7 +1,6 @@
 "use client";
 
 import { useState, useEffect } from "react";
-import { useAuth } from "@/hooks/useAuth";
 import {
   getRooms,
   deleteRoom,
@@ -9,7 +8,6 @@ import {
   updateRoom,
 } from "@/lib/roomService";
 import { getLocations } from "@/lib/locationService";
-import { useRouter } from "next/navigation";
 
 interface Room {
   id: number;
@@ -50,9 +48,6 @@ export default function AdminRoomsPage() {
   const [showModal, setShowModal] = useState(false);
   const [editingRoom, setEditingRoom] = useState<Room | null>(null);
 
-  const { user, isAuthenticated } = useAuth();
-  const router = useRouter();
-
   // Form data
   const [formData, setFormData] = useState({
     tenPhong: "",
@@ -74,26 +69,11 @@ export default function AdminRoomsPage() {
     maViTri: 1,
   });
 
-  // Kiểm tra quyền admin
+  // 🔧 BYPASS MODE: Load dữ liệu trực tiếp, không check auth
   useEffect(() => {
-    if (!isAuthenticated) {
-      router.push("/login");
-      return;
-    }
-
-    if ((user as any)?.role !== "ADMIN") {
-      router.push("/");
-      return;
-    }
-  }, [isAuthenticated, user, router]);
-
-  // Load danh sách phòng và vị trí
-  useEffect(() => {
-    if (isAuthenticated && (user as any)?.role === "ADMIN") {
-      loadRooms();
-      loadLocations();
-    }
-  }, [isAuthenticated, user]);
+    loadRooms();
+    loadLocations();
+  }, []);
 
   const loadRooms = async () => {
     try {
@@ -250,17 +230,6 @@ export default function AdminRoomsPage() {
   const filteredRooms = rooms.filter((room) =>
     room.tenPhong.toLowerCase().includes(searchKeyword.toLowerCase())
   );
-
-  if (!isAuthenticated || (user as any)?.role !== "ADMIN") {
-    return (
-      <div className="flex items-center justify-center min-h-screen">
-        <div className="text-center">
-          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600 mx-auto"></div>
-          <p className="mt-4 text-gray-600">Đang kiểm tra quyền truy cập...</p>
-        </div>
-      </div>
-    );
-  }
 
   return (
     <div className="min-h-screen bg-gray-50">

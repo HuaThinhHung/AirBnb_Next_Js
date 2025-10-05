@@ -1,8 +1,6 @@
 "use client";
 
-import { useState, useEffect } from "react";
-import { useRouter } from "next/navigation";
-import { useAuth } from "@/hooks/useAuth";
+import { useState } from "react";
 import Sidebar from "@/components/admin/Sidebar";
 import AdminNavbarSimple from "@/components/admin/AdminNavbarSimple";
 
@@ -12,44 +10,12 @@ interface AdminLayoutProps {
 
 export default function AdminLayout({ children }: AdminLayoutProps) {
   const [sidebarOpen, setSidebarOpen] = useState(false);
-  const { user, loading, isAuthenticated } = useAuth();
-  const router = useRouter();
 
   const toggleSidebar = () => {
     setSidebarOpen(!sidebarOpen);
   };
 
-  // Bảo vệ route admin
-  useEffect(() => {
-    if (!loading) {
-      if (!isAuthenticated) {
-        router.push("/login");
-        return;
-      }
-
-      if (user?.role !== "ADMIN") {
-        router.push("/");
-        return;
-      }
-    }
-  }, [loading, isAuthenticated, user, router]);
-
-  // Hiển thị loading khi đang kiểm tra authentication
-  if (loading) {
-    return (
-      <div className="flex items-center justify-center min-h-screen">
-        <div className="text-center">
-          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600 mx-auto"></div>
-          <p className="mt-4 text-gray-600">Đang kiểm tra quyền truy cập...</p>
-        </div>
-      </div>
-    );
-  }
-
-  // Không render gì nếu chưa đăng nhập hoặc không phải admin
-  if (!isAuthenticated || user?.role !== "ADMIN") {
-    return null;
-  }
+  // 🔧 BYPASS MODE: Không check authentication, render trực tiếp
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-blue-50 to-blue-100">

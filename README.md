@@ -39,19 +39,26 @@ Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/bui
 
 ## 🏠 Airbnb Clone Project
 
-### 🔧 Development Mode (Quick Access to Admin)
+### 🔧 Bypass Authentication - Development Mode
 
-**Để truy cập trang admin nhanh chóng khi develop:**
+**✅ Authentication đã được BYPASS hoàn toàn!**
 
-1. Mở file `src/hooks/useAuth.js`
-2. Tìm dòng: `const DEV_MODE = true;`
-3. Đảm bảo `DEV_MODE = true`
-4. Chạy `npm run dev`
-5. Truy cập: `http://localhost:3000/admin`
+Bạn có thể truy cập tất cả trang admin **KHÔNG CẦN ĐĂNG NHẬP**:
 
-**Lưu ý**: Nhớ đổi `DEV_MODE = false` trước khi commit!
+```bash
+npm run dev
 
-📖 Xem chi tiết: [DEV_MODE_GUIDE.md](./DEV_MODE_GUIDE.md)
+# Truy cập trực tiếp:
+http://localhost:3000/admin/rooms        # Quản lý phòng
+http://localhost:3000/admin/users        # Quản lý users
+http://localhost:3000/admin/dashboard    # Dashboard
+```
+
+**Focus 100% vào render rooms và UI!** 🎨
+
+📖 **Đọc thêm:** [BYPASS_AUTH_GUIDE.md](./BYPASS_AUTH_GUIDE.md) - Hướng dẫn chi tiết
+
+---
 
 ---
 

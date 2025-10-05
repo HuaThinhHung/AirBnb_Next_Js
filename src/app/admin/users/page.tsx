@@ -1,9 +1,7 @@
 "use client";
 
 import { useState, useEffect } from "react";
-import { useAuth } from "@/hooks/useAuth";
 import { getUsers, deleteUser } from "@/lib/userService";
-import { useRouter } from "next/navigation";
 
 interface User {
   id: number;
@@ -37,21 +35,7 @@ export default function AdminUsersPage() {
   });
   const [deleteLoading, setDeleteLoading] = useState<number | null>(null);
 
-  const { user, isAuthenticated } = useAuth();
-  const router = useRouter();
-
-  // Kiểm tra quyền admin
-  useEffect(() => {
-    if (!isAuthenticated) {
-      router.push("/login");
-      return;
-    }
-
-    if ((user as any)?.role !== "ADMIN") {
-      router.push("/");
-      return;
-    }
-  }, [isAuthenticated, user, router]);
+  // 🔧 BYPASS MODE: Không check authentication
 
   // Load danh sách users
   const loadUsers = async (page: number = 1, keyword: string = "") => {
@@ -84,11 +68,10 @@ export default function AdminUsersPage() {
     }
   };
 
+  // Load users ngay khi component mount
   useEffect(() => {
-    if (isAuthenticated && (user as any)?.role === "ADMIN") {
-      loadUsers();
-    }
-  }, [isAuthenticated, user]);
+    loadUsers();
+  }, []);
 
   // Xử lý tìm kiếm
   const handleSearch = (e: React.FormEvent) => {
@@ -145,17 +128,6 @@ export default function AdminUsersPage() {
     return role === "ADMIN" ? "Quản trị viên" : "Người dùng";
   };
 
-  if (!isAuthenticated || (user as any)?.role !== "ADMIN") {
-    return (
-      <div className="flex items-center justify-center min-h-screen">
-        <div className="text-center">
-          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600 mx-auto"></div>
-          <p className="mt-4 text-gray-600">Đang kiểm tra quyền truy cập...</p>
-        </div>
-      </div>
-    );
-  }
-
   return (
     <div className="min-h-screen bg-gray-50">
       {/* Header */}
@@ -171,10 +143,7 @@ export default function AdminUsersPage() {
               </p>
             </div>
             <div className="text-sm text-gray-500">
-              Xin chào,{" "}
-              <span className="font-medium text-gray-900">
-                {(user as any)?.name}
-              </span>
+              <span className="font-medium text-gray-900">Admin Dev</span>
             </div>
           </div>
         </div>
@@ -363,7 +332,7 @@ export default function AdminUsersPage() {
                           <div className="flex space-x-2">
                             <button
                               onClick={() =>
-                                router.push(`/admin/users/${user.id}`)
+                                (window.location.href = `/admin/users/${user.id}`)
                               }
                               className="text-blue-600 hover:text-blue-900 transition-colors"
                             >
