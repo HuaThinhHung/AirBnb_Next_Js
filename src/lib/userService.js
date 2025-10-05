@@ -1,259 +1,242 @@
 import api from "./api";
 
 /**
- * User Management Service
- * Xử lý các API liên quan đến quản lý user
+ * User Service
+ * Xử lý các API liên quan đến người dùng
  */
 
 /**
- * Lấy danh sách users với pagination (chỉ admin)
- * @param {Object} params - Tham số phân trang { pageIndex, pageSize, keyword }
- * @returns {Promise<Object>} Danh sách users và thông tin pagination
+ * Lấy thông tin người dùng hiện tại (từ localStorage)
+ * @returns {Object|null} Thông tin user hoặc null
  */
-export const getUsers = async (params = {}) => {
+export const getCurrentUser = () => {
+  if (typeof window === "undefined") return null;
+
+  const userStr = localStorage.getItem("user");
+  if (!userStr) return null;
+
   try {
-    const { pageIndex = 1, pageSize = 10, keyword = "" } = params;
+    return JSON.parse(userStr);
+  } catch (error) {
+    console.error("❌ Lỗi parse user data:", error);
+    return null;
+  }
+};
 
-    const response = await api.get("/api/users/phan-trang-tim-kiem", {
-      params: {
-        pageIndex,
-        pageSize,
-        keyword,
-      },
-    });
+/**
+ * Lấy danh sách tất cả người dùng
+ * @returns {Promise<Object>} Danh sách người dùng
+ */
+export const getUsers = async () => {
+  try {
+    console.log("📥 [User] Đang lấy danh sách người dùng...");
 
-    // Backend có thể trả về cấu trúc khác nhau
-    const data = response.data.content || response.data;
+    const response = await api.get("/api/users");
+
+    console.log("✅ [User] Response:", response.data);
 
     return {
       success: true,
-      users: data.data || data,
-      pagination: {
-        pageIndex: data.pageIndex || pageIndex,
-        pageSize: data.pageSize || pageSize,
-        totalRow: data.totalRow || 0,
-        totalPages:
-          data.totalPage || Math.ceil((data.totalRow || 0) / pageSize),
-      },
-      message: "Lấy danh sách users thành công",
+      users: response.data.content || [],
+      message: response.data.message || "Lấy danh sách người dùng thành công",
     };
   } catch (error) {
-    console.error("Lỗi lấy danh sách users:", error);
+    console.error("❌ [User] Lỗi lấy danh sách:", error);
     return {
       success: false,
       users: [],
-      pagination: {
-        pageIndex: 1,
-        pageSize: 10,
-        totalRow: 0,
-        totalPages: 0,
-      },
-      message:
-        error.response?.data?.content ||
-        error.message ||
-        "Không thể lấy danh sách users",
+      message: error.message || "Không thể lấy danh sách người dùng",
     };
   }
 };
 
 /**
- * Lấy danh sách tất cả users (chỉ admin)
- * @returns {Promise<Object>} Danh sách users
- */
-export const getAllUsers = async () => {
-  try {
-    const response = await api.get("/api/users");
-    return {
-      success: true,
-      users: response.data.content || response.data,
-      message: "Lấy danh sách users thành công",
-    };
-  } catch (error) {
-    console.error("Lỗi lấy danh sách users:", error);
-    return {
-      success: false,
-      message:
-        error.response?.data?.content ||
-        error.message ||
-        "Không thể lấy danh sách users",
-    };
-  }
-};
-
-/**
- * Lấy thông tin user theo ID
- * @param {number} userId - ID của user
- * @returns {Promise<Object>} Thông tin user
+ * Lấy thông tin người dùng theo ID
+ * @param {number} userId - ID người dùng
+ * @returns {Promise<Object>} Thông tin người dùng
  */
 export const getUserById = async (userId) => {
   try {
+    console.log("📥 [User] Đang lấy thông tin user:", userId);
+
     const response = await api.get(`/api/users/${userId}`);
+
+    console.log("✅ [User] Response:", response.data);
+
     return {
       success: true,
-      user: response.data.content || response.data,
-      message: "Lấy thông tin user thành công",
+      user: response.data.content,
+      message: response.data.message || "Lấy thông tin người dùng thành công",
     };
   } catch (error) {
-    console.error("Lỗi lấy thông tin user:", error);
+    console.error("❌ [User] Lỗi lấy thông tin:", error);
     return {
       success: false,
-      message:
-        error.response?.data?.content ||
-        error.message ||
-        "Không thể lấy thông tin user",
+      user: null,
+      message: error.message || "Không thể lấy thông tin người dùng",
     };
   }
 };
 
 /**
- * Update thông tin user
- * @param {number} userId - ID của user
- * @param {Object} userData - Dữ liệu update
- * @returns {Promise<Object>} Kết quả update
+ * Tìm kiếm người dùng theo tên
+ * @param {string} keyword - Từ khóa tìm kiếm
+ * @returns {Promise<Object>} Kết quả tìm kiếm
+ */
+export const searchUsers = async (keyword) => {
+  try {
+    console.log("🔍 [User] Đang tìm kiếm:", keyword);
+
+    const response = await api.get(`/api/users/search/${keyword}`);
+
+    console.log("✅ [User] Kết quả:", response.data);
+
+    return {
+      success: true,
+      users: response.data.content || [],
+      message: response.data.message || "Tìm kiếm thành công",
+    };
+  } catch (error) {
+    console.error("❌ [User] Lỗi tìm kiếm:", error);
+    return {
+      success: false,
+      users: [],
+      message: error.message || "Không thể tìm kiếm người dùng",
+    };
+  }
+};
+
+/**
+ * Cập nhật thông tin người dùng
+ * @param {number} userId - ID người dùng
+ * @param {Object} userData - Dữ liệu cập nhật
+ * @returns {Promise<Object>} Kết quả cập nhật
  */
 export const updateUser = async (userId, userData) => {
   try {
-    console.log("Updating user:", userId, userData);
+    console.log("📝 [User] Đang cập nhật:", { userId, userData });
 
     const response = await api.put(`/api/users/${userId}`, userData);
 
-    return {
-      success: true,
-      user: response.data.content || response.data,
-      message: "Cập nhật user thành công",
-    };
-  } catch (error) {
-    console.error("Lỗi update user:", error);
-    return {
-      success: false,
-      message:
-        error.response?.data?.content ||
-        error.message ||
-        "Không thể cập nhật user",
-    };
-  }
-};
+    console.log("✅ [User] Cập nhật thành công:", response.data);
 
-/**
- * Update role của user (chỉ admin)
- * @param {number} userId - ID của user
- * @param {string} role - Role mới ("USER" hoặc "ADMIN")
- * @returns {Promise<Object>} Kết quả update
- */
-export const updateUserRole = async (userId, role) => {
-  try {
-    console.log(`Updating user ${userId} role to ${role}`);
-
-    // Thử endpoint update user bình thường
-    const response = await api.put(`/api/users/${userId}`, { role });
+    // Update localStorage if updating current user
+    const currentUser = getCurrentUser();
+    if (currentUser && currentUser.id === userId) {
+      localStorage.setItem("user", JSON.stringify(response.data.content));
+    }
 
     return {
       success: true,
-      user: response.data.content || response.data,
-      message: `Cập nhật role thành ${role} thành công`,
+      user: response.data.content,
+      message: response.data.message || "Cập nhật thông tin thành công",
     };
   } catch (error) {
-    console.error("Lỗi update role:", error);
-    return {
-      success: false,
-      message:
-        error.response?.data?.content ||
-        error.message ||
-        "Không thể cập nhật role. Backend có thể không hỗ trợ update role từ API.",
-    };
-  }
-};
+    console.error("❌ [User] Lỗi cập nhật:", error);
 
-/**
- * Xóa user (chỉ admin)
- * @param {number} userId - ID của user cần xóa
- * @returns {Promise<Object>} Kết quả xóa
- */
-export const deleteUser = async (userId) => {
-  try {
-    const response = await api.delete(`/api/users`, {
-      params: { id: userId },
-    });
-
-    return {
-      success: true,
-      message: "Xóa user thành công",
-    };
-  } catch (error) {
-    console.error("Lỗi xóa user:", error);
-    return {
-      success: false,
-      message:
-        error.response?.data?.content || error.message || "Không thể xóa user",
-    };
-  }
-};
-
-/**
- * Tạo admin user trực tiếp (nếu backend hỗ trợ)
- * @param {Object} userData - Thông tin user
- * @returns {Promise<Object>} Kết quả tạo admin
- */
-export const createAdminUser = async (userData) => {
-  try {
-    // Thử endpoint tạo admin nếu backend có
-    // Thường backend sẽ có endpoint riêng cho admin
-    const response = await api.post("/api/admin/users", {
-      ...userData,
-      role: "ADMIN",
-    });
-
-    return {
-      success: true,
-      user: response.data.content || response.data,
-      message: "Tạo admin user thành công",
-    };
-  } catch (error) {
-    console.error("Lỗi tạo admin user:", error);
-
-    // Nếu endpoint không tồn tại, trả về message hướng dẫn
-    if (error.response?.status === 404) {
+    if (error.response) {
       return {
         success: false,
         message:
-          "Backend không hỗ trợ API tạo admin. Vui lòng liên hệ backend team hoặc tạo admin trực tiếp trong database.",
+          error.response.data?.message || error.message || "Không thể cập nhật",
+        error: error.response.data,
       };
     }
 
     return {
       success: false,
       message:
-        error.response?.data?.content ||
-        error.message ||
-        "Không thể tạo admin user",
+        error.message || "Không thể cập nhật thông tin. Vui lòng thử lại.",
     };
   }
 };
 
 /**
- * Search users
- * @param {string} keyword - Từ khóa tìm kiếm
- * @returns {Promise<Object>} Danh sách users tìm được
+ * Xóa người dùng (Admin only)
+ * @param {number} userId - ID người dùng
+ * @returns {Promise<Object>} Kết quả xóa
  */
-export const searchUsers = async (keyword) => {
+export const deleteUser = async (userId) => {
   try {
-    const response = await api.get("/api/users/search", {
-      params: { keyword },
-    });
+    console.log("🗑️ [User] Đang xóa:", userId);
+
+    const response = await api.delete(`/api/users/${userId}`);
+
+    console.log("✅ [User] Xóa thành công:", response.data);
 
     return {
       success: true,
-      users: response.data.content || response.data,
-      message: "Tìm kiếm user thành công",
+      message: response.data.message || "Xóa người dùng thành công",
     };
   } catch (error) {
-    console.error("Lỗi tìm kiếm users:", error);
+    console.error("❌ [User] Lỗi xóa:", error);
     return {
       success: false,
-      message:
-        error.response?.data?.content ||
-        error.message ||
-        "Không thể tìm kiếm users",
+      message: error.message || "Không thể xóa người dùng",
+    };
+  }
+};
+
+/**
+ * Upload avatar người dùng
+ * @param {File} file - File ảnh
+ * @returns {Promise<Object>} URL ảnh
+ */
+export const uploadAvatar = async (file) => {
+  try {
+    console.log("📤 [User] Đang upload avatar...");
+
+    const formData = new FormData();
+    formData.append("formFile", file);
+
+    const response = await api.post("/api/users/upload-avatar", formData, {
+      headers: {
+        "Content-Type": "multipart/form-data",
+      },
+    });
+
+    console.log("✅ [User] Upload thành công:", response.data);
+
+    return {
+      success: true,
+      avatar: response.data.content,
+      message: response.data.message || "Upload avatar thành công",
+    };
+  } catch (error) {
+    console.error("❌ [User] Lỗi upload:", error);
+    return {
+      success: false,
+      message: error.message || "Không thể upload avatar",
+    };
+  }
+};
+
+/**
+ * Lấy danh sách booking của user
+ * @param {number} userId - ID người dùng
+ * @returns {Promise<Object>} Danh sách booking
+ */
+export const getUserBookings = async (userId) => {
+  try {
+    console.log("📥 [User] Đang lấy danh sách booking của user:", userId);
+
+    const response = await api.get(
+      `/api/dat-phong/lay-theo-nguoi-dung/${userId}`
+    );
+
+    console.log("✅ [User] Bookings:", response.data);
+
+    return {
+      success: true,
+      bookings: response.data.content || [],
+      message: response.data.message || "Lấy danh sách đặt phòng thành công",
+    };
+  } catch (error) {
+    console.error("❌ [User] Lỗi lấy bookings:", error);
+    return {
+      success: false,
+      bookings: [],
+      message: error.message || "Không thể lấy danh sách đặt phòng",
     };
   }
 };

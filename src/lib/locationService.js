@@ -33,6 +33,55 @@ export const getLocations = async () => {
 };
 
 /**
+ * Lấy danh sách vị trí có phân trang và tìm kiếm
+ * @param {{ pageIndex?: number; pageSize?: number; keyword?: string }} params
+ * @returns {Promise<Object>} Kết quả bao gồm danh sách và phân trang
+ */
+export const getLocationsPagedSearch = async (params = {}) => {
+  try {
+    const pageIndex =
+      params.pageIndex && params.pageIndex > 0 ? params.pageIndex : 1;
+    const pageSize =
+      params.pageSize && params.pageSize > 0 ? params.pageSize : 12;
+    const keyword = params.keyword || "";
+
+    const query = new URLSearchParams();
+    query.append("pageIndex", String(pageIndex));
+    query.append("pageSize", String(pageSize));
+    if (keyword) query.append("keyword", keyword);
+
+    const url = `/api/vi-tri/phan-trang-tim-kiem?${query.toString()}`;
+    const response = await api.get(url);
+
+    const content = response.data?.content || {};
+    const data = content.data || content || [];
+
+    return {
+      success: true,
+      locations: Array.isArray(data) ? data : [],
+      pagination: content.pageIndex
+        ? {
+            pageIndex: content.pageIndex,
+            pageSize: content.pageSize,
+            totalRow: content.totalRow,
+            totalPages: Math.ceil(
+              (content.totalRow || 0) / (content.pageSize || pageSize)
+            ),
+          }
+        : null,
+      message: response.data?.message || "Lấy danh sách vị trí thành công",
+    };
+  } catch (error) {
+    console.error("Lỗi lấy danh sách vị trí phân trang:", error);
+    return {
+      success: false,
+      locations: [],
+      message: error.message || "Không thể lấy danh sách vị trí",
+    };
+  }
+};
+
+/**
  * Lấy thông tin chi tiết vị trí theo ID
  * @param {string|number} locationId - ID của vị trí
  * @returns {Promise<Object>} Thông tin vị trí

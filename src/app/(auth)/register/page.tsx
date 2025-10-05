@@ -3,7 +3,7 @@
 import { useState } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { useAuth } from "@/hooks/useAuth";
+import { register as registerUser } from "@/lib/authService";
 
 export default function RegisterPage() {
   const [formData, setFormData] = useState({
@@ -20,8 +20,9 @@ export default function RegisterPage() {
   const [showPassword, setShowPassword] = useState(false);
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
   const [registerSuccess, setRegisterSuccess] = useState(false);
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState<string | null>(null);
 
-  const { register, loading, error, clearError } = useAuth();
   const router = useRouter();
 
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -40,7 +41,7 @@ export default function RegisterPage() {
     }
 
     // Clear API error
-    if (error) clearError();
+    if (error) setError(null);
   };
 
   const validateForm = () => {
@@ -108,7 +109,10 @@ export default function RegisterPage() {
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (validateForm()) {
-      const result = (await register({
+      setLoading(true);
+      setError(null);
+
+      const result = await registerUser({
         name: formData.name,
         email: formData.email,
         password: formData.password,
@@ -116,7 +120,9 @@ export default function RegisterPage() {
         birthday: formData.birthday,
         gender: formData.gender,
         role: formData.role,
-      })) as { success: boolean; user?: any; message?: string };
+      });
+
+      setLoading(false);
 
       if (result && result.success) {
         setRegisterSuccess(true);
@@ -127,6 +133,7 @@ export default function RegisterPage() {
           router.push("/login");
         }, 2000);
       } else {
+        setError(result?.message || "Đăng ký thất bại");
         console.error(
           "Registration failed:",
           result?.message || "Unknown error"
@@ -212,10 +219,10 @@ export default function RegisterPage() {
                   {/* Welcome Text */}
                   <div className="space-y-3">
                     <h1 className="text-5xl font-bold text-gray-900 leading-tight">
-                      Join our
+                      Tham gia
                       <br />
                       <span className="text-transparent bg-clip-text bg-gradient-to-r from-blue-600 via-purple-600 to-blue-800 animate-pulse">
-                        Community
+                        Cộng đồng
                       </span>
                     </h1>
 
@@ -226,8 +233,8 @@ export default function RegisterPage() {
                   </div>
                 </div>
                 <p className="text-xl text-gray-600 leading-relaxed">
-                  Create your account and start exploring amazing places to
-                  stay. Join thousands of travelers who trust our platform.
+                  Tạo tài khoản và bắt đầu khám phá những nơi ở tuyệt vời. Tham
+                  gia cùng hàng ngàn du khách tin tưởng nền tảng của chúng tôi.
                 </p>
               </div>
 
@@ -250,10 +257,10 @@ export default function RegisterPage() {
                   </div>
                   <div>
                     <h3 className="font-semibold text-gray-900">
-                      Join Thousands of Users
+                      Tham gia cùng hàng ngàn người dùng
                     </h3>
                     <p className="text-gray-600">
-                      Be part of our growing community of travelers
+                      Trở thành một phần của cộng đồng du khách đang phát triển
                     </p>
                   </div>
                 </div>
@@ -276,10 +283,10 @@ export default function RegisterPage() {
                   </div>
                   <div>
                     <h3 className="font-semibold text-gray-900">
-                      Secure & Safe
+                      An toàn & Bảo mật
                     </h3>
                     <p className="text-gray-600">
-                      Your data is protected with enterprise-grade security
+                      Dữ liệu của bạn được bảo vệ với bảo mật cấp doanh nghiệp
                     </p>
                   </div>
                 </div>
@@ -302,10 +309,10 @@ export default function RegisterPage() {
                   </div>
                   <div>
                     <h3 className="font-semibold text-gray-900">
-                      Quick & Easy
+                      Nhanh & Dễ dàng
                     </h3>
                     <p className="text-gray-600">
-                      Get started in minutes with our simple signup process
+                      Bắt đầu trong vài phút với quy trình đăng ký đơn giản
                     </p>
                   </div>
                 </div>
@@ -327,14 +334,14 @@ export default function RegisterPage() {
                     </div>
                     <div className="text-center">
                       <h2 className="text-3xl font-bold text-gray-900 mb-2">
-                        Join our
+                        Tham gia
                         <span className="text-transparent bg-clip-text bg-gradient-to-r from-blue-600 to-purple-600">
                           {" "}
-                          Community
+                          Cộng đồng
                         </span>
                       </h2>
                       <p className="text-gray-600">
-                        Create your account and start your journey
+                        Tạo tài khoản và bắt đầu hành trình của bạn
                       </p>
                     </div>
                   </div>
@@ -346,7 +353,7 @@ export default function RegisterPage() {
                       htmlFor="name"
                       className="block text-sm font-semibold text-gray-700 mb-3"
                     >
-                      Full name
+                      Họ và tên
                     </label>
                     <div className="relative">
                       <div className="absolute inset-y-0 left-0 pl-4 flex items-center pointer-events-none">
@@ -375,7 +382,7 @@ export default function RegisterPage() {
                             ? "border-red-400 focus:ring-red-500 focus:border-red-500"
                             : "hover:border-gray-300"
                         }`}
-                        placeholder="Enter your full name"
+                        placeholder="Nhập họ và tên của bạn"
                       />
                     </div>
                     {errors.name && (

@@ -3,7 +3,7 @@
 import { useState } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { useAuth } from "@/hooks/useAuth";
+import { login as loginUser } from "@/lib/authService";
 
 export default function LoginPage() {
   const [formData, setFormData] = useState({
@@ -14,8 +14,9 @@ export default function LoginPage() {
   const [errors, setErrors] = useState<{ [key: string]: string }>({});
   const [showPassword, setShowPassword] = useState(false);
   const [loginSuccess, setLoginSuccess] = useState(false);
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState<string | null>(null);
 
-  const { login, loading, error, clearError } = useAuth();
   const router = useRouter();
 
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -34,7 +35,7 @@ export default function LoginPage() {
     }
 
     // Clear API error
-    if (error) clearError();
+    if (error) setError(null);
   };
 
   const validateForm = () => {
@@ -59,14 +60,24 @@ export default function LoginPage() {
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (validateForm()) {
-      const result = await login({
+      setLoading(true);
+      setError(null);
+
+      const result = await loginUser({
         email: formData.email,
         password: formData.password,
       });
 
+      setLoading(false);
+
       if (result.success) {
         setLoginSuccess(true);
         console.log("Login successful:", result.user);
+
+        // Save user to localStorage
+        if (result.user) {
+          localStorage.setItem("user", JSON.stringify(result.user));
+        }
 
         // Redirect based on user role
         setTimeout(() => {
@@ -77,6 +88,7 @@ export default function LoginPage() {
           }
         }, 1500);
       } else {
+        setError(result.message || "Đăng nhập thất bại");
         console.error("Login failed:", result.message);
       }
     }

@@ -1,6 +1,14 @@
-import SearchBar from './SearchBar'
+"use client";
+
+import { useState } from "react";
+import SearchBarAutocomplete from "./SearchBarAutocomplete";
+import LocationSearchDropdown from "./LocationSearchDropdown";
+import GuestsDropdown from "./GuestsDropdown";
+import { useRouter } from "next/navigation";
 
 export default function Hero() {
+  const router = useRouter();
+  const [guestCount, setGuestCount] = useState(1);
   return (
     <section className="relative min-h-screen flex items-center justify-center overflow-hidden">
       {/* Background Image/Gradient */}
@@ -15,64 +23,63 @@ export default function Hero() {
       {/* Content */}
       <div className="relative z-10 max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 text-center">
         <div className="max-w-4xl mx-auto">
-          
-          
           {/* Main Heading */}
           <h1 className="text-4xl md:text-6xl lg:text-7xl font-bold text-white mb-6 leading-tight">
-            Find Your Perfect
-            <span className="block text-blue-300">Stay</span>
+            Tìm Nơi Lưu Trú
+            <span className="block text-blue-300">Hoàn Hảo</span>
           </h1>
-          
-{/* Logo */}
-<div className="flex justify-center mb-8">
-             <div className="w-52 h-30 rounded-2xl flex items-center justify-center shadow-2xl overflow-hidden backdrop-blur-sm border border-white/30">
-               <img 
-                 src="/logo.png" 
-                 alt="Airbnb Clone Logo" 
-                 className="w-full h-full object-contain rounded-2xl"
-                 style={{
-                   imageRendering: '-webkit-optimize-contrast',
-                   filter: 'contrast(1.2) saturate(1.3) brightness(1.1) hue-rotate(10deg)'
-                 }}
-               />
-             </div>
-           </div>
-          
+
+          {/* Logo */}
+          <div className="flex justify-center mb-8">
+            <div className="w-52 h-30 rounded-2xl flex items-center justify-center shadow-2xl overflow-hidden backdrop-blur-sm border border-white/30">
+              <img
+                src="/logo.png"
+                alt="Airbnb Clone Logo"
+                className="w-full h-full object-contain rounded-2xl"
+                style={{
+                  imageRendering: "-webkit-optimize-contrast",
+                  filter:
+                    "contrast(1.2) saturate(1.3) brightness(1.1) hue-rotate(10deg)",
+                }}
+              />
+            </div>
+          </div>
+
           {/* Subtitle */}
           <p className="text-xl md:text-2xl text-blue-100 mb-12 max-w-3xl mx-auto leading-relaxed">
-            Discover amazing places to stay around the world. From cozy apartments to luxury villas, 
-            find the perfect accommodation for your next adventure.
+            Khám phá những nơi lưu trú tuyệt vời trên khắp thế giới. Từ căn hộ
+            ấm cúng đến biệt thự sang trọng, tìm chỗ ở hoàn hảo cho chuyến phiêu
+            lưu tiếp theo của bạn.
           </p>
 
-          {/* Search Bar */}
-          <div className="max-w-4xl mx-auto mb-12">
-            <SearchBar />
+          {/* Search Bar with Autocomplete */}
+          <div className="max-w-5xl mx-auto mb-12">
+            <SearchBarAutocomplete />
           </div>
 
           {/* Stats */}
           <div className="grid grid-cols-1 md:grid-cols-3 gap-8 max-w-3xl mx-auto">
             <div className="text-center">
-              <div className="text-3xl md:text-4xl font-bold text-white mb-2">10K+</div>
-              <div className="text-blue-200">Properties</div>
+              <div className="text-3xl md:text-4xl font-bold text-white mb-2">
+                10K+
+              </div>
+              <div className="text-blue-200">Chỗ Ở</div>
             </div>
             <div className="text-center">
-              <div className="text-3xl md:text-4xl font-bold text-white mb-2">50+</div>
-              <div className="text-blue-200">Countries</div>
+              <div className="text-3xl md:text-4xl font-bold text-white mb-2">
+                50+
+              </div>
+              <div className="text-blue-200">Quốc Gia</div>
             </div>
             <div className="text-center">
-              <div className="text-3xl md:text-4xl font-bold text-white mb-2">1M+</div>
-              <div className="text-blue-200">Happy Guests</div>
+              <div className="text-3xl md:text-4xl font-bold text-white mb-2">
+                1M+
+              </div>
+              <div className="text-blue-200">Khách Hài Lòng</div>
             </div>
           </div>
         </div>
       </div>
-
-      {/* Scroll Indicator */}
-      <div className="absolute bottom-8 left-1/2 transform -translate-x-1/2 animate-bounce">
-        <div className="w-6 h-10 border-2 border-white rounded-full flex justify-center">
-          <div className="w-1 h-3 bg-white rounded-full mt-2"></div>
-        </div>
-      </div>
     </section>
-  )
+  );
 }

@@ -1,123 +1,165 @@
 "use client";
 
 import Link from "next/link";
-import { useState } from "react";
-import { useAuth } from "@/hooks/useAuth";
+import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
 
 export default function Navbar() {
   const [isMenuOpen, setIsMenuOpen] = useState(false);
-  const { user, isAuthenticated, logout } = useAuth();
+  const [user, setUser] = useState<any>(null);
+  const [isAuthenticated, setIsAuthenticated] = useState(false);
   const router = useRouter();
+
+  // Kiểm tra user từ localStorage
+  useEffect(() => {
+    if (typeof window !== "undefined") {
+      const userStr = localStorage.getItem("user");
+      if (userStr) {
+        try {
+          const userData = JSON.parse(userStr);
+          setUser(userData);
+          setIsAuthenticated(true);
+        } catch (error) {
+          console.error("Error parsing user data:", error);
+        }
+      }
+    }
+  }, []);
 
   const toggleMenu = () => {
     setIsMenuOpen(!isMenuOpen);
   };
 
   const handleLogout = () => {
-    logout();
+    localStorage.removeItem("user");
+    localStorage.removeItem("token");
+    localStorage.removeItem("authToken");
+    setUser(null);
+    setIsAuthenticated(false);
     router.push("/");
   };
 
   return (
-    <nav className="bg-white/95 shadow-lg border-b border-blue-100 sticky top-0 z-50 backdrop-blur-sm">
+    <nav className="bg-white shadow-md border-b border-gray-100 sticky top-0 z-50 backdrop-blur-lg bg-white/95">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-        <div className="flex justify-between items-center h-16">
+        <div className="flex justify-between items-center h-20">
           {/* Logo */}
           <div className="flex-shrink-0">
-            <Link href="/" className="flex items-center group">
-              <div className="w-20 h-16 rounded-xl flex items-center justify-center shadow-lg group-hover:shadow-xl transition-all duration-300 overflow-hidden">
-                <img
-                  src="/logo.png"
-                  alt="Airbnb Clone Logo"
-                  className="w-full h-full object-contain rounded-xl"
-                  style={{
-                    imageRendering: "-webkit-optimize-contrast",
-                    filter: "contrast(1.1) saturate(1.1)",
-                  }}
-                />
-              </div>
+            <Link href="/" className="flex items-center space-x-3 group">
+              <span className="text-2xl font-bold bg-gradient-to-r from-blue-600 to-cyan-600 bg-clip-text text-transparent">
+                AirBnb
+              </span>
             </Link>
           </div>
 
           {/* Desktop Navigation */}
           <div className="hidden md:block">
-            <div className="ml-10 flex items-baseline space-x-1">
+            <div className="flex items-center space-x-1">
               <Link
                 href="/"
-                className="text-blue-600 bg-blue-50 px-4 py-2 rounded-lg text-sm font-medium transition-all duration-200 hover:bg-blue-100"
+                className="text-gray-700 hover:text-blue-600 hover:bg-blue-50 px-5 py-2.5 rounded-xl text-[15px] font-semibold transition-all duration-200 relative group"
               >
-                Home
+                Trang chủ
+                <span className="absolute bottom-0 left-1/2 -translate-x-1/2 w-0 h-0.5 bg-blue-600 group-hover:w-3/4 transition-all duration-300"></span>
+              </Link>
+              <Link
+                href="/search"
+                className="text-gray-700 hover:text-blue-600 hover:bg-blue-50 px-5 py-2.5 rounded-xl text-[15px] font-semibold transition-all duration-200 relative group"
+              >
+                Tìm kiếm
+                <span className="absolute bottom-0 left-1/2 -translate-x-1/2 w-0 h-0.5 bg-blue-600 group-hover:w-3/4 transition-all duration-300"></span>
               </Link>
               <Link
                 href="/rooms"
-                className="text-gray-600 hover:text-blue-600 hover:bg-blue-50 px-4 py-2 rounded-lg text-sm font-medium transition-all duration-200"
+                className="text-gray-700 hover:text-blue-600 hover:bg-blue-50 px-5 py-2.5 rounded-xl text-[15px] font-semibold transition-all duration-200 relative group"
               >
-                Rooms
+                Phòng
+                <span className="absolute bottom-0 left-1/2 -translate-x-1/2 w-0 h-0.5 bg-blue-600 group-hover:w-3/4 transition-all duration-300"></span>
               </Link>
               <Link
                 href="/about"
-                className="text-gray-600 hover:text-blue-600 hover:bg-blue-50 px-4 py-2 rounded-lg text-sm font-medium transition-all duration-200"
+                className="text-gray-700 hover:text-blue-600 hover:bg-blue-50 px-5 py-2.5 rounded-xl text-[15px] font-semibold transition-all duration-200 relative group"
               >
-                About
+                Giới thiệu
+                <span className="absolute bottom-0 left-1/2 -translate-x-1/2 w-0 h-0.5 bg-blue-600 group-hover:w-3/4 transition-all duration-300"></span>
               </Link>
               <Link
                 href="/contact"
-                className="text-gray-600 hover:text-blue-600 hover:bg-blue-50 px-4 py-2 rounded-lg text-sm font-medium transition-all duration-200"
+                className="text-gray-700 hover:text-blue-600 hover:bg-blue-50 px-5 py-2.5 rounded-xl text-[15px] font-semibold transition-all duration-200 relative group"
               >
-                Contact
+                Liên hệ
+                <span className="absolute bottom-0 left-1/2 -translate-x-1/2 w-0 h-0.5 bg-blue-600 group-hover:w-3/4 transition-all duration-300"></span>
               </Link>
               <Link
                 href="/blog"
-                className="text-gray-600 hover:text-blue-600 hover:bg-blue-50 px-4 py-2 rounded-lg text-sm font-medium transition-all duration-200"
+                className="text-gray-700 hover:text-blue-600 hover:bg-blue-50 px-5 py-2.5 rounded-xl text-[15px] font-semibold transition-all duration-200 relative group"
               >
                 Blog
+                <span className="absolute bottom-0 left-1/2 -translate-x-1/2 w-0 h-0.5 bg-blue-600 group-hover:w-3/4 transition-all duration-300"></span>
               </Link>
             </div>
           </div>
 
           {/* Desktop Auth Buttons */}
           <div className="hidden md:block">
-            <div className="ml-4 flex items-center space-x-3">
+            <div className="flex items-center space-x-4">
               {isAuthenticated ? (
                 <>
-                  {/* User Info */}
-                  <div className="flex items-center space-x-3">
-                    <div className="text-sm text-gray-600">
-                      Xin chào,{" "}
-                      <span className="font-medium text-gray-900">
-                        {user?.name}
-                      </span>
+                  {/* User Profile Link */}
+                  <Link
+                    href="/profile"
+                    className="flex items-center space-x-3 hover:bg-blue-50 px-4 py-2 rounded-xl transition-all group"
+                  >
+                    <div className="w-10 h-10 rounded-full bg-gradient-to-br from-blue-500 to-cyan-500 flex items-center justify-center text-white font-bold shadow-md group-hover:shadow-lg transition-all">
+                      {user?.avatar ? (
+                        <img
+                          src={user.avatar}
+                          alt={user.name}
+                          className="w-full h-full rounded-full object-cover"
+                        />
+                      ) : (
+                        user?.name?.charAt(0).toUpperCase() || "U"
+                      )}
                     </div>
-                    {user?.role === "ADMIN" && (
-                      <Link
-                        href="/admin"
-                        className="bg-gradient-to-r from-purple-600 to-purple-700 hover:from-purple-700 hover:to-purple-800 text-white px-4 py-2 rounded-lg text-sm font-medium transition-all duration-200 shadow-lg hover:shadow-xl"
-                      >
-                        Admin
-                      </Link>
-                    )}
-                    <button
-                      onClick={handleLogout}
-                      className="text-gray-600 hover:text-red-600 px-4 py-2 rounded-lg text-sm font-medium transition-all duration-200 hover:bg-red-50"
+                    <span className="font-semibold text-gray-900 group-hover:text-blue-600 transition-colors">
+                      {user?.name || "User"}
+                    </span>
+                  </Link>
+
+                  {/* Admin Link (chỉ hiện nếu role = ADMIN) */}
+                  {user?.role === "ADMIN" && (
+                    <Link
+                      href="/admin"
+                      className="bg-gradient-to-r from-purple-600 to-indigo-600 hover:from-purple-700 hover:to-indigo-700 text-white px-5 py-2.5 rounded-xl text-sm font-semibold transition-all duration-200 shadow-md hover:shadow-lg hover:scale-105"
                     >
-                      Logout
-                    </button>
-                  </div>
+                      Quản trị
+                    </Link>
+                  )}
+
+                  {/* Logout Button */}
+                  <button
+                    onClick={handleLogout}
+                    className="text-gray-600 hover:text-red-600 px-5 py-2.5 rounded-xl text-sm font-semibold transition-all duration-200 hover:bg-red-50 border border-gray-200 hover:border-red-200"
+                  >
+                    Đăng xuất
+                  </button>
                 </>
               ) : (
                 <>
+                  {/* Login Button */}
                   <Link
                     href="/login"
-                    className="text-gray-600 hover:text-blue-600 px-4 py-2 rounded-lg text-sm font-medium transition-all duration-200 hover:bg-blue-50"
+                    className="text-gray-700 hover:text-blue-600 px-5 py-2.5 rounded-xl text-sm font-semibold transition-all duration-200 hover:bg-blue-50 border border-gray-200 hover:border-blue-200"
                   >
-                    Login
+                    Đăng nhập
                   </Link>
+
+                  {/* Register Button */}
                   <Link
                     href="/register"
-                    className="bg-gradient-to-r from-blue-600 to-blue-700 hover:from-blue-700 hover:to-blue-800 text-white px-6 py-2 rounded-lg text-sm font-medium transition-all duration-200 shadow-lg hover:shadow-xl"
+                    className="bg-gradient-to-r from-blue-600 to-cyan-600 hover:from-blue-700 hover:to-cyan-700 text-white px-6 py-2.5 rounded-xl text-sm font-semibold transition-all duration-200 shadow-md hover:shadow-lg hover:scale-105"
                   >
-                    Register
+                    Đăng ký
                   </Link>
                 </>
               )}
@@ -128,7 +170,7 @@ export default function Navbar() {
           <div className="md:hidden">
             <button
               onClick={toggleMenu}
-              className="bg-blue-50 inline-flex items-center justify-center p-2 rounded-lg text-blue-600 hover:text-blue-700 hover:bg-blue-100 focus:outline-none focus:ring-2 focus:ring-inset focus:ring-blue-500 transition-all duration-200"
+              className="bg-blue-50 inline-flex items-center justify-center p-3 rounded-xl text-blue-600 hover:text-blue-700 hover:bg-blue-100 focus:outline-none focus:ring-2 focus:ring-inset focus:ring-blue-500 transition-all duration-200"
               aria-expanded="false"
             >
               <span className="sr-only">Open main menu</span>
@@ -139,12 +181,12 @@ export default function Navbar() {
                   fill="none"
                   viewBox="0 0 24 24"
                   stroke="currentColor"
+                  strokeWidth="2.5"
                   aria-hidden="true"
                 >
                   <path
                     strokeLinecap="round"
                     strokeLinejoin="round"
-                    strokeWidth="2"
                     d="M4 6h16M4 12h16M4 18h16"
                   />
                 </svg>
@@ -155,12 +197,12 @@ export default function Navbar() {
                   fill="none"
                   viewBox="0 0 24 24"
                   stroke="currentColor"
+                  strokeWidth="2.5"
                   aria-hidden="true"
                 >
                   <path
                     strokeLinecap="round"
                     strokeLinejoin="round"
-                    strokeWidth="2"
                     d="M6 18L18 6M6 6l12 12"
                   />
                 </svg>
@@ -172,53 +214,121 @@ export default function Navbar() {
 
       {/* Mobile menu */}
       {isMenuOpen && (
-        <div className="md:hidden">
-          <div className="px-2 pt-2 pb-3 space-y-1 sm:px-3 bg-white border-t border-blue-100">
+        <div className="md:hidden animate-in slide-in-from-top duration-200">
+          <div className="px-4 pt-2 pb-4 space-y-2 bg-white border-t border-gray-100 shadow-lg">
             <Link
               href="/"
-              className="text-blue-600 bg-blue-50 block px-3 py-2 rounded-lg text-base font-medium"
+              onClick={() => setIsMenuOpen(false)}
+              className="text-gray-700 hover:text-blue-600 hover:bg-blue-50 block px-4 py-3 rounded-xl text-base font-semibold transition-all duration-200"
             >
-              Home
+              Trang chủ
             </Link>
             <Link
               href="/search"
-              className="text-gray-600 hover:text-blue-600 hover:bg-blue-50 block px-3 py-2 rounded-lg text-base font-medium transition-all duration-200"
+              onClick={() => setIsMenuOpen(false)}
+              className="text-gray-700 hover:text-blue-600 hover:bg-blue-50 block px-4 py-3 rounded-xl text-base font-semibold transition-all duration-200"
             >
-              Search
+              Tìm kiếm
+            </Link>
+            <Link
+              href="/rooms"
+              onClick={() => setIsMenuOpen(false)}
+              className="text-gray-700 hover:text-blue-600 hover:bg-blue-50 block px-4 py-3 rounded-xl text-base font-semibold transition-all duration-200"
+            >
+              Phòng
             </Link>
             <Link
               href="/about"
-              className="text-gray-600 hover:text-blue-600 hover:bg-blue-50 block px-3 py-2 rounded-lg text-base font-medium transition-all duration-200"
+              onClick={() => setIsMenuOpen(false)}
+              className="text-gray-700 hover:text-blue-600 hover:bg-blue-50 block px-4 py-3 rounded-xl text-base font-semibold transition-all duration-200"
             >
-              About
+              Giới thiệu
             </Link>
             <Link
               href="/contact"
-              className="text-gray-600 hover:text-blue-600 hover:bg-blue-50 block px-3 py-2 rounded-lg text-base font-medium transition-all duration-200"
+              onClick={() => setIsMenuOpen(false)}
+              className="text-gray-700 hover:text-blue-600 hover:bg-blue-50 block px-4 py-3 rounded-xl text-base font-semibold transition-all duration-200"
             >
-              Contact
+              Liên hệ
             </Link>
             <Link
               href="/blog"
-              className="text-gray-600 hover:text-blue-600 hover:bg-blue-50 block px-3 py-2 rounded-lg text-base font-medium transition-all duration-200"
+              onClick={() => setIsMenuOpen(false)}
+              className="text-gray-700 hover:text-blue-600 hover:bg-blue-50 block px-4 py-3 rounded-xl text-base font-semibold transition-all duration-200"
             >
               Blog
             </Link>
-            <div className="border-t border-blue-100 pt-4 pb-3">
-              <div className="flex items-center px-3 space-x-3">
-                <Link
-                  href="/login"
-                  className="text-gray-600 hover:text-blue-600 block px-3 py-2 rounded-lg text-base font-medium transition-all duration-200"
-                >
-                  Login
-                </Link>
-                <Link
-                  href="/register"
-                  className="bg-gradient-to-r from-blue-600 to-blue-700 hover:from-blue-700 hover:to-blue-800 text-white px-4 py-2 rounded-lg text-base font-medium transition-all duration-200 shadow-lg"
-                >
-                  Register
-                </Link>
-              </div>
+
+            {/* Mobile Auth Section */}
+            <div className="border-t border-gray-100 pt-4 space-y-2">
+              {isAuthenticated ? (
+                <>
+                  {/* Mobile User Profile */}
+                  <Link
+                    href="/profile"
+                    onClick={() => setIsMenuOpen(false)}
+                    className="flex items-center space-x-3 px-4 py-3 hover:bg-blue-50 rounded-xl transition-all"
+                  >
+                    <div className="w-10 h-10 rounded-full bg-gradient-to-br from-blue-500 to-cyan-500 flex items-center justify-center text-white font-bold shadow-md">
+                      {user?.avatar ? (
+                        <img
+                          src={user.avatar}
+                          alt={user.name}
+                          className="w-full h-full rounded-full object-cover"
+                        />
+                      ) : (
+                        user?.name?.charAt(0).toUpperCase() || "U"
+                      )}
+                    </div>
+                    <div className="flex-1">
+                      <p className="text-sm text-gray-600">Xin chào,</p>
+                      <p className="font-bold text-gray-900">{user?.name}</p>
+                    </div>
+                  </Link>
+
+                  {/* Mobile Admin Link */}
+                  {user?.role === "ADMIN" && (
+                    <Link
+                      href="/admin"
+                      onClick={() => setIsMenuOpen(false)}
+                      className="bg-gradient-to-r from-purple-600 to-indigo-600 text-white block px-4 py-3 rounded-xl text-base font-semibold text-center"
+                    >
+                      Quản trị
+                    </Link>
+                  )}
+
+                  {/* Mobile Logout Button */}
+                  <button
+                    onClick={() => {
+                      handleLogout();
+                      setIsMenuOpen(false);
+                    }}
+                    className="text-red-600 hover:bg-red-50 block w-full px-4 py-3 rounded-xl text-base font-semibold border border-red-200 text-center"
+                  >
+                    Đăng xuất
+                  </button>
+                </>
+              ) : (
+                <>
+                  {/* Mobile Login Button */}
+                  <Link
+                    href="/login"
+                    onClick={() => setIsMenuOpen(false)}
+                    className="text-gray-700 hover:text-blue-600 hover:bg-blue-50 block px-4 py-3 rounded-xl text-base font-semibold text-center border border-gray-200"
+                  >
+                    Đăng nhập
+                  </Link>
+
+                  {/* Mobile Register Button */}
+                  <Link
+                    href="/register"
+                    onClick={() => setIsMenuOpen(false)}
+                    className="bg-gradient-to-r from-blue-600 to-cyan-600 text-white block px-4 py-3 rounded-xl text-base font-semibold text-center shadow-md"
+                  >
+                    Đăng ký
+                  </Link>
+                </>
+              )}
             </div>
           </div>
         </div>
