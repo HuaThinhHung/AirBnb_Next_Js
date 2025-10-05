@@ -8,12 +8,12 @@ import Footer from "@/components/home/Footer";
 import GoogleMap from "@/components/home/GoogleMap";
 
 export default function Home() {
-  const [isLoading, setIsLoading] = useState(false)
+  const [isLoading, setIsLoading] = useState(false);
   const [rooms, setRooms] = useState<any[]>([]);
   const [loadingRooms, setLoadingRooms] = useState(true);
   const [error, setError] = useState<string | null>(null);
-  const [newsletterEmail, setNewsletterEmail] = useState('')
-  const [newsletterSuccess, setNewsletterSuccess] = useState(false)
+  const [newsletterEmail, setNewsletterEmail] = useState("");
+  const [newsletterSuccess, setNewsletterSuccess] = useState(false);
 
   useEffect(() => {
     const fetchRooms = async () => {
@@ -39,8 +39,7 @@ export default function Home() {
       location: "New York, NY",
       rating: 5,
       text: "Amazing experience! The property was exactly as described and the host was incredibly helpful.",
-      avatar:
-        "https://images.unsplash.com/photo-1494790108755-2616b612b786?q=80&w=100&auto=format&fit=crop&ixlib=rb-4.1.0",
+      avatar: "logo.png",
     },
     {
       id: 2,
@@ -89,7 +88,7 @@ export default function Home() {
   };
 
   return (
-    <div className="min-h-screen bg-white">
+    <div className="min-h-screen bg-slate-50">
       {/* Navbar */}
       <Navbar />
 
@@ -97,13 +96,13 @@ export default function Home() {
       <Hero />
 
       {/* Featured Rooms Section */}
-      <section className="py-20 bg-blue-50">
+      <section className="py-20 bg-blue-100">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="text-center mb-16">
-            <h2 className="text-3xl md:text-4xl font-bold text-gray-900 mb-4">
+            <h2 className="text-3xl md:text-4xl font-bold text-black mb-4">
               Featured Properties
             </h2>
-            <p className="text-xl text-gray-600 max-w-3xl mx-auto">
+            <p className="text-xl text-black max-w-3xl mx-auto">
               Discover our handpicked selection of exceptional accommodations
               around the world
             </p>
@@ -111,11 +110,11 @@ export default function Home() {
 
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-8">
             {loadingRooms ? (
-              <p className="text-center text-gray-500 col-span-full">
+              <p className="text-center text-black col-span-full">
                 Đang tải dữ liệu...
               </p>
             ) : error ? (
-              <p className="text-center text-red-500 col-span-full">
+              <p className="text-center text-red-600 col-span-full">
                 Lỗi: {error}
               </p>
             ) : (
@@ -124,7 +123,7 @@ export default function Home() {
                   key={room.id}
                   id={room.id}
                   title={room.tenPhong}
-                  location={room.moTa }
+                  location={room.moTa}
                   price={room.giaTien}
                   rating={4.5}
                   reviews={10}
@@ -141,21 +140,21 @@ export default function Home() {
           </div>
 
           <div className="text-center mt-12">
-      <button
-        onClick={handleViewAllProperties}
-        disabled={isLoading}
-        className="bg-gradient-to-r from-blue-600 to-blue-700 hover:from-blue-700 hover:to-blue-800 disabled:opacity-50 disabled:cursor-not-allowed text-white font-medium py-3 px-8 rounded-lg transition-all duration-200 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 shadow-lg hover:shadow-xl"
-      >
-        {isLoading ? (
-          <div className="flex items-center space-x-2">
-            <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin"></div>
-            <span>Loading...</span>
+            <button
+              onClick={handleViewAllProperties}
+              disabled={isLoading}
+              className="bg-gradient-to-r from-blue-500 to-blue-600 hover:from-blue-600 hover:to-blue-700 disabled:opacity-50 disabled:cursor-not-allowed text-white font-medium py-3 px-8 rounded-lg transition-all duration-200 focus:outline-none focus:ring-2 focus:ring-blue-400 focus:ring-offset-2 shadow-lg hover:shadow-xl"
+            >
+              {isLoading ? (
+                <div className="flex items-center space-x-2">
+                  <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin"></div>
+                  <span>Loading...</span>
+                </div>
+              ) : (
+                "View All Properties"
+              )}
+            </button>
           </div>
-        ) : (
-          "View All Properties"
-        )}
-      </button>
-    </div>
         </div>
       </section>
 
@@ -163,10 +162,10 @@ export default function Home() {
       <section className="py-20 bg-white">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="text-center mb-16">
-            <h2 className="text-3xl md:text-4xl font-bold text-gray-900 mb-4">
+            <h2 className="text-3xl md:text-4xl font-bold text-black mb-4">
               What Our Guests Say
             </h2>
-            <p className="text-xl text-gray-600 max-w-3xl mx-auto">
+            <p className="text-xl text-black max-w-3xl mx-auto">
               Don't just take our word for it. Here's what our satisfied guests
               have to say about their experiences.
             </p>
@@ -176,7 +175,7 @@ export default function Home() {
             {testimonials.map((testimonial) => (
               <div
                 key={testimonial.id}
-                className="bg-blue-50 rounded-2xl p-6 shadow-lg hover:shadow-xl transition-all duration-300"
+                className="bg-blue-100 rounded-2xl p-6 shadow-lg hover:shadow-xl transition-all duration-300"
               >
                 <div className="flex items-center mb-4">
                   <img
@@ -185,12 +184,10 @@ export default function Home() {
                     className="w-12 h-12 rounded-full object-cover mr-4"
                   />
                   <div>
-                    <h4 className="font-semibold text-gray-900">
+                    <h4 className="font-semibold text-black">
                       {testimonial.name}
                     </h4>
-                    <p className="text-sm text-gray-600">
-                      {testimonial.location}
-                    </p>
+                    <p className="text-sm text-black">{testimonial.location}</p>
                   </div>
                 </div>
                 <div className="flex items-center mb-3">
@@ -205,7 +202,7 @@ export default function Home() {
                     </svg>
                   ))}
                 </div>
-                <p className="text-gray-700 italic">"{testimonial.text}"</p>
+                <p className="text-black italic">"{testimonial.text}"</p>
               </div>
             ))}
           </div>
@@ -213,12 +210,12 @@ export default function Home() {
       </section>
 
       {/* Newsletter Section */}
-      <section className="py-20 bg-gradient-to-r from-blue-600 to-blue-700">
+      <section className="py-20 bg-gradient-to-r from-blue-200 to-blue-300">
         <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 text-center">
-          <h2 className="text-3xl md:text-4xl font-bold text-white mb-4">
+          <h2 className="text-3xl md:text-4xl font-bold text-black mb-4">
             Stay Updated
           </h2>
-          <p className="text-xl text-blue-100 mb-8">
+          <p className="text-xl text-black mb-8">
             Get the latest deals, travel tips, and exclusive offers delivered to
             your inbox.
           </p>
@@ -230,13 +227,13 @@ export default function Home() {
                 value={newsletterEmail}
                 onChange={(e) => setNewsletterEmail(e.target.value)}
                 placeholder="Enter your email address"
-                className="flex-1 px-4 py-3 rounded-lg border-0 focus:ring-2 focus:ring-blue-300 focus:outline-none"
+                className="flex-1 px-4 py-3 rounded-lg border border-gray-300 bg-white text-black focus:ring-2 focus:ring-blue-400 focus:outline-none focus:border-blue-400"
                 required
               />
               <button
                 type="submit"
                 disabled={isLoading}
-                className="bg-white text-blue-600 font-medium py-3 px-6 rounded-lg hover:bg-blue-50 disabled:opacity-50 disabled:cursor-not-allowed transition-all duration-200 focus:outline-none focus:ring-2 focus:ring-blue-300"
+                className="bg-blue-600 text-white font-medium py-3 px-6 rounded-lg hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed transition-all duration-200 focus:outline-none focus:ring-2 focus:ring-blue-400"
               >
                 {isLoading ? (
                   <div className="flex items-center space-x-2">
@@ -250,7 +247,7 @@ export default function Home() {
             </div>
 
             {newsletterSuccess && (
-              <div className="mt-4 p-3 bg-green-100 text-green-800 rounded-lg animate-pulse">
+              <div className="mt-4 p-3 bg-green-200 text-green-900 rounded-lg animate-pulse">
                 ✅ Successfully subscribed! Thank you for joining us.
               </div>
             )}
@@ -263,10 +260,10 @@ export default function Home() {
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-12 items-center">
             <div>
-              <h2 className="text-3xl md:text-4xl font-bold text-gray-900 mb-6">
+              <h2 className="text-3xl md:text-4xl font-bold text-black mb-6">
                 Why Choose Our Platform?
               </h2>
-              <p className="text-lg text-gray-600 mb-8">
+              <p className="text-lg text-black mb-8">
                 We're committed to providing you with the best travel
                 experience. Our platform connects you with unique accommodations
                 and ensures your stay is memorable.
@@ -288,7 +285,7 @@ export default function Home() {
                       />
                     </svg>
                   </div>
-                  <span className="text-gray-700">
+                  <span className="text-black">
                     Verified properties and hosts
                   </span>
                 </div>
@@ -308,7 +305,7 @@ export default function Home() {
                       />
                     </svg>
                   </div>
-                  <span className="text-gray-700">24/7 customer support</span>
+                  <span className="text-black">24/7 customer support</span>
                 </div>
                 <div className="flex items-center space-x-3">
                   <div className="w-8 h-8 bg-blue-100 rounded-full flex items-center justify-center">
@@ -326,11 +323,11 @@ export default function Home() {
                       />
                     </svg>
                   </div>
-                  <span className="text-gray-700">Best price guarantee</span>
+                  <span className="text-black">Best price guarantee</span>
                 </div>
               </div>
               <div className="mt-8">
-                <button className="bg-gradient-to-r from-blue-600 to-blue-700 hover:from-blue-700 hover:to-blue-800 text-white font-medium py-3 px-8 rounded-lg transition-all duration-200 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 shadow-lg hover:shadow-xl">
+                <button className="bg-gradient-to-r from-blue-500 to-blue-600 hover:from-blue-600 hover:to-blue-700 text-white font-medium py-3 px-8 rounded-lg transition-all duration-200 focus:outline-none focus:ring-2 focus:ring-blue-400 focus:ring-offset-2 shadow-lg hover:shadow-xl">
                   Learn More
                 </button>
               </div>
@@ -343,7 +340,7 @@ export default function Home() {
               />
               <div className="absolute -bottom-6 -left-6 bg-white p-6 rounded-xl shadow-lg">
                 <div className="text-2xl font-bold text-blue-600">10K+</div>
-                <div className="text-gray-600">Happy Customers</div>
+                <div className="text-black">Happy Customers</div>
               </div>
             </div>
           </div>
@@ -351,13 +348,13 @@ export default function Home() {
       </section>
 
       {/* Contact Section */}
-      <section className="py-20 bg-blue-50">
+      <section className="py-20 bg-blue-100">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="text-center mb-16">
-            <h2 className="text-3xl md:text-4xl font-bold text-gray-900 dark:text-black mb-4">
+            <h2 className="text-3xl md:text-4xl font-bold text-black mb-4">
               Get in Touch
             </h2>
-            <p className="text-xl text-gray-600 dark:text-black-300 max-w-3xl mx-auto">
+            <p className="text-xl text-black max-w-3xl mx-auto">
               Have questions? We'd love to hear from you. Send us a message and
               we'll respond as soon as possible.
             </p>
@@ -367,9 +364,9 @@ export default function Home() {
             <div>
               <div className="space-y-8">
                 <div className="flex items-center space-x-4">
-                  <div className="w-12 h-12 bg-blue-100 dark:bg-blue-900 rounded-lg flex items-center justify-center">
+                  <div className="w-12 h-12 bg-blue-200 rounded-lg flex items-center justify-center">
                     <svg
-                      className="w-6 h-6 text-blue-600 dark:text-blue-400"
+                      className="w-6 h-6 text-blue-600"
                       fill="none"
                       stroke="currentColor"
                       viewBox="0 0 24 24"
@@ -383,18 +380,14 @@ export default function Home() {
                     </svg>
                   </div>
                   <div>
-                    <h3 className="text-lg font-semibold text-gray-900 dark:text-black">
-                      Phone
-                    </h3>
-                    <p className="text-gray-600 dark:text-gray-900">
-                      +1 (555) 123-4567
-                    </p>
+                    <h3 className="text-lg font-semibold text-black">Phone</h3>
+                    <p className="text-black">+1 (555) 123-4567</p>
                   </div>
                 </div>
                 <div className="flex items-center space-x-4">
-                  <div className="w-12 h-12 bg-blue-100 dark:bg-blue-900 rounded-lg flex items-center justify-center">
+                  <div className="w-12 h-12 bg-blue-200 rounded-lg flex items-center justify-center">
                     <svg
-                      className="w-6 h-6 text-blue-600 dark:text-blue-400"
+                      className="w-6 h-6 text-blue-600"
                       fill="none"
                       stroke="currentColor"
                       viewBox="0 0 24 24"
@@ -408,18 +401,14 @@ export default function Home() {
                     </svg>
                   </div>
                   <div>
-                    <h3 className="text-lg font-semibold text-gray-900 dark:text-black">
-                      Email
-                    </h3>
-                    <p className="text-gray-600 dark:text-gray-900">
-                      info@airbnbclone.com
-                    </p>
+                    <h3 className="text-lg font-semibold text-black">Email</h3>
+                    <p className="text-black">info@airbnbclone.com</p>
                   </div>
                 </div>
                 <div className="flex items-center space-x-4">
-                  <div className="w-12 h-12 bg-blue-100 dark:bg-blue-900 rounded-lg flex items-center justify-center">
+                  <div className="w-12 h-12 bg-blue-200 rounded-lg flex items-center justify-center">
                     <svg
-                      className="w-6 h-6 text-blue-600 dark:text-blue-400"
+                      className="w-6 h-6 text-blue-600"
                       fill="none"
                       stroke="currentColor"
                       viewBox="0 0 24 24"
@@ -439,10 +428,10 @@ export default function Home() {
                     </svg>
                   </div>
                   <div>
-                    <h3 className="text-lg font-semibold text-gray-900 dark:text-black">
+                    <h3 className="text-lg font-semibold text-black">
                       Address
                     </h3>
-                    <p className="text-gray-600 dark:text-gray-900">
+                    <p className="text-black">
                       123 Travel Street, City, Country
                     </p>
                   </div>
@@ -454,7 +443,7 @@ export default function Home() {
                 <div>
                   <label
                     htmlFor="name"
-                    className="block text-sm font-medium text-gray-700 dark:text-black mb-2"
+                    className="block text-sm font-medium text-black mb-2"
                   >
                     Full Name
                   </label>
@@ -462,14 +451,14 @@ export default function Home() {
                     type="text"
                     id="name"
                     name="name"
-                    className="w-full px-4 py-3 border border-black dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 dark:bg-gray-700 dark:text-white transition-colors duration-200"
+                    className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-400 focus:border-blue-400 bg-white text-black transition-colors duration-200"
                     placeholder="Your full name"
                   />
                 </div>
                 <div>
                   <label
                     htmlFor="email"
-                    className="block text-sm font-medium text-gray-700 dark:text-black mb-2"
+                    className="block text-sm font-medium text-black mb-2"
                   >
                     Email
                   </label>
@@ -477,14 +466,14 @@ export default function Home() {
                     type="email"
                     id="email"
                     name="email"
-                    className="w-full px-4 py-3 border border-black dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 dark:bg-gray-700 dark:text-white transition-colors duration-200"
+                    className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-400 focus:border-blue-400 bg-white text-black transition-colors duration-200"
                     placeholder="your@email.com"
                   />
                 </div>
                 <div>
                   <label
                     htmlFor="message"
-                    className="block text-sm font-medium text-gray-700 dark:text-black mb-2"
+                    className="block text-sm font-medium text-black mb-2"
                   >
                     Message
                   </label>
@@ -492,13 +481,13 @@ export default function Home() {
                     id="message"
                     name="message"
                     rows={4}
-                    className="w-full px-4 py-3 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 dark:bg-gray-700 dark:text-white transition-colors duration-200"
+                    className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-400 focus:border-blue-400 bg-white text-black transition-colors duration-200"
                     placeholder="Your message"
                   ></textarea>
                 </div>
                 <button
                   type="submit"
-                  className="w-full bg-blue-600 hover:bg-blue-700 text-white font-medium py-3 px-6 rounded-lg transition-colors duration-200 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 dark:focus:ring-offset-gray-800"
+                  className="w-full bg-blue-600 hover:bg-blue-700 text-white font-medium py-3 px-6 rounded-lg transition-colors duration-200 focus:outline-none focus:ring-2 focus:ring-blue-400 focus:ring-offset-2"
                 >
                   Send Message
                 </button>
