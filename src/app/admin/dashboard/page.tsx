@@ -33,9 +33,21 @@ export default function DashboardPage() {
 
     // Fetch all data
     const [usersResult, roomsResult, locationsResult] = await Promise.all([
-      getUsers(),
-      getRooms(),
-      getLocations(),
+      getUsers() as Promise<{
+        success: boolean;
+        users: unknown[];
+        message?: string;
+      }>,
+      getRooms() as Promise<{
+        success: boolean;
+        rooms: unknown[];
+        message?: string;
+      }>,
+      getLocations() as Promise<{
+        success: boolean;
+        locations: unknown[];
+        message?: string;
+      }>,
     ]);
 
     setStats({

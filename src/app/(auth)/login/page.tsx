@@ -63,10 +63,20 @@ export default function LoginPage() {
       setLoading(true);
       setError(null);
 
-      const result = await loginUser({
+      const result = (await loginUser({
         email: formData.email,
         password: formData.password,
-      });
+      })) as {
+        success: boolean;
+        user?: {
+          id: number;
+          name: string;
+          email: string;
+          role?: string;
+        };
+        token?: string;
+        message?: string;
+      };
 
       setLoading(false);
 

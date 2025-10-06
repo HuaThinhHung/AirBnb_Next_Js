@@ -31,9 +31,13 @@ export default function UserDetailPage() {
 
   const fetchUser = async () => {
     setLoading(true);
-    const result = await getUserById(Number(userId));
+    const result = (await getUserById(Number(userId))) as {
+      success: boolean;
+      user?: User;
+      message?: string;
+    };
     if (result.success) {
-      setUser(result.user);
+      setUser(result.user || null);
     } else {
       alert("Không tìm thấy người dùng");
       router.push("/admin/users");
@@ -58,14 +62,18 @@ export default function UserDetailPage() {
     }
 
     setUploading(true);
-    const result = await uploadAvatar(file);
+    const result = (await uploadAvatar(file)) as {
+      success: boolean;
+      avatar?: string;
+      message?: string;
+    };
     setUploading(false);
 
     if (result.success) {
       alert("Upload avatar thành công!");
       // Update user avatar in state
       if (user) {
-        setUser({ ...user, avatar: result.avatar });
+        setUser({ ...user, avatar: result.avatar || user.avatar });
       }
       fetchUser(); // Refresh user data
     } else {

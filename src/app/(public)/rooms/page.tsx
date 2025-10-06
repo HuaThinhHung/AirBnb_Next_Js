@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useMemo, useState } from "react";
+import { Suspense, useEffect, useMemo, useState } from "react";
 import Link from "next/link";
 import { useSearchParams } from "next/navigation";
 import { getRooms, getRoomsByLocation } from "@/lib/roomService";
@@ -35,7 +35,7 @@ type LocationInfo = {
   hinhAnh?: string;
 };
 
-export default function RoomsPage() {
+function RoomsContent() {
   const searchParams = useSearchParams();
   const locationParam = searchParams.get("location");
 
@@ -92,7 +92,11 @@ export default function RoomsPage() {
           }
         } else {
           // Fetch all rooms
-          const result = (await getRooms({ pageSize: 100 })) as {
+          const result = (await getRooms({
+            pageIndex: 1,
+            pageSize: 100,
+            keyword: "",
+          })) as {
             success: boolean;
             rooms: RoomItem[];
             message?: string;
@@ -103,8 +107,10 @@ export default function RoomsPage() {
             setError(result.message || "Không thể lấy dữ liệu phòng");
           }
         }
-      } catch (err: any) {
-        setError(err.message || "Có lỗi xảy ra khi tải dữ liệu");
+      } catch (err) {
+        const errorMessage =
+          err instanceof Error ? err.message : "Có lỗi xảy ra khi tải dữ liệu";
+        setError(errorMessage);
       } finally {
         setLoading(false);
       }
@@ -469,5 +475,24 @@ export default function RoomsPage() {
         )}
       </div>
     </div>
+  );
+}
+
+export default function RoomsPage() {
+  return (
+    <Suspense
+      fallback={
+        <div className="min-h-screen bg-white flex items-center justify-center">
+          <div className="text-center">
+            <div className="inline-block animate-spin rounded-full h-16 w-16 border-b-4 border-blue-600 mb-4"></div>
+            <p className="text-gray-600 font-semibold text-lg">
+              Đang tải phòng...
+            </p>
+          </div>
+        </div>
+      }
+    >
+      <RoomsContent />
+    </Suspense>
   );
 }

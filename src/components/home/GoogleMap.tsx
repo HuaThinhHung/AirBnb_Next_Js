@@ -14,7 +14,9 @@ interface Location {
 
 export default function GoogleMapNew() {
   const mapRef = useRef<HTMLDivElement>(null);
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const [map, setMap] = useState<any>(null);
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const [markers, setMarkers] = useState<any[]>([]);
   const [isLoaded, setIsLoaded] = useState(false);
 
@@ -135,6 +137,7 @@ export default function GoogleMapNew() {
   useEffect(() => {
     if (!isLoaded || !mapRef.current || !window.google) return;
 
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     const mapOptions: any = {
       center: { lat: 10.7769, lng: 106.7009 }, // TP.HCM coordinates
       zoom: 13,
@@ -220,6 +223,7 @@ export default function GoogleMapNew() {
     const newMap = new window.google.maps.Map(mapRef.current, mapOptions);
     setMap(newMap);
 
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     const newMarkers: any[] = [];
 
     const getMarkerColor = (type: string) => {

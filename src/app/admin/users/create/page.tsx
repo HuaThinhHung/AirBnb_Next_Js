@@ -24,7 +24,15 @@ export default function CreateUserPage() {
     setLoading(true);
     setError(null);
 
-    const result = await register(formData);
+    const result = (await register(formData)) as {
+      success: boolean;
+      user?: {
+        id: number;
+        name: string;
+        email: string;
+      };
+      message?: string;
+    };
     setLoading(false);
 
     if (result.success) {

@@ -44,7 +44,11 @@ export default function LocationDetailPage() {
       setError(null);
 
       // Fetch location details
-      const locRes = await getLocationById(id);
+      const locRes = (await getLocationById(id)) as {
+        success: boolean;
+        location?: LocationDetail;
+        message?: string;
+      };
       if (!isMounted) return;
 
       if (locRes.success) {
@@ -52,7 +56,11 @@ export default function LocationDetailPage() {
 
         // Fetch rooms for this location
         setLoadingRooms(true);
-        const roomsRes = await getRoomsByLocation(Number(id));
+        const roomsRes = (await getRoomsByLocation(Number(id))) as {
+          success: boolean;
+          rooms: RoomItem[];
+          message?: string;
+        };
         if (!isMounted) return;
 
         if (roomsRes.success) {

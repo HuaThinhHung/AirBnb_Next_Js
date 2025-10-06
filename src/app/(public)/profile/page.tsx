@@ -42,7 +42,7 @@ export default function ProfilePage() {
   });
 
   useEffect(() => {
-    const currentUser = getCurrentUser();
+    const currentUser = getCurrentUser() as User | null;
     if (!currentUser) {
       router.push("/login");
       return;
@@ -62,7 +62,11 @@ export default function ProfilePage() {
 
   const fetchUserBookings = async (userId: number) => {
     setLoading(true);
-    const result = await getUserBookings(userId);
+    const result = (await getUserBookings(userId)) as {
+      success: boolean;
+      bookings: Booking[];
+      message?: string;
+    };
     if (result.success) {
       setBookings(result.bookings);
     }
@@ -73,9 +77,13 @@ export default function ProfilePage() {
     e.preventDefault();
     if (!user) return;
 
-    const result = await updateUser(user.id, formData);
+    const result = (await updateUser(user.id, formData)) as {
+      success: boolean;
+      user?: User;
+      message?: string;
+    };
     if (result.success) {
-      setUser(result.user);
+      setUser(result.user || null);
       setIsEditing(false);
       alert("Cập nhật thông tin thành công!");
     } else {

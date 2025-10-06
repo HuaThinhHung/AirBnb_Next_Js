@@ -59,7 +59,11 @@ export default function EditLocationPage() {
     setSubmitting(true);
     setError(null);
 
-    const result = await updateLocation(Number(locationId), formData);
+    const result = (await updateLocation(Number(locationId), formData)) as {
+      success: boolean;
+      location?: unknown;
+      message?: string;
+    };
     setSubmitting(false);
 
     if (result.success) {

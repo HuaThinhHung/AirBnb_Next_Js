@@ -112,7 +112,7 @@ export default function RegisterPage() {
       setLoading(true);
       setError(null);
 
-      const result = await registerUser({
+      const result = (await registerUser({
         name: formData.name,
         email: formData.email,
         password: formData.password,
@@ -120,7 +120,15 @@ export default function RegisterPage() {
         birthday: formData.birthday,
         gender: formData.gender,
         role: formData.role,
-      });
+      })) as {
+        success: boolean;
+        user?: {
+          id: number;
+          name: string;
+          email: string;
+        };
+        message?: string;
+      };
 
       setLoading(false);
 

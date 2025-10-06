@@ -13,16 +13,18 @@ import PropertyTypeCard from "@/components/home/PropertyTypeCard";
 import { getRooms } from "@/lib/roomService";
 import { getLocations } from "@/lib/locationService";
 
+import type { Room, Location } from "@/types/api";
+
 export default function Home() {
   const [isLoading, setIsLoading] = useState(false);
-  const [rooms, setRooms] = useState<any[]>([]);
+  const [rooms, setRooms] = useState<Room[]>([]);
   const [loadingRooms, setLoadingRooms] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [newsletterEmail, setNewsletterEmail] = useState("");
   const [newsletterSuccess, setNewsletterSuccess] = useState(false);
 
   // States cho locations
-  const [locations, setLocations] = useState<any[]>([]);
+  const [locations, setLocations] = useState<Location[]>([]);
   const [loadingLocations, setLoadingLocations] = useState(true);
 
   // Lấy danh sách phòng từ API Cybersoft
@@ -34,7 +36,7 @@ export default function Home() {
 
         const result = (await getRooms()) as {
           success: boolean;
-          rooms: any[];
+          rooms: Room[];
           message?: string;
         };
 
@@ -45,9 +47,11 @@ export default function Home() {
         } else {
           setError(result.message || "Không thể lấy dữ liệu phòng");
         }
-      } catch (err: any) {
+      } catch (err) {
         console.error("❌ Lỗi fetch rooms:", err);
-        setError(err.message || "Có lỗi xảy ra khi tải dữ liệu");
+        const errorMessage =
+          err instanceof Error ? err.message : "Có lỗi xảy ra khi tải dữ liệu";
+        setError(errorMessage);
       } finally {
         setLoadingRooms(false);
       }
@@ -63,7 +67,7 @@ export default function Home() {
 
         const result = (await getLocations()) as {
           success: boolean;
-          locations: any[];
+          locations: Location[];
           message?: string;
         };
 
@@ -74,7 +78,7 @@ export default function Home() {
         } else {
           console.log("⚠️ Không thể lấy vị trí:", result.message);
         }
-      } catch (err: any) {
+      } catch (err) {
         console.error("❌ Lỗi fetch locations:", err);
       } finally {
         setLoadingLocations(false);

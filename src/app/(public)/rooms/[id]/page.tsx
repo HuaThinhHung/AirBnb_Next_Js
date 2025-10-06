@@ -107,8 +107,9 @@ export default function RoomDetailPage() {
       } else {
         setError(result.message || "Không thể tải thông tin phòng");
       }
-    } catch (err: any) {
-      setError(err.message || "Có lỗi xảy ra");
+    } catch (err) {
+      const errorMessage = err instanceof Error ? err.message : "Có lỗi xảy ra";
+      setError(errorMessage);
     } finally {
       setLoading(false);
     }
@@ -116,7 +117,11 @@ export default function RoomDetailPage() {
 
   const fetchComments = async () => {
     setLoadingComments(true);
-    const result = await getCommentsByRoom(Number(roomId));
+    const result = (await getCommentsByRoom(Number(roomId))) as {
+      success: boolean;
+      comments: Comment[];
+      message?: string;
+    };
     if (result.success) {
       setComments(result.comments);
     }
@@ -144,7 +149,11 @@ export default function RoomDetailPage() {
       ngayBinhLuan: new Date().toISOString().split("T")[0],
     };
 
-    const result = await createComment(commentData);
+    const result = (await createComment(commentData)) as {
+      success: boolean;
+      comment?: Comment;
+      message?: string;
+    };
     setSubmittingComment(false);
 
     if (result.success) {
@@ -200,7 +209,11 @@ export default function RoomDetailPage() {
       maNguoiDung: user.id,
     };
 
-    const result = await createBooking(bookingData);
+    const result = (await createBooking(bookingData)) as {
+      success: boolean;
+      booking?: unknown;
+      message?: string;
+    };
     setBookingLoading(false);
 
     if (result.success) {

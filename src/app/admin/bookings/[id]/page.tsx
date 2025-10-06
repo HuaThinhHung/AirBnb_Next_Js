@@ -86,7 +86,10 @@ export default function BookingDetailPage() {
   const handleDelete = async () => {
     if (!confirm(`Bạn có chắc muốn xóa đặt phòng #${booking?.id}?`)) return;
 
-    const result = await deleteBooking(Number(bookingId));
+    const result = (await deleteBooking(Number(bookingId))) as {
+      success: boolean;
+      message?: string;
+    };
     if (result.success) {
       alert("✅ Xóa đặt phòng thành công!");
       router.push("/admin/bookings");

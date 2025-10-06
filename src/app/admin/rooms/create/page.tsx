@@ -64,7 +64,11 @@ export default function CreateRoomPage() {
     setLoading(true);
     setError(null);
 
-    const result = await createRoom(formData);
+    const result = (await createRoom(formData)) as {
+      success: boolean;
+      room?: unknown;
+      message?: string;
+    };
     setLoading(false);
 
     if (result.success) {
