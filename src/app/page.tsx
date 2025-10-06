@@ -2,11 +2,9 @@
 
 import { useEffect, useState } from "react";
 import Link from "next/link";
-import Navbar from "@/components/home/Navbar";
 import Hero from "@/components/home/Hero";
 import SearchBarAutocomplete from "@/components/home/SearchBarAutocomplete";
 import RoomCard from "@/components/home/RoomCard";
-import Footer from "@/components/home/Footer";
 // import GoogleMap from "@/components/home/GoogleMap"; // Tạm tắt để tránh lỗi billing
 import LocationCard from "@/components/home/LocationCard";
 import PropertyTypeCard from "@/components/home/PropertyTypeCard";
@@ -145,9 +143,6 @@ export default function Home() {
 
   return (
     <div className="min-h-screen bg-slate-50">
-      {/* Navbar */}
-      <Navbar />
-
       {/* Hero Section */}
       <Hero />
 
@@ -697,9 +692,6 @@ export default function Home() {
 
       {/* Google Map Section - Tạm tắt để tránh lỗi billing */}
       {/* <GoogleMap /> */}
-
-      {/* Footer */}
-      <Footer />
     </div>
   );
 }

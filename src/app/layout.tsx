@@ -3,6 +3,8 @@ import { Geist, Geist_Mono } from "next/font/google";
 import "./globals.css"; // Đảm bảo đường dẫn này đúng
 import FlowbiteInit from "@/components/FlowbiteInit";
 import SmartFloatingActions from "@/components/common/SmartFloatingActions";
+import ConditionalHeader from "@/components/ConditionalHeader";
+import ConditionalFooter from "@/components/ConditionalFooter";
 
 const geistSans = Geist({
   variable: "--font-geist-sans",
@@ -19,11 +21,11 @@ export const metadata: Metadata = {
   description: "A simple Airbnb clone built with Next.js",
   icons: {
     icon: [
-      { url: '/favicon.ico', sizes: 'any' },
-      { url: '/logo.png', type: 'image/png' }
+      { url: "/favicon.ico", sizes: "any" },
+      { url: "/logo.png", type: "image/png" },
     ],
-    shortcut: '/favicon.ico',
-    apple: '/logo.png',
+    shortcut: "/favicon.ico",
+    apple: "/logo.png",
   },
 };
 
@@ -37,7 +39,9 @@ export default function RootLayout({
       <body
         className={`${geistSans.variable} ${geistMono.variable} antialiased`}
       >
+        <ConditionalHeader />
         {children}
+        <ConditionalFooter />
         <FlowbiteInit />
         <SmartFloatingActions />
       </body>

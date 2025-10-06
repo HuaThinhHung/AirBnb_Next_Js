@@ -48,8 +48,6 @@ function RoomsContent() {
   const [keyword, setKeyword] = useState("");
   const [priceRange, setPriceRange] = useState<string>("all");
   const [bedrooms, setBedrooms] = useState<string>("");
-  const [beds, setBeds] = useState<string>("");
-  const [maxPrice, setMaxPrice] = useState<string>("");
   const [guests, setGuests] = useState<string>("");
   const [amenities, setAmenities] = useState<string[]>([]);
   const [sortBy, setSortBy] = useState<
@@ -66,11 +64,8 @@ function RoomsContent() {
         setLoading(true);
         setError(null);
 
-        // If location parameter exists, fetch by location
         if (locationParam) {
           const locationId = Number(locationParam);
-
-          // Fetch location info
           const locRes = (await getLocationById(locationId)) as {
             success: boolean;
             location: LocationInfo;
@@ -79,7 +74,6 @@ function RoomsContent() {
             setLocation(locRes.location);
           }
 
-          // Fetch rooms by location
           const roomsRes = (await getRoomsByLocation(locationId)) as {
             success: boolean;
             rooms: RoomItem[];
@@ -91,18 +85,13 @@ function RoomsContent() {
             setError(roomsRes.message || "Không thể lấy dữ liệu phòng");
           }
         } else {
-          // Fetch all rooms
           const result = (await getRooms({
             pageIndex: 1,
             pageSize: 100,
             keyword: "",
-          })) as {
-            success: boolean;
-            rooms: RoomItem[];
-            message?: string;
-          };
+          })) as { success: boolean; rooms: RoomItem[]; message?: string };
           if (result.success) {
-            setRooms(result.rooms);
+            setRooms(result.rooms || []);
           } else {
             setError(result.message || "Không thể lấy dữ liệu phòng");
           }
@@ -115,52 +104,56 @@ function RoomsContent() {
         setLoading(false);
       }
     };
+
     fetchData();
   }, [locationParam]);
 
-  const filtered = useMemo(() => {
-    let list = rooms.slice();
-    const q = keyword.trim().toLowerCase();
-    if (q)
-      list = list.filter(
-        (r) =>
-          r.tenPhong?.toLowerCase().includes(q) ||
-          r.moTa?.toLowerCase().includes(q)
-      );
+  // Filter and sort rooms
+  const filteredRooms = useMemo(() => {
+    let filtered = [...rooms];
 
-    // Price range filter
-    if (priceRange !== "all") {
-      const [min, max] = priceRange.split("-").map(Number);
-      list = list.filter((r) => {
-        if (max) return r.giaTien >= min && r.giaTien <= max;
-        return r.giaTien >= min;
-      });
+    if (keyword) {
+      filtered = filtered.filter((room) =>
+        room.tenPhong.toLowerCase().includes(keyword.toLowerCase())
+      );
     }
 
-    if (bedrooms)
-      list = list.filter((r) => (r.phongNgu || 0) >= Number(bedrooms));
-    if (beds) list = list.filter((r) => (r.giuong || 0) >= Number(beds));
-    if (maxPrice)
-      list = list.filter((r) => (r.giaTien || 0) <= Number(maxPrice));
-    if (guests) list = list.filter((r) => (r.khach || 0) >= Number(guests));
+    if (priceRange === "under-50") {
+      filtered = filtered.filter((r) => r.giaTien < 50);
+    } else if (priceRange === "50-100") {
+      filtered = filtered.filter((r) => r.giaTien >= 50 && r.giaTien <= 100);
+    } else if (priceRange === "100-200") {
+      filtered = filtered.filter((r) => r.giaTien > 100 && r.giaTien <= 200);
+    } else if (priceRange === "over-200") {
+      filtered = filtered.filter((r) => r.giaTien > 200);
+    }
 
-    // Amenities filter
+    if (bedrooms) {
+      const bedroomsNum = Number(bedrooms);
+      filtered = filtered.filter((r) => (r.phongNgu || 0) >= bedroomsNum);
+    }
+
+    if (guests) {
+      const guestsNum = Number(guests);
+      filtered = filtered.filter((r) => (r.khach || 0) >= guestsNum);
+    }
+
     if (amenities.length > 0) {
-      list = list.filter((r) => {
+      filtered = filtered.filter((room) => {
         return amenities.every((amenity) => {
           switch (amenity) {
             case "wifi":
-              return r.wifi;
-            case "bep":
-              return r.bep;
+              return room.wifi;
             case "dieuHoa":
-              return r.dieuHoa;
-            case "doXe":
-              return r.doXe;
+              return room.dieuHoa;
+            case "bep":
+              return room.bep;
             case "hoBoi":
-              return r.hoBoi;
+              return room.hoBoi;
             case "mayGiat":
-              return r.mayGiat;
+              return room.mayGiat;
+            case "tivi":
+              return room.tivi;
             default:
               return true;
           }
@@ -168,43 +161,16 @@ function RoomsContent() {
       });
     }
 
-    switch (sortBy) {
-      case "priceAsc":
-        list.sort((a, b) => a.giaTien - b.giaTien);
-        break;
-      case "priceDesc":
-        list.sort((a, b) => b.giaTien - a.giaTien);
-        break;
-      case "nameAsc":
-        list.sort((a, b) => a.tenPhong.localeCompare(b.tenPhong));
-        break;
-      case "nameDesc":
-        list.sort((a, b) => b.tenPhong.localeCompare(a.tenPhong));
-        break;
-    }
+    filtered.sort((a, b) => {
+      if (sortBy === "priceAsc") return a.giaTien - b.giaTien;
+      if (sortBy === "priceDesc") return b.giaTien - a.giaTien;
+      if (sortBy === "nameAsc") return a.tenPhong.localeCompare(b.tenPhong);
+      if (sortBy === "nameDesc") return b.tenPhong.localeCompare(a.tenPhong);
+      return 0;
+    });
 
-    return list;
-  }, [
-    rooms,
-    keyword,
-    priceRange,
-    bedrooms,
-    beds,
-    maxPrice,
-    guests,
-    amenities,
-    sortBy,
-  ]);
-
-  // Paginated results
-  const paginatedRooms = useMemo(() => {
-    const start = (page - 1) * pageSize;
-    return filtered.slice(start, start + pageSize);
-  }, [filtered, page]);
-
-  const totalPages = useMemo(() => {
-    return Math.max(1, Math.ceil(filtered.length / pageSize));
-  }, [filtered.length]);
+    return filtered;
+  }, [rooms, keyword, priceRange, bedrooms, guests, amenities, sortBy]);
 
   const toggleAmenity = (amenity: string) => {
     setAmenities((prev) =>
@@ -212,260 +178,360 @@ function RoomsContent() {
         ? prev.filter((a) => a !== amenity)
         : [...prev, amenity]
     );
-    setPage(1);
   };
 
+  const totalPages = Math.ceil(filteredRooms.length / pageSize);
+  const paginatedRooms = filteredRooms.slice(
+    (page - 1) * pageSize,
+    page * pageSize
+  );
+
   return (
-    <div className="min-h-screen bg-white">
+    <div
+      className="min-h-screen bg-gray-50"
+      style={{ fontFamily: "'Inter', sans-serif" }}
+    >
       {/* Header */}
-      <div className="border-b border-gray-200 bg-white sticky top-20 z-40">
-        <div className="max-w-[1760px] mx-auto px-6 py-4">
-          <div className="flex items-center justify-between">
+      <div className="bg-white border-b border-gray-200">
+        <div className="max-w-[1400px] mx-auto px-6 lg:px-12 py-8">
+          {location ? (
             <div>
-              <h1 className="text-2xl font-semibold text-gray-900">
-                {location
-                  ? `Chỗ ở tại ${location.tenViTri}, ${location.tinhThanh}`
-                  : "Tất cả chỗ ở"}
+              <h1 className="text-5xl font-extrabold text-gray-900 mb-3">
+                {location.tenViTri}
               </h1>
-              <p className="text-sm text-gray-600 mt-1">
-                {filtered.length} chỗ ở{location && ` • ${location.quocGia}`}
+              <p className="text-xl text-gray-600 flex items-center gap-2">
+                <svg
+                  className="w-6 h-6 text-blue-600"
+                  fill="currentColor"
+                  viewBox="0 0 20 20"
+                >
+                  <path
+                    fillRule="evenodd"
+                    d="M5.05 4.05a7 7 0 119.9 9.9L10 18.9l-4.95-4.95a7 7 0 010-9.9zM10 11a2 2 0 100-4 2 2 0 000 4z"
+                    clipRule="evenodd"
+                  />
+                </svg>
+                {location.tinhThanh}, {location.quocGia}
               </p>
             </div>
-            {location && (
-              <Link
-                href="/rooms"
-                className="text-sm text-blue-600 hover:underline font-medium"
-              >
-                ← Xem tất cả phòng
-              </Link>
-            )}
-          </div>
-
-          {/* Filter Tags */}
-          <div className="flex items-center gap-3 mt-4 overflow-x-auto pb-2">
-            <button
-              onClick={() => {
-                setPriceRange("all");
-                setPage(1);
-              }}
-              className={`px-4 py-2 rounded-full border text-sm font-medium whitespace-nowrap transition-all ${
-                priceRange === "all"
-                  ? "bg-gray-900 text-white border-gray-900"
-                  : "bg-white text-gray-700 border-gray-300 hover:border-gray-900"
-              }`}
-            >
-              Tất cả giá
-            </button>
-            <button
-              onClick={() => {
-                setPriceRange("0-500000");
-                setPage(1);
-              }}
-              className={`px-4 py-2 rounded-full border text-sm font-medium whitespace-nowrap transition-all ${
-                priceRange === "0-500000"
-                  ? "bg-gray-900 text-white border-gray-900"
-                  : "bg-white text-gray-700 border-gray-300 hover:border-gray-900"
-              }`}
-            >
-              Dưới 500K
-            </button>
-            <button
-              onClick={() => {
-                setPriceRange("500000-1000000");
-                setPage(1);
-              }}
-              className={`px-4 py-2 rounded-full border text-sm font-medium whitespace-nowrap transition-all ${
-                priceRange === "500000-1000000"
-                  ? "bg-gray-900 text-white border-gray-900"
-                  : "bg-white text-gray-700 border-gray-300 hover:border-gray-900"
-              }`}
-            >
-              500K - 1M
-            </button>
-            <button
-              onClick={() => {
-                setPriceRange("1000000-999999999");
-                setPage(1);
-              }}
-              className={`px-4 py-2 rounded-full border text-sm font-medium whitespace-nowrap transition-all ${
-                priceRange === "1000000-999999999"
-                  ? "bg-gray-900 text-white border-gray-900"
-                  : "bg-white text-gray-700 border-gray-300 hover:border-gray-900"
-              }`}
-            >
-              Trên 1M
-            </button>
-
-            <div className="w-px h-6 bg-gray-300"></div>
-
-            <button
-              onClick={() => toggleAmenity("wifi")}
-              className={`px-4 py-2 rounded-full border text-sm font-medium whitespace-nowrap transition-all ${
-                amenities.includes("wifi")
-                  ? "bg-gray-900 text-white border-gray-900"
-                  : "bg-white text-gray-700 border-gray-300 hover:border-gray-900"
-              }`}
-            >
-              Wifi
-            </button>
-            <button
-              onClick={() => toggleAmenity("bep")}
-              className={`px-4 py-2 rounded-full border text-sm font-medium whitespace-nowrap transition-all ${
-                amenities.includes("bep")
-                  ? "bg-gray-900 text-white border-gray-900"
-                  : "bg-white text-gray-700 border-gray-300 hover:border-gray-900"
-              }`}
-            >
-              Bếp
-            </button>
-            <button
-              onClick={() => toggleAmenity("dieuHoa")}
-              className={`px-4 py-2 rounded-full border text-sm font-medium whitespace-nowrap transition-all ${
-                amenities.includes("dieuHoa")
-                  ? "bg-gray-900 text-white border-gray-900"
-                  : "bg-white text-gray-700 border-gray-300 hover:border-gray-900"
-              }`}
-            >
-              Điều hòa
-            </button>
-            <button
-              onClick={() => toggleAmenity("doXe")}
-              className={`px-4 py-2 rounded-full border text-sm font-medium whitespace-nowrap transition-all ${
-                amenities.includes("doXe")
-                  ? "bg-gray-900 text-white border-gray-900"
-                  : "bg-white text-gray-700 border-gray-300 hover:border-gray-900"
-              }`}
-            >
-              Đỗ xe
-            </button>
-            <button
-              onClick={() => toggleAmenity("hoBoi")}
-              className={`px-4 py-2 rounded-full border text-sm font-medium whitespace-nowrap transition-all ${
-                amenities.includes("hoBoi")
-                  ? "bg-gray-900 text-white border-gray-900"
-                  : "bg-white text-gray-700 border-gray-300 hover:border-gray-900"
-              }`}
-            >
-              Hồ bơi
-            </button>
-          </div>
+          ) : (
+            <div>
+              <h1 className="text-5xl font-extrabold text-gray-900 mb-3">
+                Tất Cả Chỗ Ở
+              </h1>
+              <p className="text-xl text-gray-600">
+                Khám phá hàng nghìn nơi lưu trú tuyệt vời
+              </p>
+            </div>
+          )}
         </div>
       </div>
 
-      {/* Main Content */}
-      <div className="max-w-[1760px] mx-auto px-6 py-6">
-        {/* Loading State */}
-        {loading ? (
-          <div className="text-center py-16">
+      <div className="max-w-[1400px] mx-auto px-6 lg:px-12 py-12">
+        {/* Filters Bar */}
+        <div className="bg-white rounded-2xl shadow-sm border border-gray-200 p-6 mb-12">
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+            {/* Search */}
+            <div>
+              <label className="block text-sm font-bold text-gray-900 mb-2 uppercase tracking-wide">
+                Tìm kiếm
+              </label>
+              <input
+                type="text"
+                value={keyword}
+                onChange={(e) => setKeyword(e.target.value)}
+                placeholder="Tên phòng..."
+                className="w-full px-4 py-3 border-2 border-gray-200 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all"
+              />
+            </div>
+
+            {/* Price */}
+            <div>
+              <label className="block text-sm font-bold text-gray-900 mb-2 uppercase tracking-wide">
+                Mức giá
+              </label>
+              <select
+                value={priceRange}
+                onChange={(e) => setPriceRange(e.target.value)}
+                className="w-full px-4 py-3 border-2 border-gray-200 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all"
+              >
+                <option value="all">Tất cả</option>
+                <option value="under-50">Dưới $50</option>
+                <option value="50-100">$50 - $100</option>
+                <option value="100-200">$100 - $200</option>
+                <option value="over-200">Trên $200</option>
+              </select>
+            </div>
+
+            {/* Bedrooms */}
+            <div>
+              <label className="block text-sm font-bold text-gray-900 mb-2 uppercase tracking-wide">
+                Phòng ngủ
+              </label>
+              <select
+                value={bedrooms}
+                onChange={(e) => setBedrooms(e.target.value)}
+                className="w-full px-4 py-3 border-2 border-gray-200 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all"
+              >
+                <option value="">Tất cả</option>
+                <option value="1">1+ phòng</option>
+                <option value="2">2+ phòng</option>
+                <option value="3">3+ phòng</option>
+                <option value="4">4+ phòng</option>
+              </select>
+            </div>
+
+            {/* Guests */}
+            <div>
+              <label className="block text-sm font-bold text-gray-900 mb-2 uppercase tracking-wide">
+                Số khách
+              </label>
+              <select
+                value={guests}
+                onChange={(e) => setGuests(e.target.value)}
+                className="w-full px-4 py-3 border-2 border-gray-200 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all"
+              >
+                <option value="">Tất cả</option>
+                <option value="1">1+ khách</option>
+                <option value="2">2+ khách</option>
+                <option value="4">4+ khách</option>
+                <option value="6">6+ khách</option>
+              </select>
+            </div>
+          </div>
+
+          {/* Amenities */}
+          <div className="mt-6 pt-6 border-t border-gray-200">
+            <label className="block text-sm font-bold text-gray-900 mb-3 uppercase tracking-wide">
+              Tiện nghi
+            </label>
+            <div className="flex flex-wrap gap-3">
+              {[
+                { value: "wifi", label: "WiFi", icon: "📶" },
+                { value: "dieuHoa", label: "Điều hòa", icon: "❄️" },
+                { value: "bep", label: "Bếp", icon: "🍳" },
+                { value: "hoBoi", label: "Hồ bơi", icon: "🏊" },
+                { value: "mayGiat", label: "Máy giặt", icon: "🧺" },
+                { value: "tivi", label: "TV", icon: "📺" },
+              ].map((amenity) => (
+                <button
+                  key={amenity.value}
+                  onClick={() => toggleAmenity(amenity.value)}
+                  className={`px-4 py-2 rounded-xl font-semibold transition-all duration-200 ${
+                    amenities.includes(amenity.value)
+                      ? "bg-blue-600 text-white shadow-md"
+                      : "bg-gray-100 text-gray-700 hover:bg-gray-200"
+                  }`}
+                >
+                  {amenity.icon} {amenity.label}
+                </button>
+              ))}
+            </div>
+          </div>
+
+          {/* Clear Filter */}
+          <div className="mt-6 flex items-center justify-between">
+            <button
+              onClick={() => {
+                setKeyword("");
+                setPriceRange("all");
+                setBedrooms("");
+                setGuests("");
+                setAmenities([]);
+                setPage(1);
+              }}
+              className="px-6 py-3 bg-gray-100 hover:bg-gray-200 text-gray-700 font-semibold rounded-xl transition-all"
+            >
+              Xóa bộ lọc
+            </button>
+          </div>
+        </div>
+
+        {/* Sort and Count */}
+        <div className="flex items-center justify-between mb-8">
+          <p className="text-lg text-gray-700">
+            <span className="text-3xl font-bold text-gray-900">
+              {filteredRooms.length}
+            </span>{" "}
+            chỗ ở
+          </p>
+          <select
+            value={sortBy}
+            onChange={(e) => setSortBy(e.target.value as typeof sortBy)}
+            className="px-6 py-3 border-2 border-gray-200 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all font-semibold"
+          >
+            <option value="priceAsc">Giá: Thấp → Cao</option>
+            <option value="priceDesc">Giá: Cao → Thấp</option>
+            <option value="nameAsc">Tên: A → Z</option>
+            <option value="nameDesc">Tên: Z → A</option>
+          </select>
+        </div>
+
+        {/* Loading */}
+        {loading && (
+          <div className="text-center py-20">
             <div className="inline-block animate-spin rounded-full h-16 w-16 border-b-4 border-blue-600 mb-4"></div>
-            <p className="text-gray-600 font-semibold text-lg">
-              Đang tải phòng...
-            </p>
+            <p className="text-gray-600 font-semibold text-lg">Đang tải...</p>
           </div>
-        ) : error ? (
-          <div className="bg-red-50 border-l-4 border-red-500 p-6 rounded-xl text-center">
-            <p className="text-red-700 font-semibold text-lg">
-              ⚠️ Lỗi: {error}
-            </p>
+        )}
+
+        {/* Error */}
+        {error && !loading && (
+          <div className="bg-red-50 border-l-4 border-red-500 p-6 rounded-xl">
+            <p className="text-red-700 font-semibold">⚠️ {error}</p>
           </div>
-        ) : filtered.length === 0 ? (
-          <div className="text-center py-16">
-            <div className="text-6xl mb-4">🏠</div>
-            <p className="text-xl text-gray-600 font-medium">
-              Không có phòng phù hợp
-            </p>
-            <p className="text-gray-500 mt-2">Thử thay đổi bộ lọc của bạn</p>
-          </div>
-        ) : (
+        )}
+
+        {/* Rooms Grid */}
+        {!loading && !error && (
           <>
-            {/* Rooms Grid */}
-            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
               {paginatedRooms.map((room) => (
                 <Link
                   key={room.id}
                   href={`/rooms/${room.id}`}
-                  className="bg-white rounded-2xl shadow-lg hover:shadow-2xl transition-all duration-300 overflow-hidden group border border-gray-100"
+                  className="group bg-white rounded-2xl overflow-hidden shadow-sm hover:shadow-xl transition-all duration-300 border border-gray-100"
                 >
-                  {/* Image */}
-                  <div className="relative h-56 overflow-hidden">
+                  <div className="relative aspect-[4/3] overflow-hidden bg-gray-100">
                     <img
                       src={
                         room.hinhAnh ||
                         "https://images.unsplash.com/photo-1566073771259-6a8506099945?q=80&w=800"
                       }
                       alt={room.tenPhong}
-                      className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-500"
+                      className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-700"
                     />
-                    {/* Price Badge */}
-                    <div className="absolute top-4 right-4 bg-white/95 backdrop-blur-sm px-3 py-2 rounded-xl shadow-lg">
-                      <p className="text-blue-600 font-bold text-lg">
-                        {room.giaTien.toLocaleString()}₫
-                      </p>
-                      <p className="text-gray-600 text-xs font-medium text-center">
-                        / đêm
-                      </p>
+                    <div className="absolute top-4 right-4 px-4 py-2 bg-white rounded-full shadow-lg">
+                      <span className="text-lg font-bold text-gray-900">
+                        ${room.giaTien}
+                      </span>
+                      <span className="text-sm text-gray-600">/đêm</span>
                     </div>
                   </div>
 
-                  {/* Content */}
-                  <div className="p-5">
-                    <h3 className="text-lg font-bold text-gray-900 mb-2 line-clamp-1">
+                  <div className="p-6">
+                    <h3 className="font-bold text-xl text-gray-900 mb-3 line-clamp-1 group-hover:text-blue-600 transition-colors">
                       {room.tenPhong}
                     </h3>
-                    <p className="text-sm text-gray-600 line-clamp-2 mb-4">
-                      {room.moTa || "Phòng tuyệt vời cho kỳ nghỉ của bạn"}
+                    <p className="text-gray-600 line-clamp-2 mb-4">
+                      {room.moTa || "Chỗ ở tuyệt vời"}
                     </p>
 
-                    {/* Amenities */}
-                    <div className="flex items-center gap-4 text-sm text-gray-700 mb-4">
-                      {room.khach && (
-                        <span className="flex items-center gap-1">
-                          <span>👥</span>
-                          <span className="font-medium">{room.khach}</span>
+                    <div className="flex items-center gap-6 text-gray-600 border-t border-gray-100 pt-4 mb-4">
+                      <span className="flex items-center gap-1.5">
+                        <svg
+                          className="w-5 h-5"
+                          fill="none"
+                          stroke="currentColor"
+                          viewBox="0 0 24 24"
+                        >
+                          <path
+                            strokeLinecap="round"
+                            strokeLinejoin="round"
+                            strokeWidth={2}
+                            d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z"
+                          />
+                        </svg>
+                        <span className="font-semibold text-gray-900">
+                          {room.khach}
                         </span>
-                      )}
-                      {room.phongNgu && (
-                        <span className="flex items-center gap-1">
-                          <span>🛏️</span>
-                          <span className="font-medium">{room.phongNgu}</span>
+                      </span>
+                      <span className="flex items-center gap-1.5">
+                        <svg
+                          className="w-5 h-5"
+                          fill="none"
+                          stroke="currentColor"
+                          viewBox="0 0 24 24"
+                        >
+                          <path
+                            strokeLinecap="round"
+                            strokeLinejoin="round"
+                            strokeWidth={2}
+                            d="M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-6 0a1 1 0 001-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 001 1m-6 0h6"
+                          />
+                        </svg>
+                        <span className="font-semibold text-gray-900">
+                          {room.phongNgu}
                         </span>
-                      )}
-                      {room.giuong && (
-                        <span className="flex items-center gap-1">
-                          <span>🛌</span>
-                          <span className="font-medium">{room.giuong}</span>
+                      </span>
+                      <span className="flex items-center gap-1.5">
+                        <svg
+                          className="w-5 h-5"
+                          fill="none"
+                          stroke="currentColor"
+                          viewBox="0 0 24 24"
+                        >
+                          <path
+                            strokeLinecap="round"
+                            strokeLinejoin="round"
+                            strokeWidth={2}
+                            d="M3 3h2l.4 2M7 13h10l4-8H5.4M7 13L5.4 5M7 13l-2.293 2.293c-.63.63-.184 1.707.707 1.707H17m0 0a2 2 0 100 4 2 2 0 000-4zm-8 2a2 2 0 11-4 0 2 2 0 014 0z"
+                          />
+                        </svg>
+                        <span className="font-semibold text-gray-900">
+                          {room.giuong}
                         </span>
-                      )}
+                      </span>
                     </div>
 
-                    {/* View Details Button */}
-                    <div className="pt-4 border-t border-gray-100">
-                      <div className="text-center px-4 py-2.5 rounded-xl bg-gradient-to-r from-blue-600 to-cyan-600 group-hover:from-blue-700 group-hover:to-cyan-700 text-white font-semibold transition-all duration-200">
-                        Xem chi tiết
-                      </div>
+                    <div className="flex items-center gap-2">
+                      {room.wifi && (
+                        <span className="px-3 py-1 bg-blue-50 text-blue-700 rounded-full text-xs font-semibold">
+                          WiFi
+                        </span>
+                      )}
+                      {room.dieuHoa && (
+                        <span className="px-3 py-1 bg-blue-50 text-blue-700 rounded-full text-xs font-semibold">
+                          AC
+                        </span>
+                      )}
+                      {room.hoBoi && (
+                        <span className="px-3 py-1 bg-blue-50 text-blue-700 rounded-full text-xs font-semibold">
+                          Pool
+                        </span>
+                      )}
                     </div>
                   </div>
                 </Link>
               ))}
             </div>
 
+            {/* Empty State */}
+            {paginatedRooms.length === 0 && (
+              <div className="text-center py-20">
+                <div className="text-7xl mb-6">🏠</div>
+                <h3 className="text-2xl font-bold text-gray-900 mb-2">
+                  Không tìm thấy chỗ ở phù hợp
+                </h3>
+                <p className="text-gray-600 text-lg">
+                  Thử điều chỉnh bộ lọc của bạn
+                </p>
+              </div>
+            )}
+
             {/* Pagination */}
             {totalPages > 1 && (
-              <div className="mt-12 flex items-center justify-center gap-3">
+              <div className="mt-16 flex items-center justify-center gap-3">
                 <button
                   disabled={page === 1}
-                  onClick={() => setPage((p) => Math.max(1, p - 1))}
-                  className="px-6 py-3 bg-white border-2 border-gray-200 rounded-xl font-semibold text-gray-700 disabled:opacity-50 disabled:cursor-not-allowed hover:bg-gray-50 hover:border-blue-500 hover:text-blue-600 transition-all duration-200"
+                  onClick={() => {
+                    setPage(page - 1);
+                    window.scrollTo({ top: 0, behavior: "smooth" });
+                  }}
+                  className="px-6 py-3 border-2 border-gray-200 rounded-xl font-semibold text-gray-700 disabled:opacity-40 disabled:cursor-not-allowed hover:border-blue-600 hover:text-blue-600 transition-all"
                 >
                   ← Trước
                 </button>
-                <div className="px-6 py-3 bg-gradient-to-r from-blue-600 to-cyan-600 text-white rounded-xl font-bold shadow-md">
-                  Trang {page} / {totalPages}
+                <div className="px-8 py-3 bg-blue-600 text-white rounded-xl font-bold shadow-md">
+                  {page} / {totalPages}
                 </div>
                 <button
                   disabled={page === totalPages}
-                  onClick={() => setPage((p) => Math.min(totalPages, p + 1))}
-                  className="px-6 py-3 bg-white border-2 border-gray-200 rounded-xl font-semibold text-gray-700 disabled:opacity-50 disabled:cursor-not-allowed hover:bg-gray-50 hover:border-blue-500 hover:text-blue-600 transition-all duration-200"
+                  onClick={() => {
+                    setPage(page + 1);
+                    window.scrollTo({ top: 0, behavior: "smooth" });
+                  }}
+                  className="px-6 py-3 border-2 border-gray-200 rounded-xl font-semibold text-gray-700 disabled:opacity-40 disabled:cursor-not-allowed hover:border-blue-600 hover:text-blue-600 transition-all"
                 >
                   Sau →
                 </button>
@@ -482,12 +548,10 @@ export default function RoomsPage() {
   return (
     <Suspense
       fallback={
-        <div className="min-h-screen bg-white flex items-center justify-center">
+        <div className="min-h-screen flex items-center justify-center">
           <div className="text-center">
             <div className="inline-block animate-spin rounded-full h-16 w-16 border-b-4 border-blue-600 mb-4"></div>
-            <p className="text-gray-600 font-semibold text-lg">
-              Đang tải phòng...
-            </p>
+            <p className="text-gray-600 font-semibold text-lg">Đang tải...</p>
           </div>
         </div>
       }
