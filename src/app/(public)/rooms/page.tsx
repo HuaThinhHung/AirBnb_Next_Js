@@ -2,19 +2,56 @@
 
 import { useEffect, useMemo, useState } from "react";
 import Link from "next/link";
-import { getRooms } from "@/lib/roomService";
+import { useSearchParams } from "next/navigation";
+import { getRooms, getRoomsByLocation } from "@/lib/roomService";
+import { getLocationById } from "@/lib/locationService";
+
+type RoomItem = {
+  id: number;
+  tenPhong: string;
+  giaTien: number;
+  hinhAnh?: string;
+  moTa?: string;
+  khach?: number;
+  phongNgu?: number;
+  giuong?: number;
+  phongTam?: number;
+  maViTri?: number;
+  mayGiat?: boolean;
+  banLa?: boolean;
+  tivi?: boolean;
+  dieuHoa?: boolean;
+  wifi?: boolean;
+  bep?: boolean;
+  doXe?: boolean;
+  hoBoi?: boolean;
+};
+
+type LocationInfo = {
+  id: number;
+  tenViTri: string;
+  tinhThanh: string;
+  quocGia: string;
+  hinhAnh?: string;
+};
 
 export default function RoomsPage() {
-  const [rooms, setRooms] = useState<any[]>([]);
+  const searchParams = useSearchParams();
+  const locationParam = searchParams.get("location");
+
+  const [rooms, setRooms] = useState<RoomItem[]>([]);
+  const [location, setLocation] = useState<LocationInfo | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
   // filters
   const [keyword, setKeyword] = useState("");
+  const [priceRange, setPriceRange] = useState<string>("all");
   const [bedrooms, setBedrooms] = useState<string>("");
   const [beds, setBeds] = useState<string>("");
   const [maxPrice, setMaxPrice] = useState<string>("");
   const [guests, setGuests] = useState<string>("");
+  const [amenities, setAmenities] = useState<string[]>([]);
   const [sortBy, setSortBy] = useState<
     "priceAsc" | "priceDesc" | "nameAsc" | "nameDesc"
   >("priceAsc");
@@ -24,19 +61,47 @@ export default function RoomsPage() {
   const pageSize = 12;
 
   useEffect(() => {
-    const fetchRooms = async () => {
+    const fetchData = async () => {
       try {
         setLoading(true);
         setError(null);
-        const result = (await getRooms({ pageSize: 100 })) as {
-          success: boolean;
-          rooms: any[];
-          message?: string;
-        };
-        if (result.success) {
-          setRooms(result.rooms);
+
+        // If location parameter exists, fetch by location
+        if (locationParam) {
+          const locationId = Number(locationParam);
+
+          // Fetch location info
+          const locRes = (await getLocationById(locationId)) as {
+            success: boolean;
+            location: LocationInfo;
+          };
+          if (locRes.success && locRes.location) {
+            setLocation(locRes.location);
+          }
+
+          // Fetch rooms by location
+          const roomsRes = (await getRoomsByLocation(locationId)) as {
+            success: boolean;
+            rooms: RoomItem[];
+            message?: string;
+          };
+          if (roomsRes.success) {
+            setRooms(roomsRes.rooms || []);
+          } else {
+            setError(roomsRes.message || "Không thể lấy dữ liệu phòng");
+          }
         } else {
-          setError(result.message || "Không thể lấy dữ liệu phòng");
+          // Fetch all rooms
+          const result = (await getRooms({ pageSize: 100 })) as {
+            success: boolean;
+            rooms: RoomItem[];
+            message?: string;
+          };
+          if (result.success) {
+            setRooms(result.rooms);
+          } else {
+            setError(result.message || "Không thể lấy dữ liệu phòng");
+          }
         }
       } catch (err: any) {
         setError(err.message || "Có lỗi xảy ra khi tải dữ liệu");
@@ -44,8 +109,8 @@ export default function RoomsPage() {
         setLoading(false);
       }
     };
-    fetchRooms();
-  }, []);
+    fetchData();
+  }, [locationParam]);
 
   const filtered = useMemo(() => {
     let list = rooms.slice();
@@ -56,12 +121,46 @@ export default function RoomsPage() {
           r.tenPhong?.toLowerCase().includes(q) ||
           r.moTa?.toLowerCase().includes(q)
       );
+
+    // Price range filter
+    if (priceRange !== "all") {
+      const [min, max] = priceRange.split("-").map(Number);
+      list = list.filter((r) => {
+        if (max) return r.giaTien >= min && r.giaTien <= max;
+        return r.giaTien >= min;
+      });
+    }
+
     if (bedrooms)
       list = list.filter((r) => (r.phongNgu || 0) >= Number(bedrooms));
     if (beds) list = list.filter((r) => (r.giuong || 0) >= Number(beds));
     if (maxPrice)
       list = list.filter((r) => (r.giaTien || 0) <= Number(maxPrice));
     if (guests) list = list.filter((r) => (r.khach || 0) >= Number(guests));
+
+    // Amenities filter
+    if (amenities.length > 0) {
+      list = list.filter((r) => {
+        return amenities.every((amenity) => {
+          switch (amenity) {
+            case "wifi":
+              return r.wifi;
+            case "bep":
+              return r.bep;
+            case "dieuHoa":
+              return r.dieuHoa;
+            case "doXe":
+              return r.doXe;
+            case "hoBoi":
+              return r.hoBoi;
+            case "mayGiat":
+              return r.mayGiat;
+            default:
+              return true;
+          }
+        });
+      });
+    }
 
     switch (sortBy) {
       case "priceAsc":
@@ -79,7 +178,17 @@ export default function RoomsPage() {
     }
 
     return list;
-  }, [rooms, keyword, bedrooms, beds, maxPrice, guests, sortBy]);
+  }, [
+    rooms,
+    keyword,
+    priceRange,
+    bedrooms,
+    beds,
+    maxPrice,
+    guests,
+    amenities,
+    sortBy,
+  ]);
 
   // Paginated results
   const paginatedRooms = useMemo(() => {
@@ -91,154 +200,154 @@ export default function RoomsPage() {
     return Math.max(1, Math.ceil(filtered.length / pageSize));
   }, [filtered.length]);
 
+  const toggleAmenity = (amenity: string) => {
+    setAmenities((prev) =>
+      prev.includes(amenity)
+        ? prev.filter((a) => a !== amenity)
+        : [...prev, amenity]
+    );
+    setPage(1);
+  };
+
   return (
-    <div className="min-h-screen bg-gradient-to-b from-gray-50 to-white">
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-12">
-        {/* Header */}
-        <div className="mb-10 text-center">
-          <h1 className="text-5xl font-bold text-gray-900 mb-4">
-            Khám phá các phòng đẹp
-          </h1>
-          <p className="text-xl text-gray-600">
-            Tìm phòng hoàn hảo cho chuyến đi của bạn với {rooms.length} lựa chọn
-          </p>
-        </div>
-
-        {/* Filters Card */}
-        <div className="bg-white rounded-2xl shadow-xl border border-gray-100 p-6 mb-10">
-          <div className="flex items-center gap-3 mb-6">
-            <div className="w-10 h-10 bg-gradient-to-br from-blue-600 to-cyan-600 rounded-xl flex items-center justify-center">
-              <svg
-                className="w-6 h-6 text-white"
-                fill="none"
-                stroke="currentColor"
-                viewBox="0 0 24 24"
+    <div className="min-h-screen bg-white">
+      {/* Header */}
+      <div className="border-b border-gray-200 bg-white sticky top-20 z-40">
+        <div className="max-w-[1760px] mx-auto px-6 py-4">
+          <div className="flex items-center justify-between">
+            <div>
+              <h1 className="text-2xl font-semibold text-gray-900">
+                {location
+                  ? `Chỗ ở tại ${location.tenViTri}, ${location.tinhThanh}`
+                  : "Tất cả chỗ ở"}
+              </h1>
+              <p className="text-sm text-gray-600 mt-1">
+                {filtered.length} chỗ ở{location && ` • ${location.quocGia}`}
+              </p>
+            </div>
+            {location && (
+              <Link
+                href="/rooms"
+                className="text-sm text-blue-600 hover:underline font-medium"
               >
-                <path
-                  strokeLinecap="round"
-                  strokeLinejoin="round"
-                  strokeWidth={2}
-                  d="M12 6V4m0 2a2 2 0 100 4m0-4a2 2 0 110 4m-6 8a2 2 0 100-4m0 4a2 2 0 110-4m0 4v2m0-6V4m6 6v10m6-2a2 2 0 100-4m0 4a2 2 0 110-4m0 4v2m0-6V4"
-                />
-              </svg>
-            </div>
-            <h2 className="text-xl font-bold text-gray-900">Bộ lọc tìm kiếm</h2>
+                ← Xem tất cả phòng
+              </Link>
+            )}
           </div>
 
-          {/* Main Filters */}
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-5 mb-5">
-            <div className="md:col-span-2">
-              <label className="block text-sm font-semibold text-gray-700 mb-2">
-                🔍 Tìm kiếm phòng
-              </label>
-              <input
-                type="text"
-                placeholder="Nhập tên phòng hoặc mô tả..."
-                value={keyword}
-                onChange={(e) => {
-                  setKeyword(e.target.value);
-                  setPage(1);
-                }}
-                className="w-full px-4 py-3 border-2 border-gray-200 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all duration-200 text-gray-900 placeholder-gray-400"
-              />
-            </div>
-            <div>
-              <label className="block text-sm font-semibold text-gray-700 mb-2">
-                🔄 Sắp xếp theo
-              </label>
-              <select
-                value={sortBy}
-                onChange={(e) => {
-                  setSortBy(e.target.value as any);
-                  setPage(1);
-                }}
-                className="w-full px-4 py-3 border-2 border-gray-200 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all duration-200 text-gray-900"
-              >
-                <option value="priceAsc">💰 Giá tăng dần</option>
-                <option value="priceDesc">💎 Giá giảm dần</option>
-                <option value="nameAsc">🔤 Tên A-Z</option>
-                <option value="nameDesc">🔤 Tên Z-A</option>
-              </select>
-            </div>
-          </div>
+          {/* Filter Tags */}
+          <div className="flex items-center gap-3 mt-4 overflow-x-auto pb-2">
+            <button
+              onClick={() => {
+                setPriceRange("all");
+                setPage(1);
+              }}
+              className={`px-4 py-2 rounded-full border text-sm font-medium whitespace-nowrap transition-all ${
+                priceRange === "all"
+                  ? "bg-gray-900 text-white border-gray-900"
+                  : "bg-white text-gray-700 border-gray-300 hover:border-gray-900"
+              }`}
+            >
+              Tất cả giá
+            </button>
+            <button
+              onClick={() => {
+                setPriceRange("0-500000");
+                setPage(1);
+              }}
+              className={`px-4 py-2 rounded-full border text-sm font-medium whitespace-nowrap transition-all ${
+                priceRange === "0-500000"
+                  ? "bg-gray-900 text-white border-gray-900"
+                  : "bg-white text-gray-700 border-gray-300 hover:border-gray-900"
+              }`}
+            >
+              Dưới 500K
+            </button>
+            <button
+              onClick={() => {
+                setPriceRange("500000-1000000");
+                setPage(1);
+              }}
+              className={`px-4 py-2 rounded-full border text-sm font-medium whitespace-nowrap transition-all ${
+                priceRange === "500000-1000000"
+                  ? "bg-gray-900 text-white border-gray-900"
+                  : "bg-white text-gray-700 border-gray-300 hover:border-gray-900"
+              }`}
+            >
+              500K - 1M
+            </button>
+            <button
+              onClick={() => {
+                setPriceRange("1000000-999999999");
+                setPage(1);
+              }}
+              className={`px-4 py-2 rounded-full border text-sm font-medium whitespace-nowrap transition-all ${
+                priceRange === "1000000-999999999"
+                  ? "bg-gray-900 text-white border-gray-900"
+                  : "bg-white text-gray-700 border-gray-300 hover:border-gray-900"
+              }`}
+            >
+              Trên 1M
+            </button>
 
-          {/* Advanced Filters */}
-          <div className="grid grid-cols-2 md:grid-cols-4 gap-5 pt-5 border-t border-gray-200">
-            <div>
-              <label className="block text-sm font-semibold text-gray-700 mb-2">
-                👥 Số khách (tối thiểu)
-              </label>
-              <input
-                type="number"
-                placeholder="Ví dụ: 2"
-                value={guests}
-                onChange={(e) => {
-                  setGuests(e.target.value);
-                  setPage(1);
-                }}
-                className="w-full px-4 py-3 border-2 border-gray-200 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all duration-200 text-gray-900"
-              />
-            </div>
-            <div>
-              <label className="block text-sm font-semibold text-gray-700 mb-2">
-                🛏️ Phòng ngủ (tối thiểu)
-              </label>
-              <input
-                type="number"
-                placeholder="Ví dụ: 1"
-                value={bedrooms}
-                onChange={(e) => {
-                  setBedrooms(e.target.value);
-                  setPage(1);
-                }}
-                className="w-full px-4 py-3 border-2 border-gray-200 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all duration-200 text-gray-900"
-              />
-            </div>
-            <div>
-              <label className="block text-sm font-semibold text-gray-700 mb-2">
-                🛌 Giường (tối thiểu)
-              </label>
-              <input
-                type="number"
-                placeholder="Ví dụ: 1"
-                value={beds}
-                onChange={(e) => {
-                  setBeds(e.target.value);
-                  setPage(1);
-                }}
-                className="w-full px-4 py-3 border-2 border-gray-200 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all duration-200 text-gray-900"
-              />
-            </div>
-            <div>
-              <label className="block text-sm font-semibold text-gray-700 mb-2">
-                💵 Giá tối đa (₫)
-              </label>
-              <input
-                type="number"
-                placeholder="10,000,000"
-                value={maxPrice}
-                onChange={(e) => {
-                  setMaxPrice(e.target.value);
-                  setPage(1);
-                }}
-                className="w-full px-4 py-3 border-2 border-gray-200 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all duration-200 text-gray-900"
-              />
-            </div>
-          </div>
+            <div className="w-px h-6 bg-gray-300"></div>
 
-          {/* Results Counter */}
-          <div className="mt-5 pt-5 border-t border-gray-200 text-center">
-            <p className="text-gray-700">
-              <span className="font-bold text-blue-600 text-lg">
-                {filtered.length}
-              </span>{" "}
-              <span className="font-medium">
-                phòng phù hợp với tìm kiếm của bạn
-              </span>
-            </p>
+            <button
+              onClick={() => toggleAmenity("wifi")}
+              className={`px-4 py-2 rounded-full border text-sm font-medium whitespace-nowrap transition-all ${
+                amenities.includes("wifi")
+                  ? "bg-gray-900 text-white border-gray-900"
+                  : "bg-white text-gray-700 border-gray-300 hover:border-gray-900"
+              }`}
+            >
+              Wifi
+            </button>
+            <button
+              onClick={() => toggleAmenity("bep")}
+              className={`px-4 py-2 rounded-full border text-sm font-medium whitespace-nowrap transition-all ${
+                amenities.includes("bep")
+                  ? "bg-gray-900 text-white border-gray-900"
+                  : "bg-white text-gray-700 border-gray-300 hover:border-gray-900"
+              }`}
+            >
+              Bếp
+            </button>
+            <button
+              onClick={() => toggleAmenity("dieuHoa")}
+              className={`px-4 py-2 rounded-full border text-sm font-medium whitespace-nowrap transition-all ${
+                amenities.includes("dieuHoa")
+                  ? "bg-gray-900 text-white border-gray-900"
+                  : "bg-white text-gray-700 border-gray-300 hover:border-gray-900"
+              }`}
+            >
+              Điều hòa
+            </button>
+            <button
+              onClick={() => toggleAmenity("doXe")}
+              className={`px-4 py-2 rounded-full border text-sm font-medium whitespace-nowrap transition-all ${
+                amenities.includes("doXe")
+                  ? "bg-gray-900 text-white border-gray-900"
+                  : "bg-white text-gray-700 border-gray-300 hover:border-gray-900"
+              }`}
+            >
+              Đỗ xe
+            </button>
+            <button
+              onClick={() => toggleAmenity("hoBoi")}
+              className={`px-4 py-2 rounded-full border text-sm font-medium whitespace-nowrap transition-all ${
+                amenities.includes("hoBoi")
+                  ? "bg-gray-900 text-white border-gray-900"
+                  : "bg-white text-gray-700 border-gray-300 hover:border-gray-900"
+              }`}
+            >
+              Hồ bơi
+            </button>
           </div>
         </div>
+      </div>
 
+      {/* Main Content */}
+      <div className="max-w-[1760px] mx-auto px-6 py-6">
         {/* Loading State */}
         {loading ? (
           <div className="text-center py-16">
@@ -255,26 +364,11 @@ export default function RoomsPage() {
           </div>
         ) : filtered.length === 0 ? (
           <div className="text-center py-16">
-            <div className="text-7xl mb-6">🏠</div>
-            <p className="text-2xl text-gray-800 font-bold mb-2">
-              Không tìm thấy phòng nào
+            <div className="text-6xl mb-4">🏠</div>
+            <p className="text-xl text-gray-600 font-medium">
+              Không có phòng phù hợp
             </p>
-            <p className="text-gray-600 text-lg mb-6">
-              Thử điều chỉnh các bộ lọc của bạn
-            </p>
-            <button
-              onClick={() => {
-                setKeyword("");
-                setBedrooms("");
-                setBeds("");
-                setMaxPrice("");
-                setGuests("");
-                setPage(1);
-              }}
-              className="px-6 py-3 bg-gradient-to-r from-blue-600 to-cyan-600 hover:from-blue-700 hover:to-cyan-700 text-white font-semibold rounded-xl shadow-md hover:shadow-lg transition-all duration-200"
-            >
-              Xóa tất cả bộ lọc
-            </button>
+            <p className="text-gray-500 mt-2">Thử thay đổi bộ lọc của bạn</p>
           </div>
         ) : (
           <>

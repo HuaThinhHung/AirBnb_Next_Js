@@ -210,7 +210,7 @@ export default function SearchPage() {
                         Chi tiết
                       </Link>
                       <Link
-                        href={`/rooms/${loc.id}`}
+                        href={`/rooms?location=${loc.id}`}
                         className="flex-1 text-center px-4 py-3 rounded-xl bg-gradient-to-r from-blue-600 to-cyan-600 hover:from-blue-700 hover:to-cyan-700 text-white font-semibold transition-all duration-200 shadow-md hover:shadow-lg"
                       >
                         Xem phòng

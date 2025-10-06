@@ -89,7 +89,10 @@ export default function RoomDetailPage() {
     }
 
     setUploading(true);
-    const result = await uploadRoomImage(Number(roomId), file);
+    const result = (await uploadRoomImage(Number(roomId), file)) as {
+      success: boolean;
+      message?: string;
+    };
     setUploading(false);
 
     if (result.success) {
@@ -103,7 +106,10 @@ export default function RoomDetailPage() {
   const handleDelete = async () => {
     if (!confirm(`Bạn có chắc muốn xóa phòng "${room?.tenPhong}"?`)) return;
 
-    const result = await deleteRoom(Number(roomId));
+    const result = (await deleteRoom(Number(roomId))) as {
+      success: boolean;
+      message?: string;
+    };
     if (result.success) {
       alert("✅ Xóa phòng thành công!");
       router.push("/admin/rooms");

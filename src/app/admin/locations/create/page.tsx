@@ -21,7 +21,10 @@ export default function CreateLocationPage() {
     setLoading(true);
     setError(null);
 
-    const result = await createLocation(formData);
+    const result = (await createLocation(formData)) as {
+      success: boolean;
+      message?: string;
+    };
     setLoading(false);
 
     if (result.success) {

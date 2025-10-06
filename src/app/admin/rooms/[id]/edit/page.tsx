@@ -127,7 +127,10 @@ export default function EditRoomPage() {
     setSubmitting(true);
     setError(null);
 
-    const result = await updateRoom(Number(roomId), formData);
+    const result = (await updateRoom(Number(roomId), formData)) as {
+      success: boolean;
+      message?: string;
+    };
     setSubmitting(false);
 
     if (result.success) {

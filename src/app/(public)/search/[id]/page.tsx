@@ -172,7 +172,7 @@ export default function LocationDetailPage() {
               <p className="text-gray-600 mt-1">{rooms.length} chỗ ở có sẵn</p>
             </div>
             <Link
-              href={`/rooms/${location.id}`}
+              href={`/rooms?location=${location.id}`}
               className="inline-flex items-center gap-2 px-6 py-3 bg-blue-600 hover:bg-blue-700 text-white font-medium rounded-lg transition-colors"
             >
               Xem tất cả phòng
