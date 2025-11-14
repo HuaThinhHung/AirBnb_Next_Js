@@ -1,7 +1,243 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect, useRef } from "react";
 import Link from "next/link";
+
+// Office Map Component
+function OfficeMap() {
+  const mapRef = useRef<HTMLDivElement>(null);
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  const [map, setMap] = useState<any>(null);
+  const [isLoaded, setIsLoaded] = useState(false);
+
+  // Vị trí văn phòng: 123 Đường Lê Lợi, Quận 1, TP.HCM
+  const officeLocation = {
+    lat: 10.7769,
+    lng: 106.7009,
+    title: "Văn Phòng AirBnb Clone",
+    address: "123 Đường Lê Lợi, Quận 1, TP. Hồ Chí Minh, Việt Nam",
+  };
+
+  useEffect(() => {
+    const apiKey = process.env.NEXT_PUBLIC_GOOGLE_MAPS_API_KEY;
+
+    if (!apiKey) {
+      console.warn(
+        "Google Maps API key not found. Please add NEXT_PUBLIC_GOOGLE_MAPS_API_KEY to your .env.local file"
+      );
+      return;
+    }
+
+    // Kiểm tra xem Google Maps đã được load chưa
+    if (window.google && window.google.maps) {
+      setIsLoaded(true);
+      return;
+    }
+
+    // Load Google Maps script
+    const script = document.createElement("script");
+    script.src = `https://maps.googleapis.com/maps/api/js?key=${apiKey}&libraries=places`;
+    script.async = true;
+    script.defer = true;
+
+    script.onload = () => {
+      setIsLoaded(true);
+    };
+
+    script.onerror = () => {
+      console.error("Failed to load Google Maps script");
+    };
+
+    document.head.appendChild(script);
+
+    return () => {
+      if (document.head.contains(script)) {
+        document.head.removeChild(script);
+      }
+    };
+  }, []);
+
+  useEffect(() => {
+    if (!isLoaded || !mapRef.current || !window.google) return;
+
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const mapOptions: any = {
+      center: { lat: officeLocation.lat, lng: officeLocation.lng },
+      zoom: 16,
+      styles: [
+        {
+          featureType: "water",
+          elementType: "geometry",
+          stylers: [{ color: "#e9e9e9" }, { lightness: 17 }],
+        },
+        {
+          featureType: "landscape",
+          elementType: "geometry",
+          stylers: [{ color: "#f5f5f5" }, { lightness: 20 }],
+        },
+        {
+          featureType: "road.highway",
+          elementType: "geometry.fill",
+          stylers: [{ color: "#ffffff" }, { lightness: 17 }],
+        },
+        {
+          featureType: "road.highway",
+          elementType: "geometry.stroke",
+          stylers: [{ color: "#ffffff" }, { lightness: 29 }, { weight: 0.2 }],
+        },
+        {
+          featureType: "road.arterial",
+          elementType: "geometry",
+          stylers: [{ color: "#ffffff" }, { lightness: 18 }],
+        },
+        {
+          featureType: "road.local",
+          elementType: "geometry",
+          stylers: [{ color: "#ffffff" }, { lightness: 16 }],
+        },
+        {
+          featureType: "poi",
+          elementType: "geometry",
+          stylers: [{ color: "#f5f5f5" }, { lightness: 21 }],
+        },
+        {
+          featureType: "poi.park",
+          elementType: "geometry",
+          stylers: [{ color: "#dedede" }, { lightness: 21 }],
+        },
+        {
+          elementType: "labels.text.stroke",
+          stylers: [
+            { visibility: "on" },
+            { color: "#ffffff" },
+            { lightness: 16 },
+          ],
+        },
+        {
+          elementType: "labels.text.fill",
+          stylers: [
+            { saturation: 36 },
+            { color: "#333333" },
+            { lightness: 40 },
+          ],
+        },
+        {
+          elementType: "labels.icon",
+          stylers: [{ visibility: "off" }],
+        },
+        {
+          featureType: "transit",
+          elementType: "geometry",
+          stylers: [{ color: "#f2f2f2" }, { lightness: 19 }],
+        },
+        {
+          featureType: "administrative",
+          elementType: "geometry.fill",
+          stylers: [{ color: "#fefefe" }, { lightness: 20 }],
+        },
+        {
+          featureType: "administrative",
+          elementType: "geometry.stroke",
+          stylers: [{ color: "#fefefe" }, { lightness: 17 }, { weight: 1.2 }],
+        },
+      ],
+    };
+
+    const newMap = new window.google.maps.Map(mapRef.current, mapOptions);
+    setMap(newMap);
+
+    // Tạo marker cho văn phòng
+    const marker = new window.google.maps.Marker({
+      position: { lat: officeLocation.lat, lng: officeLocation.lng },
+      map: newMap,
+      title: officeLocation.title,
+      icon: {
+        path: window.google.maps.SymbolPath.CIRCLE,
+        scale: 15,
+        fillColor: "#3b82f6",
+        fillOpacity: 0.9,
+        strokeColor: "#ffffff",
+        strokeWeight: 4,
+      },
+    });
+
+    // Tạo info window
+    const infoWindow = new window.google.maps.InfoWindow({
+      content: `
+        <div class="p-4 max-w-xs">
+          <div class="flex items-center mb-3">
+            <div class="w-10 h-10 bg-blue-600 rounded-full flex items-center justify-center mr-3">
+              <svg class="w-6 h-6 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4" />
+              </svg>
+            </div>
+            <h3 class="font-bold text-gray-900 text-lg">${officeLocation.title}</h3>
+          </div>
+          <p class="text-sm text-gray-600 mb-2">📍 ${officeLocation.address}</p>
+          <div class="mt-3 pt-2 border-t border-gray-200">
+            <span class="inline-block px-3 py-1 text-xs font-medium rounded-full bg-blue-100 text-blue-800">
+              Văn Phòng
+            </span>
+          </div>
+        </div>
+      `,
+    });
+
+    // Mở info window khi click vào marker
+    marker.addListener("click", () => {
+      infoWindow.open(newMap, marker);
+    });
+
+    // Tự động mở info window khi load
+    infoWindow.open(newMap, marker);
+
+    return () => {
+      marker.setMap(null);
+    };
+  }, [isLoaded]);
+
+  return (
+    <div className="mt-16">
+      <h2 className="text-2xl font-bold text-gray-900 text-center mb-8">
+        Vị Trí Văn Phòng
+      </h2>
+      <div className="w-full h-[500px] rounded-2xl shadow-lg overflow-hidden border border-gray-200 relative">
+        {!process.env.NEXT_PUBLIC_GOOGLE_MAPS_API_KEY ? (
+          <div className="w-full h-full flex items-center justify-center bg-gray-100">
+            <div className="text-center">
+              <div className="w-16 h-16 mx-auto mb-4 bg-yellow-100 rounded-full flex items-center justify-center">
+                <svg
+                  className="w-8 h-8 text-yellow-600"
+                  fill="none"
+                  stroke="currentColor"
+                  viewBox="0 0 24 24"
+                >
+                  <path
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                    strokeWidth={2}
+                    d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-2.5L13.732 4c-.77-.833-1.964-.833-2.732 0L3.732 16.5c-.77.833.192 2.5 1.732 2.5z"
+                  />
+                </svg>
+              </div>
+              <h3 className="text-lg font-semibold text-gray-900 mb-2">
+                Google Maps API Key Required
+              </h3>
+              <p className="text-gray-600 mb-4">
+                Vui lòng thêm Google Maps API key vào file .env.local
+              </p>
+              <div className="bg-gray-800 text-green-400 p-3 rounded-lg text-sm font-mono">
+                NEXT_PUBLIC_GOOGLE_MAPS_API_KEY=your_api_key_here
+              </div>
+            </div>
+          </div>
+        ) : (
+          <div ref={mapRef} className="w-full h-full" />
+        )}
+      </div>
+    </div>
+  );
+}
 
 export default function ContactPage() {
   const [formData, setFormData] = useState({
@@ -382,15 +618,8 @@ export default function ContactPage() {
           </div>
         </div>
 
-        {/* Map Section (Optional) */}
-        <div className="mt-16">
-          <h2 className="text-2xl font-bold text-gray-900 text-center mb-8">
-            Vị Trí Văn Phòng
-          </h2>
-          <div className="bg-gray-200 rounded-2xl h-[400px] flex items-center justify-center">
-            <p className="text-gray-600">🗺️ Bản đồ sẽ được hiển thị tại đây</p>
-          </div>
-        </div>
+        {/* Map Section */}
+        <OfficeMap />
       </div>
     </div>
   );
