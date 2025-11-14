@@ -20,7 +20,10 @@ api.interceptors.request.use(
     if (typeof window !== "undefined" && localStorage) {
       const token = localStorage.getItem("authToken");
       if (token) {
+        // Một số endpoint yêu cầu Authorization header
         config.headers.Authorization = `Bearer ${token}`;
+        // Một số endpoint yêu cầu token header (theo Swagger docs)
+        config.headers.token = token;
       }
     }
     return config;
