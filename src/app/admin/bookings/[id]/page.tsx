@@ -159,7 +159,7 @@ export default function BookingDetailPage() {
     <div className="min-h-screen bg-gray-50">
       {/* Header */}
       <div className="bg-white border-b border-gray-200 px-6 py-4">
-        <div className="flex items-center justify-between">
+        <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
           <div>
             <h1 className="text-2xl font-bold text-gray-900">
               Chi tiết đặt phòng
@@ -168,16 +168,16 @@ export default function BookingDetailPage() {
               Mã đặt phòng: #{booking.id}
             </p>
           </div>
-          <div className="flex gap-3">
+          <div className="flex flex-col gap-3 sm:flex-row sm:items-center">
             <Link
               href="/admin/bookings"
-              className="px-4 py-2 text-gray-600 hover:text-gray-900 font-medium"
+              className="px-4 py-2 text-center rounded-lg border border-gray-200 text-gray-600 hover:text-gray-900 font-medium transition"
             >
               ← Quay lại
             </Link>
             <button
               onClick={handleDelete}
-              className="px-6 py-2 bg-red-600 hover:bg-red-700 text-white font-semibold rounded-lg"
+              className="px-6 py-2 bg-red-600 hover:bg-red-700 text-white font-semibold rounded-lg shadow-sm transition"
             >
               Xóa đặt phòng
             </button>
@@ -192,19 +192,19 @@ export default function BookingDetailPage() {
           <div className="lg:col-span-2 space-y-6">
             {/* Room Card */}
             {room && (
-              <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-6">
+              <div className="bg-white rounded-2xl shadow-sm border border-gray-200 p-6">
                 <h2 className="text-lg font-bold text-gray-900 mb-4">
                   Thông tin phòng
                 </h2>
-                <div className="flex gap-4">
+                <div className="flex flex-col gap-4 sm:flex-row">
                   {room.hinhAnh ? (
                     <img
                       src={room.hinhAnh}
                       alt={room.tenPhong}
-                      className="w-32 h-32 object-cover rounded-lg border border-gray-200"
+                      className="w-full h-48 rounded-xl object-cover border border-gray-200 sm:w-40 sm:h-40"
                     />
                   ) : (
-                    <div className="w-32 h-32 flex items-center justify-center bg-gradient-to-br from-blue-100 to-cyan-100 rounded-lg">
+                    <div className="w-full h-48 flex items-center justify-center bg-gradient-to-br from-blue-100 to-cyan-100 rounded-xl sm:w-40 sm:h-40">
                       <svg
                         className="w-16 h-16 text-blue-600"
                         fill="none"
@@ -243,7 +243,7 @@ export default function BookingDetailPage() {
 
             {/* User Info */}
             {user && (
-              <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-6">
+              <div className="bg-white rounded-2xl shadow-sm border border-gray-200 p-6">
                 <h2 className="text-lg font-bold text-gray-900 mb-4">
                   Thông tin khách hàng
                 </h2>
@@ -314,7 +314,7 @@ export default function BookingDetailPage() {
           {/* Right - Booking Details */}
           <div className="space-y-6">
             {/* Dates */}
-            <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-6">
+            <div className="bg-white rounded-2xl shadow-sm border border-gray-200 p-6">
               <h2 className="text-lg font-bold text-gray-900 mb-4">
                 Thời gian lưu trú
               </h2>
@@ -341,7 +341,7 @@ export default function BookingDetailPage() {
             </div>
 
             {/* Guests */}
-            <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-6">
+            <div className="bg-white rounded-2xl shadow-sm border border-gray-200 p-6">
               <h2 className="text-lg font-bold text-gray-900 mb-4">Khách</h2>
               <div className="flex items-center gap-3">
                 <svg
@@ -368,7 +368,7 @@ export default function BookingDetailPage() {
 
             {/* Total */}
             {room && (
-              <div className="bg-gradient-to-br from-blue-50 to-cyan-50 rounded-lg border-2 border-blue-200 p-6">
+              <div className="bg-gradient-to-br from-blue-50 to-cyan-50 rounded-2xl border-2 border-blue-200 p-6">
                 <h2 className="text-lg font-bold text-gray-900 mb-4">
                   Tổng chi phí
                 </h2>

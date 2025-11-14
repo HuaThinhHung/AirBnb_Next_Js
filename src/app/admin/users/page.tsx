@@ -319,6 +319,24 @@ export default function AdminUsersPage() {
     );
   };
 
+  const formatBirthday = (value?: string) => {
+    if (!value) return "Chưa cập nhật";
+    const date = new Date(value);
+    if (Number.isNaN(date.getTime())) return "Chưa cập nhật";
+    return date.toLocaleDateString("vi-VN", {
+      day: "2-digit",
+      month: "2-digit",
+      year: "numeric",
+    });
+  };
+
+  const formatGender = (gender?: boolean | null) => {
+    if (gender === null || gender === undefined) return "Chưa rõ";
+    return gender ? "Nam" : "Nữ";
+  };
+
+  const formatPhone = (phone?: string) => phone || "Chưa cập nhật";
+
   return (
     <div className="min-h-screen bg-gray-50">
       {/* Scroll Target */}
@@ -471,46 +489,44 @@ export default function AdminUsersPage() {
                   {users.map((user, index) => (
                     <tr
                       key={user.id}
-                      className="hover:bg-gray-50 transition-colors"
+                      className="hover:bg-gray-50 transition-colors sm:rounded-none sm:border-0 sm:shadow-none rounded-2xl border border-gray-100 shadow-sm"
                     >
-                      <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900" data-label="STT">
+                      <td className="px-6 py-4 whitespace-nowrap text-sm font-semibold text-gray-900" data-label="STT">
                         {(currentPage - 1) * pageSize + index + 1}
                       </td>
-                      <td className="px-6 py-4" data-label="Thông tin">
-                        <div className="text-sm font-medium text-gray-900">
+                      <td className="px-6 py-4 space-y-1" data-label="Thông tin">
+                        <div className="text-base font-semibold text-gray-900">
                           {user.name}
                         </div>
-                        <div className="text-sm text-gray-500">
+                        <div className="text-sm text-gray-500 break-all">
                           {user.email}
                         </div>
                       </td>
-                      <td className="px-6 py-4 whitespace-nowrap" data-label="Avatar">
+                      <td className="px-6 py-4" data-label="Avatar">
                         {user.avatar ? (
                           <img
                             src={user.avatar}
                             alt={user.name}
-                            className="w-12 h-12 rounded-full object-cover border-2 border-gray-200"
+                            className="w-14 h-14 rounded-full object-cover border-2 border-white shadow-md mx-auto"
                           />
                         ) : (
-                          <div className="w-12 h-12 rounded-full bg-gradient-to-br from-blue-400 to-blue-600 flex items-center justify-center text-white font-bold text-lg">
+                          <div className="w-14 h-14 rounded-full bg-gradient-to-br from-blue-400 to-blue-600 flex items-center justify-center text-white font-bold text-lg mx-auto">
                             {user.name.charAt(0).toUpperCase()}
                           </div>
                         )}
                       </td>
-                      <td className="px-6 py-4" data-label="Chi tiết">
-                        <div className="text-sm text-gray-900">
-                          📞 {user.phone || "N/A"}
+                      <td className="px-6 py-4 space-y-2" data-label="Chi tiết">
+                        <div className="inline-flex items-center gap-2 rounded-full bg-purple-50 px-3 py-1 text-sm font-medium text-purple-700">
+                          <span>📞</span>
+                          <span>{formatPhone(user.phone)}</span>
                         </div>
-                        <div className="text-sm text-gray-500">
-                          🎂{" "}
-                          {user.birthday
-                            ? new Date(user.birthday).toLocaleDateString(
-                                "vi-VN"
-                              )
-                            : "N/A"}
+                        <div className="inline-flex items-center gap-2 rounded-full bg-blue-50 px-3 py-1 text-sm font-medium text-blue-700">
+                          <span>🎂</span>
+                          <span>{formatBirthday(user.birthday)}</span>
                         </div>
-                        <div className="text-sm text-gray-500">
-                          {user.gender ? "👨 Nam" : "👩 Nữ"}
+                        <div className="inline-flex items-center gap-2 rounded-full bg-amber-50 px-3 py-1 text-sm font-medium text-amber-700">
+                          <span>{user.gender ? "👨" : "👩"}</span>
+                          <span>{formatGender(user.gender)}</span>
                         </div>
                       </td>
                       <td className="px-6 py-4 whitespace-nowrap" data-label="Role">
@@ -525,10 +541,10 @@ export default function AdminUsersPage() {
                         </span>
                       </td>
                       <td className="px-6 py-4 whitespace-nowrap text-center" data-label="Hành động">
-                        <div className="flex items-center justify-center gap-2">
+                        <div className="flex flex-col items-stretch gap-2 sm:flex-row sm:items-center sm:justify-center">
                           <Link
                             href={`/admin/users/${user.id}`}
-                            className="p-2 bg-blue-50 hover:bg-blue-100 text-blue-600 rounded-lg transition-colors"
+                            className="flex items-center justify-center gap-1 rounded-lg border-2 border-blue-100 bg-blue-50 px-3 py-2 text-blue-600 hover:bg-blue-100 transition-colors"
                             title="Xem chi tiết"
                           >
                             <svg
@@ -550,10 +566,13 @@ export default function AdminUsersPage() {
                                 d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z"
                               />
                             </svg>
+                            <span className="text-sm font-semibold sm:hidden">
+                              Xem
+                            </span>
                           </Link>
                           <Link
                             href={`/admin/users/${user.id}/edit`}
-                            className="p-2 bg-yellow-50 hover:bg-yellow-100 text-yellow-600 rounded-lg transition-colors"
+                            className="flex items-center justify-center gap-1 rounded-lg border-2 border-yellow-100 bg-yellow-50 px-3 py-2 text-yellow-600 hover:bg-yellow-100 transition-colors"
                             title="Chỉnh sửa"
                           >
                             <svg
@@ -569,10 +588,13 @@ export default function AdminUsersPage() {
                                 d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"
                               />
                             </svg>
+                            <span className="text-sm font-semibold sm:hidden">
+                              Sửa
+                            </span>
                           </Link>
                           <button
                             onClick={() => handleDelete(user.id, user.name)}
-                            className="p-2 bg-red-50 hover:bg-red-100 text-red-600 rounded-lg transition-colors"
+                            className="flex items-center justify-center gap-1 rounded-lg border-2 border-red-100 bg-red-50 px-3 py-2 text-red-600 hover:bg-red-100 transition-colors"
                             title="Xóa người dùng"
                           >
                             <svg
@@ -588,6 +610,9 @@ export default function AdminUsersPage() {
                                 d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"
                               />
                             </svg>
+                            <span className="text-sm font-semibold sm:hidden">
+                              Xóa
+                            </span>
                           </button>
                         </div>
                       </td>

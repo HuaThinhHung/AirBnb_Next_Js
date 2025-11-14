@@ -397,7 +397,7 @@ export default function AdminBookingsPage() {
               setSearchTerm(e.target.value);
               setCurrentPage(1);
             }}
-              list="bookings-suggestions"
+            list="bookings-suggestions"
             className="w-full px-4 py-2 border-2 border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 text-gray-900"
           />
         </div>
@@ -470,19 +470,25 @@ export default function AdminBookingsPage() {
                       return (
                         <tr
                           key={booking.id}
-                          className="hover:bg-gray-50 transition-colors"
+                          className="hover:bg-gray-50 transition-colors rounded-2xl border border-transparent sm:border-0 sm:rounded-none sm:shadow-none shadow-sm"
                         >
                           <td className="px-4 py-4" data-label="ID">
-                            <span className="text-sm font-mono text-gray-900">
-                              #{booking.id}
+                            <span className="inline-flex items-center gap-1 rounded-full bg-gray-100 px-3 py-1 text-xs font-semibold text-gray-700">
+                              <span>#{booking.id}</span>
+                              <span className="hidden text-gray-400 sm:inline-block">
+                                •
+                              </span>
+                              <span className="text-gray-500">
+                                {calculateNights(booking.ngayDen, booking.ngayDi)} đêm
+                              </span>
                             </span>
                           </td>
                           <td className="px-4 py-4" data-label="Phòng">
-                            <div className="flex items-center gap-3">
-                              <div className="w-14 h-14 rounded-lg overflow-hidden bg-gray-100 border border-gray-200 flex-shrink-0">
+                            <div className="flex flex-col gap-3 sm:flex-row sm:items-center">
+                              <div className="w-full h-36 rounded-2xl overflow-hidden bg-gray-100 border border-gray-200 flex-shrink-0 sm:w-16 sm:h-16 sm:rounded-lg">
                                 {loadingAddresses.has(booking.maPhong) ? (
-                                  <div className="w-full h-full flex items-center justify-center text-gray-400 text-xs">
-                                    ...
+                                  <div className="w-full h-full flex items-center justify-center text-gray-400 text-xs font-semibold">
+                                    Đang tải
                                   </div>
                                 ) : (
                                   <img
@@ -501,7 +507,7 @@ export default function AdminBookingsPage() {
                               <div>
                                 <Link
                                   href={`/admin/rooms/${booking.maPhong}`}
-                                  className="text-blue-600 hover:text-blue-800 font-semibold block mb-1"
+                                  className="text-base text-blue-600 hover:text-blue-800 font-semibold block mb-1"
                                 >
                                   {roomNames[booking.maPhong] ||
                                     `Phòng #${booking.maPhong}`}
@@ -538,15 +544,18 @@ export default function AdminBookingsPage() {
                             </div>
                           </td>
                           <td className="px-4 py-4" data-label="Người đặt">
-                            <Link
-                              href={`/admin/users/${booking.maNguoiDung}`}
-                              className="text-blue-600 hover:text-blue-800 font-semibold"
-                            >
-                              User #{booking.maNguoiDung}
-                            </Link>
+                            <div className="inline-flex flex-wrap items-center gap-2 rounded-full bg-blue-50 px-3 py-1 text-sm font-semibold text-blue-700">
+                              <span>👤</span>
+                              <Link
+                                href={`/admin/users/${booking.maNguoiDung}`}
+                                className="hover:text-blue-900"
+                              >
+                                User #{booking.maNguoiDung}
+                              </Link>
+                            </div>
                           </td>
                           <td className="px-4 py-4" data-label="Ngày đến">
-                            <div className="flex items-center gap-2 text-sm text-gray-700">
+                            <div className="flex items-center gap-2 text-sm font-medium text-gray-800">
                               <svg
                                 className="w-4 h-4 text-gray-400"
                                 fill="none"
@@ -564,7 +573,7 @@ export default function AdminBookingsPage() {
                             </div>
                           </td>
                           <td className="px-4 py-4" data-label="Ngày đi">
-                            <div className="flex items-center gap-2 text-sm text-gray-700">
+                            <div className="flex items-center gap-2 text-sm font-medium text-gray-800">
                               <svg
                                 className="w-4 h-4 text-gray-400"
                                 fill="none"
@@ -583,27 +592,28 @@ export default function AdminBookingsPage() {
                           </td>
                           <td className="px-4 py-4 text-center" data-label="Số đêm">
                             <span className="inline-flex items-center justify-center px-3 py-1 rounded-full text-sm font-semibold bg-purple-100 text-purple-700">
-                              {calculateNights(booking.ngayDen, booking.ngayDi)}{" "}
-                              đêm
+                              {calculateNights(booking.ngayDen, booking.ngayDi)} đêm
                             </span>
                           </td>
                           <td className="px-4 py-4 text-center" data-label="Khách">
-                            <span className="text-sm font-semibold text-gray-900">
-                              {booking.soLuongKhach}
+                            <span className="inline-flex items-center justify-center gap-1 rounded-full bg-pink-50 px-3 py-1 text-sm font-semibold text-pink-700">
+                              <span>🧑‍🤝‍🧑</span>
+                              <span>{booking.soLuongKhach}</span>
                             </span>
                           </td>
                           <td className="px-4 py-4 text-center" data-label="Trạng thái">
                             <span
-                              className={`inline-flex items-center px-3 py-1 rounded-full text-xs font-semibold ${status.color}`}
+                              className={`inline-flex items-center gap-2 px-3 py-1 rounded-full text-xs font-semibold ${status.color}`}
                             >
+                              <span className="text-sm">📍</span>
                               {status.label}
                             </span>
                           </td>
                           <td className="px-4 py-4" data-label="Hành động">
-                            <div className="flex items-center justify-center gap-2">
+                            <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-center">
                               <Link
                                 href={`/admin/bookings/${booking.id}`}
-                                className="p-2 bg-blue-50 hover:bg-blue-100 text-blue-600 rounded-lg transition-colors"
+                                className="flex items-center justify-center gap-2 rounded-lg border-2 border-blue-100 bg-blue-50 px-3 py-2 text-blue-600 hover:bg-blue-100 transition-colors"
                                 title="Xem chi tiết"
                               >
                                 <svg
@@ -625,10 +635,13 @@ export default function AdminBookingsPage() {
                                     d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z"
                                   />
                                 </svg>
+                                <span className="text-sm font-semibold sm:hidden">
+                                  Xem
+                                </span>
                               </Link>
                               <button
                                 onClick={() => openEditModal(booking)}
-                                className="p-2 bg-yellow-50 hover:bg-yellow-100 text-yellow-600 rounded-lg transition-colors"
+                                className="flex items-center justify-center gap-2 rounded-lg border-2 border-yellow-100 bg-yellow-50 px-3 py-2 text-yellow-600 hover:bg-yellow-100 transition-colors"
                                 title="Chỉnh sửa"
                               >
                                 <svg
@@ -644,10 +657,13 @@ export default function AdminBookingsPage() {
                                     d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"
                                   />
                                 </svg>
+                                <span className="text-sm font-semibold sm:hidden">
+                                  Sửa
+                                </span>
                               </button>
                               <button
                                 onClick={() => handleDelete(booking.id)}
-                                className="p-2 bg-red-50 hover:bg-red-100 text-red-600 rounded-lg transition-colors"
+                                className="flex items-center justify-center gap-2 rounded-lg border-2 border-red-100 bg-red-50 px-3 py-2 text-red-600 hover:bg-red-100 transition-colors"
                                 title="Xóa"
                               >
                                 <svg
@@ -663,6 +679,9 @@ export default function AdminBookingsPage() {
                                     d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"
                                   />
                                 </svg>
+                                <span className="text-sm font-semibold sm:hidden">
+                                  Xóa
+                                </span>
                               </button>
                             </div>
                           </td>

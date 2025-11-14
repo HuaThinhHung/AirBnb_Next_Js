@@ -353,46 +353,79 @@ export default function AdminCommentsPage() {
                   </thead>
                   <tbody className="divide-y divide-gray-100 bg-white">
                     {comments.map((comment) => (
-                      <tr key={comment.id} className="hover:bg-gray-50 transition-colors">
-                        <td className="px-4 py-4 text-sm font-mono text-gray-900" data-label="ID">
-                          #{comment.id}
+                      <tr
+                        key={comment.id}
+                        className="hover:bg-gray-50 transition-colors rounded-2xl border border-transparent shadow-sm sm:rounded-none sm:border-0 sm:shadow-none"
+                      >
+                        <td className="px-4 py-4" data-label="ID">
+                          <span className="inline-flex items-center gap-2 rounded-full bg-gray-100 px-3 py-1 text-xs font-semibold text-gray-700">
+                            <span># {comment.id}</span>
+                            <span className="hidden text-gray-400 sm:inline">•</span>
+                            <span className="text-gray-500">
+                              Phòng #{comment.maPhong}
+                            </span>
+                          </span>
                         </td>
                         <td className="px-4 py-4" data-label="Phòng">
-                          <Link
-                            href={`/admin/rooms/${comment.maPhong}`}
-                            className="text-blue-600 hover:text-blue-800 font-semibold"
-                          >
-                            Phòng #{comment.maPhong}
-                          </Link>
+                          <div className="inline-flex flex-wrap items-center gap-2 rounded-full bg-blue-50 px-3 py-1 text-sm font-semibold text-blue-700">
+                            <span>🏠</span>
+                            <Link
+                              href={`/admin/rooms/${comment.maPhong}`}
+                              className="hover:text-blue-900"
+                            >
+                              Phòng #{comment.maPhong}
+                            </Link>
+                          </div>
                         </td>
                         <td className="px-4 py-4" data-label="Người bình luận">
-                          <Link
-                            href={`/admin/users/${comment.maNguoiBinhLuan}`}
-                            className="text-blue-600 hover:text-blue-800 font-semibold"
-                          >
-                            User #{comment.maNguoiBinhLuan}
-                          </Link>
+                          <div className="inline-flex flex-wrap items-center gap-2 rounded-full bg-purple-50 px-3 py-1 text-sm font-semibold text-purple-700">
+                            <span>👤</span>
+                            <Link
+                              href={`/admin/users/${comment.maNguoiBinhLuan}`}
+                              className="hover:text-purple-900"
+                            >
+                              User #{comment.maNguoiBinhLuan}
+                            </Link>
+                          </div>
                         </td>
                         <td className="px-4 py-4" data-label="Nội dung">
-                          <p className="text-sm text-gray-900 line-clamp-2">{comment.noiDung}</p>
+                          <div className="rounded-2xl bg-gray-50 px-3 py-2 text-sm text-gray-900 shadow-inner">
+                            {comment.noiDung}
+                          </div>
                         </td>
                         <td className="px-4 py-4 text-center" data-label="Đánh giá">
                           <span
-                            className={`inline-flex items-center justify-center px-3 py-1 rounded-full text-sm font-semibold ${ratingBadge(
+                            className={`inline-flex items-center justify-center gap-1 px-3 py-1 rounded-full text-sm font-semibold ${ratingBadge(
                               comment.saoBinhLuan
                             )}`}
                           >
-                            ⭐ {comment.saoBinhLuan}/5
+                            <span>⭐</span>
+                            <span>{comment.saoBinhLuan}/5</span>
                           </span>
                         </td>
-                        <td className="px-4 py-4 text-sm text-gray-600" data-label="Ngày bình luận">
-                          {formatDate(comment.ngayBinhLuan || new Date().toISOString())}
+                        <td className="px-4 py-4 text-sm font-medium text-gray-700" data-label="Ngày bình luận">
+                          <div className="inline-flex items-center gap-2">
+                            <svg
+                              className="w-4 h-4 text-gray-400"
+                              fill="none"
+                              stroke="currentColor"
+                              viewBox="0 0 24 24"
+                            >
+                              <path
+                                strokeLinecap="round"
+                                strokeLinejoin="round"
+                                strokeWidth={2}
+                                d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"
+                              />
+                            </svg>
+                            {formatDate(comment.ngayBinhLuan || new Date().toISOString())}
+                          </div>
                         </td>
                         <td className="px-4 py-4" data-label="Hành động">
-                          <div className="flex items-center justify-center gap-2">
+                          <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-center">
                             <button
                               onClick={() => openEditModal(comment)}
-                              className="p-2 bg-yellow-50 hover:bg-yellow-100 text-yellow-600 rounded-lg transition-colors"
+                              className="flex items-center justify-center gap-2 rounded-lg border-2 border-yellow-100 bg-yellow-50 px-3 py-2 text-yellow-600 hover:bg-yellow-100 transition-colors"
                               title="Chỉnh sửa"
                             >
                               <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -403,10 +436,11 @@ export default function AdminCommentsPage() {
                                   d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"
                                 />
                               </svg>
+                              <span className="text-sm font-semibold sm:hidden">Sửa</span>
                             </button>
                             <button
                               onClick={() => handleDelete(comment.id)}
-                              className="p-2 bg-red-50 hover:bg-red-100 text-red-600 rounded-lg transition-colors"
+                              className="flex items-center justify-center gap-2 rounded-lg border-2 border-red-100 bg-red-50 px-3 py-2 text-red-600 hover:bg-red-100 transition-colors"
                               title="Xóa"
                             >
                               <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -417,6 +451,7 @@ export default function AdminCommentsPage() {
                                   d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"
                                 />
                               </svg>
+                              <span className="text-sm font-semibold sm:hidden">Xóa</span>
                             </button>
                           </div>
                         </td>
