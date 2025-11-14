@@ -1,12 +1,81 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useMemo } from "react";
 import { getUsers } from "@/lib/userService";
 import { getRooms } from "@/lib/roomService";
 import { getLocations } from "@/lib/locationService";
+import { getAllBookings } from "@/lib/bookingService";
 import { logout } from "@/lib/authService";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
+import {
+  Chart as ChartJS,
+  CategoryScale,
+  LinearScale,
+  BarElement,
+  Title,
+  Tooltip,
+  Legend,
+} from "chart.js";
+import { Bar } from "react-chartjs-2";
+
+ChartJS.register(CategoryScale, LinearScale, BarElement, Title, Tooltip, Legend);
+
+type DashboardRoom = {
+  id: number;
+  maViTri?: number;
+};
+
+type DashboardLocation = {
+  id: number;
+  tenViTri?: string;
+  tinhThanh?: string;
+};
+
+type DashboardBooking = {
+  id: number;
+  maPhong: number;
+};
+
+const buildBookingChartData = (
+  bookings: DashboardBooking[],
+  rooms: DashboardRoom[],
+  locations: DashboardLocation[]
+) => {
+  const roomLocationMap = new Map<number, number>();
+  rooms.forEach((room) => {
+    if (room.id && typeof room.maViTri === "number") {
+      roomLocationMap.set(room.id, Number(room.maViTri));
+    }
+  });
+
+  const locationNameMap = new Map<number, string>();
+  locations.forEach((loc) => {
+    const labelParts = [loc.tenViTri, loc.tinhThanh].filter(Boolean);
+    if (loc.id) {
+      locationNameMap.set(loc.id, labelParts.join(", ") || `Vị trí #${loc.id}`);
+    }
+  });
+
+  const locationCounts = new Map<string, number>();
+  bookings.forEach((booking) => {
+    const locationId = roomLocationMap.get(booking.maPhong);
+    if (!locationId) return;
+    const label =
+      locationNameMap.get(locationId) || `Vị trí #${locationId.toString()}`;
+    locationCounts.set(label, (locationCounts.get(label) || 0) + 1);
+  });
+
+  const sortedEntries = Array.from(locationCounts.entries()).sort(
+    (a, b) => b[1] - a[1]
+  );
+  const topEntries = sortedEntries.slice(0, 6);
+
+  return {
+    labels: topEntries.map(([label]) => label),
+    values: topEntries.map(([, value]) => value),
+  };
+};
 
 export default function DashboardPage() {
   const router = useRouter();
@@ -18,6 +87,14 @@ export default function DashboardPage() {
   });
   const [user, setUser] = useState<any>(null);
   const [loading, setLoading] = useState(true);
+  const [bookingChartData, setBookingChartData] = useState<{
+    labels: string[];
+    values: number[];
+  }>({ labels: [], values: [] });
+  const [bookingChartLoading, setBookingChartLoading] = useState(true);
+  const [bookingChartError, setBookingChartError] = useState<string | null>(
+    null
+  );
 
   useEffect(() => {
     // Get current user
@@ -31,36 +108,72 @@ export default function DashboardPage() {
 
   const fetchStats = async () => {
     setLoading(true);
+    setBookingChartLoading(true);
+    setBookingChartError(null);
 
-    // Fetch all data
-    const [usersResult, roomsResult, locationsResult] = await Promise.all([
-      getUsers() as Promise<{
-        success: boolean;
-        users: unknown[];
-        message?: string;
-      }>,
-      getRooms() as Promise<{
-        success: boolean;
-        rooms: unknown[];
-        message?: string;
-      }>,
-      getLocations() as Promise<{
-        success: boolean;
-        locations: unknown[];
-        message?: string;
-      }>,
-    ]);
+    try {
+      const [usersResult, roomsResult, locationsResult, bookingsResult] =
+        await Promise.all([
+          getUsers() as Promise<{
+            success: boolean;
+            users: unknown[];
+            message?: string;
+          }>,
+          getRooms() as Promise<{
+            success: boolean;
+            rooms: DashboardRoom[];
+            message?: string;
+          }>,
+          getLocations() as Promise<{
+            success: boolean;
+            locations: DashboardLocation[];
+            message?: string;
+          }>,
+          getAllBookings() as Promise<{
+            success: boolean;
+            bookings: DashboardBooking[];
+            message?: string;
+          }>,
+        ]);
 
-    setStats({
-      totalUsers: usersResult.success ? usersResult.users.length : 0,
-      totalRooms: roomsResult.success ? roomsResult.rooms.length : 0,
-      totalLocations: locationsResult.success
-        ? locationsResult.locations.length
-        : 0,
-      totalBookings: 0, // Would need booking API
-    });
+      setStats({
+        totalUsers: usersResult.success ? usersResult.users.length : 0,
+        totalRooms: roomsResult.success ? roomsResult.rooms.length : 0,
+        totalLocations: locationsResult.success
+          ? locationsResult.locations.length
+          : 0,
+        totalBookings: bookingsResult.success
+          ? bookingsResult.bookings.length
+          : 0,
+      });
 
-    setLoading(false);
+      if (
+        bookingsResult.success &&
+        roomsResult.success &&
+        locationsResult.success
+      ) {
+        setBookingChartData(
+          buildBookingChartData(
+            bookingsResult.bookings,
+            roomsResult.rooms,
+            locationsResult.locations
+          )
+        );
+      } else {
+        setBookingChartData({ labels: [], values: [] });
+        if (!bookingsResult.success) {
+          setBookingChartError(
+            bookingsResult.message || "Không thể tải dữ liệu đặt phòng"
+          );
+        }
+      }
+    } catch (error) {
+      console.error("Lỗi tải thống kê:", error);
+      setBookingChartError("Không thể tải thống kê đặt phòng theo vị trí");
+    } finally {
+      setLoading(false);
+      setBookingChartLoading(false);
+    }
   };
 
   const handleLogout = () => {
@@ -102,6 +215,55 @@ export default function DashboardPage() {
       link: "/admin/bookings",
     },
   ];
+
+  const chartData = useMemo(
+    () => ({
+      labels: bookingChartData.labels,
+      datasets: [
+        {
+          label: "Lượt đặt phòng",
+          data: bookingChartData.values,
+          backgroundColor: "rgba(59,130,246,0.8)",
+          borderRadius: 12,
+          hoverBackgroundColor: "rgba(59,130,246,1)",
+        },
+      ],
+    }),
+    [bookingChartData]
+  );
+
+  const chartOptions = useMemo(
+    () => ({
+      responsive: true,
+      maintainAspectRatio: false,
+      plugins: {
+        legend: { display: false },
+        tooltip: {
+          backgroundColor: "#1f2937",
+          titleFont: { size: 14 },
+          bodyFont: { size: 13 },
+        },
+      },
+      scales: {
+        x: {
+          grid: { display: false },
+          ticks: {
+            color: "#4b5563",
+            font: { size: 12 },
+          },
+        },
+        y: {
+          beginAtZero: true,
+          ticks: {
+            stepSize: 1,
+            color: "#4b5563",
+            font: { size: 12 },
+          },
+        },
+      },
+    }),
+    []
+  );
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-gray-50 to-blue-50">
@@ -207,17 +369,31 @@ export default function DashboardPage() {
             <h3 className="text-lg font-bold text-gray-900 mb-4">
               📊 Thống kê đặt phòng theo vị trí
             </h3>
-            <div className="h-64 flex items-center justify-center bg-gradient-to-br from-blue-50 to-cyan-50 rounded-lg">
-              <div className="text-center">
-                <div className="text-5xl mb-4">📈</div>
-                <p className="text-gray-600 font-medium">
-                  Biểu đồ sẽ hiển thị ở đây
-                </p>
-                <p className="text-sm text-gray-500 mt-2">
-                  Tích hợp Chart.js hoặc Recharts
-                </p>
-              </div>
+            <div className="h-64">
+              {bookingChartLoading ? (
+                <div className="h-full flex flex-col items-center justify-center text-gray-600">
+                  <div className="inline-block animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600 mb-4"></div>
+                  <p>Đang tải biểu đồ...</p>
+                </div>
+              ) : bookingChartData.labels.length > 0 ? (
+                <Bar data={chartData} options={chartOptions} />
+              ) : (
+                <div className="h-full flex flex-col items-center justify-center bg-gradient-to-br from-blue-50 to-cyan-50 rounded-lg text-center">
+                  <div className="text-5xl mb-3">🗺️</div>
+                  <p className="text-gray-700 font-semibold">
+                    Chưa có dữ liệu đặt phòng
+                  </p>
+                  <p className="text-sm text-gray-500 mt-1">
+                    Hãy thêm đặt phòng để xem thống kê theo vị trí
+                  </p>
+                </div>
+              )}
             </div>
+            {bookingChartError && (
+              <p className="text-sm text-red-500 mt-4 text-center">
+                {bookingChartError}
+              </p>
+            )}
           </div>
 
           {/* Recent Activity */}
