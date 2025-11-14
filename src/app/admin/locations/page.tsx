@@ -21,6 +21,7 @@ export default function AdminLocationsPage() {
   const [totalCount, setTotalCount] = useState(0);
   const pageSize = 12; // Tăng lên 12 items mỗi trang để hiển thị nhiều hơn
   const topRef = useRef<HTMLDivElement>(null);
+  const [searchSuggestions, setSearchSuggestions] = useState<string[]>([]);
 
   // Fetch locations
   const fetchLocations = async (page = 1, keyword = "") => {
@@ -47,6 +48,13 @@ export default function AdminLocationsPage() {
       setTotalPages(result.pagination?.totalPages || result.totalPages || 1);
       setTotalCount(result.pagination?.totalRow || result.totalCount || 0);
       setCurrentPage(page);
+      const suggestionList = result.locations
+        .map(
+          (loc) =>
+            `${loc.id} - ${loc.tenViTri}, ${loc.tinhThanh || ""}`.trim()
+        )
+        .slice(0, 20);
+      setSearchSuggestions(suggestionList);
     }
     setLoading(false);
   };
@@ -297,20 +305,12 @@ export default function AdminLocationsPage() {
               )}
             </p>
           </div>
-          <div className="flex items-center gap-3">
-            <Link
-              href="/admin/dashboard"
-              className="px-4 py-2 text-gray-600 hover:text-gray-900 font-medium"
-            >
-              ← Dashboard
-            </Link>
-            <Link
-              href="/admin/locations/create"
-              className="px-6 py-2 bg-blue-600 hover:bg-blue-700 text-white font-semibold rounded-lg shadow-md transition-colors"
-            >
-              + Thêm vị trí mới
-            </Link>
-          </div>
+          <Link
+            href="/admin/locations/create"
+            className="px-6 py-2 bg-blue-600 hover:bg-blue-700 text-white font-semibold rounded-lg shadow-md transition-colors"
+          >
+            + Thêm vị trí mới
+          </Link>
         </div>
       </div>
 
@@ -325,6 +325,7 @@ export default function AdminLocationsPage() {
               onChange={(e) => setSearchKeyword(e.target.value)}
               onKeyPress={(e) => e.key === "Enter" && handleSearch()}
               placeholder="Tìm kiếm theo tên vị trí, tỉnh thành hoặc quốc gia..."
+              list="locations-suggestions"
               className="flex-1 px-4 py-3 border-2 border-gray-200 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 text-gray-900"
             />
             <button
@@ -341,6 +342,11 @@ export default function AdminLocationsPage() {
               ✕ Reset
             </button>
           </div>
+        <datalist id="locations-suggestions">
+          {searchSuggestions.map((suggestion) => (
+            <option key={suggestion} value={suggestion} />
+          ))}
+        </datalist>
         </div>
 
         {/* Grid View */}

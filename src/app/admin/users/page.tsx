@@ -3,7 +3,6 @@
 import { useState, useEffect, useRef } from "react";
 import { getUsersPaginated, deleteUser } from "@/lib/userService";
 import Link from "next/link";
-import { useRouter } from "next/navigation";
 
 interface User {
   id: number;
@@ -17,7 +16,6 @@ interface User {
 }
 
 export default function AdminUsersPage() {
-  const router = useRouter();
   const [users, setUsers] = useState<User[]>([]);
   const [loading, setLoading] = useState(true);
   const [searchKeyword, setSearchKeyword] = useState("");
@@ -26,6 +24,7 @@ export default function AdminUsersPage() {
   const [totalCount, setTotalCount] = useState(0);
   const pageSize = 10;
   const topRef = useRef<HTMLDivElement>(null);
+  const [searchSuggestions, setSearchSuggestions] = useState<string[]>([]);
 
   // Fetch users với phân trang
   const fetchUsers = async (page = 1, keyword = "") => {
@@ -42,6 +41,10 @@ export default function AdminUsersPage() {
       setTotalPages(result.totalPages);
       setTotalCount(result.totalCount);
       setCurrentPage(page);
+      const suggestionList = result.users
+        .map((user) => `${user.id} - ${user.name || user.email}`)
+        .slice(0, 20);
+      setSearchSuggestions(suggestionList);
     }
     setLoading(false);
   };
@@ -167,20 +170,12 @@ export default function AdminUsersPage() {
               {totalPages}
             </p>
           </div>
-          <div className="flex items-center gap-3">
-            <Link
-              href="/admin/dashboard"
-              className="px-4 py-2 text-gray-600 hover:text-gray-900 font-medium"
-            >
-              ← Quay lại Dashboard
-            </Link>
-            <Link
-              href="/admin/users/create"
-              className="px-6 py-2 bg-blue-600 hover:bg-blue-700 text-white font-semibold rounded-lg shadow-md transition-colors"
-            >
-              + Thêm quản trị viên
-            </Link>
-          </div>
+          <Link
+            href="/admin/users/create"
+            className="px-6 py-2 bg-blue-600 hover:bg-blue-700 text-white font-semibold rounded-lg shadow-md transition-colors"
+          >
+            + Thêm quản trị viên
+          </Link>
         </div>
       </div>
 
@@ -195,6 +190,7 @@ export default function AdminUsersPage() {
               onChange={(e) => setSearchKeyword(e.target.value)}
               onKeyPress={(e) => e.key === "Enter" && handleSearch()}
               placeholder="Nhập vào tên hoặc email người dùng"
+              list="users-suggestions"
               className="flex-1 px-4 py-3 border-2 border-gray-200 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 text-gray-900"
             />
             <button
@@ -212,6 +208,11 @@ export default function AdminUsersPage() {
             </button>
           </div>
         </div>
+        <datalist id="users-suggestions">
+          {searchSuggestions.map((suggestion) => (
+            <option key={suggestion} value={suggestion} />
+          ))}
+        </datalist>
 
         {/* Table */}
         <div className="bg-white rounded-lg shadow-sm border border-gray-200 overflow-hidden">

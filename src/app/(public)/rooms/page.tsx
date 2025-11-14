@@ -5,6 +5,7 @@ import Link from "next/link";
 import { useSearchParams } from "next/navigation";
 import { getRooms, getRoomsByLocation } from "@/lib/roomService";
 import { getLocationById } from "@/lib/locationService";
+import type { LocationResponse } from "@/types/api";
 
 type RoomItem = {
   id: number;
@@ -111,6 +112,8 @@ function RoomsContent() {
 
   // Fetch locations for rooms
   useEffect(() => {
+    let isMounted = true;
+
     const fetchLocations = async () => {
       const uniqueLocationIds = new Set<number>();
       rooms.forEach((room) => {
@@ -119,36 +122,50 @@ function RoomsContent() {
         }
       });
 
-      const newCache = new Map(locationCache);
-      const promises: Promise<void>[] = [];
+      const idsToFetch = Array.from(uniqueLocationIds).filter(
+        (locationId) => !locationCache.has(locationId)
+      );
 
-      uniqueLocationIds.forEach((locationId) => {
-        if (!newCache.has(locationId)) {
-          promises.push(
-            getLocationById(locationId)
-              .then((res) => {
-                if (res.success && res.location) {
-                  newCache.set(locationId, res.location);
-                }
-              })
-              .catch(() => {
-                // Ignore errors for individual locations
-              })
-          );
-        }
+      if (idsToFetch.length === 0) return;
+
+      const results = await Promise.all(
+        idsToFetch.map(async (locationId) => {
+          try {
+            const res = (await getLocationById(locationId)) as LocationResponse;
+            return { locationId, res };
+          } catch {
+            return null;
+          }
+        })
+      );
+
+      if (!isMounted) return;
+
+      setLocationCache((prevCache) => {
+        const updatedCache = new Map(prevCache);
+        let hasChange = false;
+
+        results.forEach((result) => {
+          if (result && result.res.success && result.res.location) {
+            if (!updatedCache.has(result.locationId)) {
+              updatedCache.set(result.locationId, result.res.location);
+              hasChange = true;
+            }
+          }
+        });
+
+        return hasChange ? updatedCache : prevCache;
       });
-
-      if (promises.length > 0) {
-        await Promise.all(promises);
-        setLocationCache(newCache);
-      }
     };
 
     if (rooms.length > 0) {
       fetchLocations();
     }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [rooms]);
+
+    return () => {
+      isMounted = false;
+    };
+  }, [rooms, locationCache]);
 
   const getLocationName = (maViTri?: number): string => {
     if (!maViTri) return "Chưa có địa điểm";
@@ -231,7 +248,28 @@ function RoomsContent() {
     );
   };
 
-  const totalPages = Math.ceil(filteredRooms.length / pageSize);
+  useEffect(() => {
+    setPage(1);
+  }, [
+    locationParam,
+    keyword,
+    priceRange,
+    bedrooms,
+    guests,
+    amenities,
+    sortBy,
+    rooms.length,
+  ]);
+
+  const totalPages = Math.max(1, Math.ceil(filteredRooms.length / pageSize));
+
+  useEffect(() => {
+    if (page > totalPages) {
+      setPage(totalPages);
+    } else if (page < 1) {
+      setPage(1);
+    }
+  }, [page, totalPages]);
   const paginatedRooms = filteredRooms.slice(
     (page - 1) * pageSize,
     page * pageSize
@@ -586,12 +624,12 @@ function RoomsContent() {
             )}
 
             {/* Pagination */}
-            {totalPages > 1 && (
+            {filteredRooms.length > pageSize && (
               <div className="mt-16 flex items-center justify-center gap-3">
                 <button
-                  disabled={page === 1}
+                  disabled={page <= 1}
                   onClick={() => {
-                    setPage(page - 1);
+                    setPage((prev) => Math.max(1, prev - 1));
                     window.scrollTo({ top: 0, behavior: "smooth" });
                   }}
                   className="px-6 py-3 border-2 border-gray-200 rounded-xl font-semibold text-gray-700 disabled:opacity-40 disabled:cursor-not-allowed hover:border-blue-600 hover:text-blue-600 transition-all"
@@ -601,10 +639,30 @@ function RoomsContent() {
                 <div className="px-8 py-3 bg-blue-600 text-white rounded-xl font-bold shadow-md">
                   {page} / {totalPages}
                 </div>
+                <div className="flex items-center gap-2">
+                  {Array.from({ length: totalPages }, (_, index) => index + 1).map(
+                    (pageNumber) => (
+                      <button
+                        key={pageNumber}
+                        onClick={() => {
+                          setPage(pageNumber);
+                          window.scrollTo({ top: 0, behavior: "smooth" });
+                        }}
+                        className={`w-10 h-10 rounded-full font-semibold transition-all ${
+                          pageNumber === page
+                            ? "bg-blue-600 text-white shadow-lg"
+                            : "border-2 border-gray-200 text-gray-700 hover:border-blue-600 hover:text-blue-600"
+                        }`}
+                      >
+                        {pageNumber}
+                      </button>
+                    )
+                  )}
+                </div>
                 <button
-                  disabled={page === totalPages}
+                  disabled={page >= totalPages}
                   onClick={() => {
-                    setPage(page + 1);
+                    setPage((prev) => Math.min(totalPages, prev + 1));
                     window.scrollTo({ top: 0, behavior: "smooth" });
                   }}
                   className="px-6 py-3 border-2 border-gray-200 rounded-xl font-semibold text-gray-700 disabled:opacity-40 disabled:cursor-not-allowed hover:border-blue-600 hover:text-blue-600 transition-all"
