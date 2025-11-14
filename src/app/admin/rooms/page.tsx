@@ -1,10 +1,6 @@
 "use client";
 
-<<<<<<< HEAD
-import { useState, useEffect, useMemo } from "react";
-=======
 import { useEffect, useMemo, useState } from "react";
->>>>>>> cbfc25bbd4e55b0a3577dbafa8db804526988361
 import { getRooms, deleteRoom } from "@/lib/roomService";
 import { getLocations } from "@/lib/locationService";
 import Link from "next/link";
@@ -88,34 +84,6 @@ export default function AdminRoomsPage() {
     }
   };
 
-<<<<<<< HEAD
-  const [allRooms, setAllRooms] = useState<Room[]>([]);
-
-  const fetchRooms = async () => {
-    setLoading(true);
-    
-    // Nếu có filter (searchTerm hoặc selectedLocation), cần fetch tất cả phòng để filter client-side
-    if (searchTerm || selectedLocation) {
-      // Fetch tất cả phòng để filter client-side
-      const allRoomsResult = (await getRooms({
-        pageIndex: 1,
-        pageSize: 1000, // Lấy nhiều để có đủ dữ liệu filter
-        keyword: "", // Không dùng keyword ở server, sẽ filter client-side
-      })) as {
-        success: boolean;
-        rooms: Room[];
-        pagination?: { totalPages: number; totalRow: number };
-      };
-
-      if (allRoomsResult.success) {
-        setAllRooms(allRoomsResult.rooms);
-      }
-    } else {
-      // Không có filter, dùng server-side pagination
-      const result = (await getRooms({
-        pageIndex: currentPage,
-        pageSize: 10,
-=======
   const fetchAllRooms = async () => {
     const aggregated: Room[] = [];
     let pageIndex = 1;
@@ -125,7 +93,6 @@ export default function AdminRoomsPage() {
       const result = (await getRooms({
         pageIndex,
         pageSize: fetchBatchSize,
->>>>>>> cbfc25bbd4e55b0a3577dbafa8db804526988361
         keyword: "",
       })) as {
         success: boolean;
@@ -133,16 +100,8 @@ export default function AdminRoomsPage() {
         pagination?: { totalPages: number; totalRow: number };
       };
 
-<<<<<<< HEAD
-      if (result.success) {
-        setAllRooms(result.rooms);
-        // Không cần filter client-side, dùng pagination từ server
-        setTotalPages(result.pagination?.totalPages || 1);
-        setTotalRows(result.pagination?.totalRow || 0);
-=======
       if (!result.success) {
         break;
->>>>>>> cbfc25bbd4e55b0a3577dbafa8db804526988361
       }
 
       aggregated.push(...(result.rooms || []));
@@ -358,12 +317,8 @@ export default function AdminRoomsPage() {
                 setSearchTerm(e.target.value);
                 setCurrentPage(1);
               }}
-<<<<<<< HEAD
-              className="w-full px-4 py-2 border-2 border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 text-gray-900 font-medium placeholder-gray-400"
-=======
               list="rooms-suggestions"
-              className="w-full px-4 py-2 border-2 border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 text-gray-900"
->>>>>>> cbfc25bbd4e55b0a3577dbafa8db804526988361
+              className="w-full px-4 py-2 border-2 border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 text-gray-900 font-medium placeholder-gray-400"
             />
             <datalist id="rooms-suggestions">
               {searchSuggestions.map((suggestion) => (
