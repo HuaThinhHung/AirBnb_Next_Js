@@ -6,6 +6,7 @@ import { getRoomById } from "@/lib/roomService";
 import { getLocationById } from "@/lib/locationService";
 import { createBooking } from "@/lib/bookingService";
 import { getCommentsByRoom, createComment } from "@/lib/commentService";
+import RoomMap from "@/components/rooms/RoomMap";
 import Link from "next/link";
 
 interface Room {
@@ -36,7 +37,17 @@ interface Location {
   tinhThanh: string;
   quocGia: string;
   hinhAnh: string;
+  latitude?: number;
+  longitude?: number;
+  lat?: number;
+  lng?: number;
+  viDo?: number;
+  kinhDo?: number;
 }
+
+type LocationWithAny = Location & {
+  [key: string]: unknown;
+};
 
 interface Comment {
   id: number;
@@ -340,6 +351,60 @@ export default function RoomDetailPage() {
 
   const nights = calculateNights();
   const total = calculateTotal();
+  const roomAddress = location
+    ? `${location.tenViTri}, ${location.tinhThanh}, ${location.quocGia}`
+    : "";
+
+  const parseCoordinate = (value?: number | string | null) => {
+    if (value === null || value === undefined) return null;
+    if (typeof value === "number" && Number.isFinite(value)) return value;
+    if (typeof value === "string") {
+      const parsed = Number(value);
+      return Number.isFinite(parsed) ? parsed : null;
+    }
+    return null;
+  };
+
+  const getCoordinateValue = (
+    obj: Location | null,
+    keys: string[]
+  ): number | string | null => {
+    if (!obj) return null;
+    const record = obj as LocationWithAny;
+    for (const key of keys) {
+      const value = record[key];
+      if (value !== undefined && value !== null) {
+        if (typeof value === "number" || typeof value === "string") {
+          return value as number | string;
+        }
+      }
+    }
+    return null;
+  };
+
+  const locationLat = parseCoordinate(
+    getCoordinateValue(location, [
+      "latitude",
+      "lat",
+      "viDo",
+      "vido",
+      "Latitude",
+    ])
+  );
+  const locationLng = parseCoordinate(
+    getCoordinateValue(location, [
+      "longitude",
+      "lng",
+      "kinhDo",
+      "kinhdo",
+      "Longitude",
+    ])
+  );
+
+  const roomCoordinates =
+    locationLat !== null && locationLng !== null
+      ? { lat: locationLat, lng: locationLng }
+      : undefined;
 
   return (
     <div className="min-h-screen bg-gray-50">
@@ -454,6 +519,38 @@ export default function RoomDetailPage() {
                 ))}
               </div>
             </div>
+
+            {/* Map Section */}
+            {roomAddress && (
+              <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-6 space-y-6">
+                <div className="flex flex-col gap-2">
+                  <h2 className="text-2xl font-bold text-gray-900">
+                    Vị trí trên bản đồ
+                  </h2>
+                  <p className="text-gray-600">
+                    Phòng #{room.id} • {room.tenPhong}
+                  </p>
+                  <p className="text-sm text-gray-500">
+                    📍 {roomAddress}
+                  </p>
+                </div>
+                <RoomMap
+                  roomId={room.id}
+                  roomName={room.tenPhong}
+                  address={roomAddress}
+                  coordinates={roomCoordinates}
+                  locationMeta={{
+                    tenViTri: location?.tenViTri,
+                    tinhThanh: location?.tinhThanh,
+                    quocGia: location?.quocGia,
+                  }}
+                />
+                <p className="text-xs text-gray-500">
+                  Vị trí được geocode dựa trên tên phòng và địa chỉ. Vui lòng
+                  đảm bảo địa chỉ chính xác để hiển thị đúng trên Google Maps.
+                </p>
+              </div>
+            )}
 
             {/* Comments Section */}
             <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-6">

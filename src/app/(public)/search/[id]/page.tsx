@@ -5,6 +5,7 @@ import { useParams } from "next/navigation";
 import Link from "next/link";
 import { getLocationById } from "@/lib/locationService";
 import { getRoomsByLocation } from "@/lib/roomService";
+import RoomMap from "@/components/rooms/RoomMap";
 
 type LocationDetail = {
   id: number;
@@ -12,6 +13,16 @@ type LocationDetail = {
   tinhThanh?: string;
   quocGia?: string;
   hinhAnh?: string;
+  latitude?: number;
+  longitude?: number;
+  lat?: number;
+  lng?: number;
+  viDo?: number;
+  kinhDo?: number;
+};
+
+type LocationDetailWithAny = LocationDetail & {
+  [key: string]: unknown;
 };
 
 type RoomItem = {
@@ -109,6 +120,66 @@ export default function LocationDetailPage() {
   }
 
   if (!location) return null;
+
+  const buildAddress = (...parts: Array<string | undefined>) =>
+    parts.filter((part) => Boolean(part && part.trim())).join(", ");
+
+  const locationAddress = buildAddress(
+    location.tenViTri,
+    location.tinhThanh,
+    location.quocGia
+  );
+
+  const parseCoordinate = (value?: number | string | null) => {
+    if (value === null || value === undefined) return null;
+    if (typeof value === "number" && Number.isFinite(value)) return value;
+    if (typeof value === "string") {
+      const parsed = Number(value);
+      return Number.isFinite(parsed) ? parsed : null;
+    }
+    return null;
+  };
+
+  const getCoordinateValue = (
+    obj: LocationDetail | null,
+    keys: string[]
+  ): number | string | null => {
+    if (!obj) return null;
+    const record = obj as LocationDetailWithAny;
+    for (const key of keys) {
+      const value = record[key];
+      if (value !== undefined && value !== null) {
+        if (typeof value === "number" || typeof value === "string") {
+          return value as number | string;
+        }
+      }
+    }
+    return null;
+  };
+
+  const locationLat = parseCoordinate(
+    getCoordinateValue(location, [
+      "latitude",
+      "lat",
+      "viDo",
+      "vido",
+      "Latitude",
+    ])
+  );
+  const locationLng = parseCoordinate(
+    getCoordinateValue(location, [
+      "longitude",
+      "lng",
+      "kinhDo",
+      "kinhdo",
+      "Longitude",
+    ])
+  );
+
+  const locationCoordinates =
+    locationLat !== null && locationLng !== null
+      ? { lat: locationLat, lng: locationLng }
+      : undefined;
 
   return (
     <div className="min-h-screen bg-gray-50">
@@ -349,6 +420,29 @@ export default function LocationDetailPage() {
               </div>
             </div>
           </div>
+        </div>
+
+        {/* Map Section */}
+        <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-8 mt-8 space-y-4">
+          <div>
+            <h3 className="text-xl font-bold text-gray-900 mb-2">
+              Vị trí trên bản đồ
+            </h3>
+            <p className="text-gray-600">
+              {locationAddress || "Đang cập nhật địa chỉ"}
+            </p>
+          </div>
+          <RoomMap
+            roomId={location.id}
+            roomName={`Vị trí ${location.tenViTri || locationAddress || ""}`}
+            address={locationAddress || location.tenViTri || ""}
+            coordinates={locationCoordinates}
+            locationMeta={{
+              tenViTri: location.tenViTri,
+              tinhThanh: location.tinhThanh,
+              quocGia: location.quocGia,
+            }}
+          />
         </div>
       </div>
     </div>
