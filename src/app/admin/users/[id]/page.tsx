@@ -2,7 +2,7 @@
 
 import { useState, useEffect } from "react";
 import { useParams, useRouter } from "next/navigation";
-import { getUserById, uploadAvatar } from "@/lib/userService";
+import { getUserById, uploadAvatar, deleteUser } from "@/lib/userService";
 import Link from "next/link";
 
 interface User {
@@ -43,6 +43,24 @@ export default function UserDetailPage() {
       router.push("/admin/users");
     }
     setLoading(false);
+  };
+
+  const handleDelete = async () => {
+    if (!user) return;
+    
+    if (!confirm(`Bạn có chắc muốn xóa người dùng "${user.name}"?`)) return;
+
+    const result = (await deleteUser(user.id)) as {
+      success: boolean;
+      message?: string;
+    };
+
+    if (result.success) {
+      alert("✅ Xóa người dùng thành công!");
+      router.push("/admin/users");
+    } else {
+      alert("❌ Lỗi: " + (result.message || "Không thể xóa người dùng"));
+    }
   };
 
   const handleUploadAvatar = async (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -292,13 +310,9 @@ export default function UserDetailPage() {
                   Chỉnh sửa thông tin
                 </Link>
                 <button
-                  onClick={() => {
-                    alert(
-                      "⚠️ Chức năng xóa người dùng chưa được hỗ trợ bởi API AirBnb"
-                    );
-                  }}
-                  className="px-6 py-3 bg-gray-100 hover:bg-gray-200 text-gray-500 font-semibold rounded-lg transition-colors cursor-not-allowed opacity-50"
-                  title="API không hỗ trợ xóa user"
+                  onClick={handleDelete}
+                  className="px-6 py-3 bg-red-600 hover:bg-red-700 text-white font-semibold rounded-lg transition-colors"
+                  title="Xóa người dùng"
                 >
                   Xóa người dùng
                 </button>

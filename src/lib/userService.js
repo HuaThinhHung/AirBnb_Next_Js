@@ -206,7 +206,8 @@ export const deleteUser = async (userId) => {
   try {
     console.log("🗑️ [User] Đang xóa:", userId);
 
-    const response = await api.delete(`/api/users/${userId}`);
+    // API expects id as query parameter, not in URL path
+    const response = await api.delete(`/api/users?id=${userId}`);
 
     console.log("✅ [User] Xóa thành công:", response.data);
 
@@ -215,20 +216,21 @@ export const deleteUser = async (userId) => {
       message: response.data.message || "Xóa người dùng thành công",
     };
   } catch (error) {
-    console.error("❌ [User] Lỗi xóa:", error);
-    
+    // API interceptor đã xử lý và log lỗi, chỉ cần sử dụng message đã được transform
     if (error.response) {
+      // Sử dụng error.message đã được API interceptor transform thành message thân thiện
       return {
         success: false,
-        message:
-          error.response.data?.message || error.message || "Không thể xóa người dùng",
+        message: error.message || "Không thể xóa người dùng",
         error: error.response.data,
       };
     }
 
+    // Lỗi không có response (network error, etc.) - log chi tiết vì interceptor không log network errors
+    console.error("❌ [User] Lỗi xóa (network/unknown):", error);
     return {
       success: false,
-      message: error.message || "Không thể xóa người dùng",
+      message: error.message || "Không thể xóa người dùng. Vui lòng kiểm tra kết nối mạng.",
     };
   }
 };

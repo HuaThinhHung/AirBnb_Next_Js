@@ -84,6 +84,11 @@ export default function LoginPage() {
         setLoginSuccess(true);
         console.log("Login successful:", result.user);
 
+        // Clear token-expired flag
+        if (typeof document !== "undefined") {
+          document.body.removeAttribute('data-token-expired');
+        }
+
         // Save user to localStorage
         if (result.user) {
           localStorage.setItem("user", JSON.stringify(result.user));
