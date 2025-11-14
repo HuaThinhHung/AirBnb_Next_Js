@@ -5,11 +5,8 @@ import Link from "next/link";
 import { useRouter, useSearchParams } from "next/navigation";
 import { getRooms, getRoomsByLocation } from "@/lib/roomService";
 import { getLocationById } from "@/lib/locationService";
-<<<<<<< HEAD
 import { searchWithoutAccents } from "@/lib/utils";
-=======
 import type { LocationResponse } from "@/types/api";
->>>>>>> cbfc25bbd4e55b0a3577dbafa8db804526988361
 
 type RoomItem = {
   id: number;
