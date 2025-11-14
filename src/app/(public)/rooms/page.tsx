@@ -5,6 +5,7 @@ import Link from "next/link";
 import { useSearchParams } from "next/navigation";
 import { getRooms, getRoomsByLocation } from "@/lib/roomService";
 import { getLocationById } from "@/lib/locationService";
+import { searchWithoutAccents } from "@/lib/utils";
 
 type RoomItem = {
   id: number;
@@ -165,7 +166,7 @@ function RoomsContent() {
 
     if (keyword) {
       filtered = filtered.filter((room) =>
-        room.tenPhong.toLowerCase().includes(keyword.toLowerCase())
+        searchWithoutAccents(room.tenPhong, keyword)
       );
     }
 
@@ -292,7 +293,7 @@ function RoomsContent() {
                 value={keyword}
                 onChange={(e) => setKeyword(e.target.value)}
                 placeholder="Tên phòng..."
-                className="w-full px-4 py-3 border-2 border-gray-200 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all"
+                className="w-full px-4 py-3 border-2 border-gray-200 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all text-gray-900 placeholder-gray-400"
               />
             </div>
 
@@ -304,7 +305,7 @@ function RoomsContent() {
               <select
                 value={priceRange}
                 onChange={(e) => setPriceRange(e.target.value)}
-                className="w-full px-4 py-3 border-2 border-gray-200 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all"
+                className="w-full px-4 py-3 border-2 border-gray-200 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all text-gray-900 font-medium"
               >
                 <option value="all">Tất cả</option>
                 <option value="under-50">Dưới $50</option>
@@ -322,7 +323,7 @@ function RoomsContent() {
               <select
                 value={bedrooms}
                 onChange={(e) => setBedrooms(e.target.value)}
-                className="w-full px-4 py-3 border-2 border-gray-200 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all"
+                className="w-full px-4 py-3 border-2 border-gray-200 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all text-gray-900 font-medium"
               >
                 <option value="">Tất cả</option>
                 <option value="1">1+ phòng</option>
@@ -340,7 +341,7 @@ function RoomsContent() {
               <select
                 value={guests}
                 onChange={(e) => setGuests(e.target.value)}
-                className="w-full px-4 py-3 border-2 border-gray-200 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all"
+                className="w-full px-4 py-3 border-2 border-gray-200 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all text-gray-900 font-medium"
               >
                 <option value="">Tất cả</option>
                 <option value="1">1+ khách</option>

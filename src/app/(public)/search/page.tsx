@@ -1,10 +1,11 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useState, useMemo } from "react";
 import { useSearchParams, useRouter } from "next/navigation";
 import Link from "next/link";
-import { getLocationsPagedSearch } from "@/lib/locationService";
+import { getLocationsPagedSearch, getLocations } from "@/lib/locationService";
 import { getRoomsByLocation } from "@/lib/roomService";
+import { searchWithoutAccents } from "@/lib/utils";
 import type { LocationsResponse } from "@/types/api";
 
 type LocationItem = {
@@ -30,7 +31,7 @@ export default function SearchPage() {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
-  const [locations, setLocations] = useState<LocationItem[]>([]);
+  const [allLocations, setAllLocations] = useState<LocationItem[]>([]);
   const [rooms, setRooms] = useState<RoomItem[]>([]);
   const [locPage, setLocPage] = useState(1);
   const [locTotalPages, setLocTotalPages] = useState(1);
@@ -51,58 +52,71 @@ export default function SearchPage() {
     }
   }, [searchParams]);
 
-  // Initial load
+  // Load all locations for client-side filtering
   useEffect(() => {
     if (showRooms) return; // Không load locations nếu đang hiển thị rooms
     
     let mounted = true;
-    const loadLocations = async (pageIndex = 1) => {
+    const loadAllLocations = async () => {
       setLoading(true);
       setError(null);
-      const res = (await getLocationsPagedSearch({
-        pageIndex,
-        pageSize: 12,
-        keyword,
-      })) as LocationsResponse;
-      if (!mounted) return;
-      if (res.success) {
-        setLocations(res.locations || []);
-        setLocTotalPages(res.pagination?.totalPages || 1);
-      } else setError(res.message || "Không thể tải danh sách vị trí");
-      setLoading(false);
+      try {
+        // Fetch tất cả locations để có thể filter client-side
+        const res = (await getLocations()) as {
+          success: boolean;
+          locations: LocationItem[];
+          message?: string;
+        };
+        if (!mounted) return;
+        if (res.success) {
+          setAllLocations(res.locations || []);
+        } else {
+          setError(res.message || "Không thể tải danh sách vị trí");
+          setAllLocations([]);
+        }
+      } catch (err) {
+        if (!mounted) return;
+        setError("Có lỗi xảy ra khi tải danh sách vị trí");
+        setAllLocations([]);
+      } finally {
+        setLoading(false);
+      }
     };
-    loadLocations(1);
+    loadAllLocations();
     return () => {
       mounted = false;
     };
   }, [showRooms]);
 
-  // Reload when keyword changes
+  // Filter locations client-side với hỗ trợ không dấu
+  const filteredLocations = useMemo(() => {
+    if (!keyword.trim()) {
+      return allLocations;
+    }
+
+    return allLocations.filter((loc) => {
+      const searchText = `${loc.tenViTri || ""} ${loc.tinhThanh || ""} ${loc.quocGia || ""}`.trim();
+      return searchWithoutAccents(searchText, keyword);
+    });
+  }, [allLocations, keyword]);
+
+  // Pagination cho filtered locations
+  const pageSize = 12;
+  const totalFilteredPages = Math.ceil(filteredLocations.length / pageSize);
+  const paginatedLocations = useMemo(() => {
+    const startIndex = (locPage - 1) * pageSize;
+    const endIndex = startIndex + pageSize;
+    return filteredLocations.slice(startIndex, endIndex);
+  }, [filteredLocations, locPage, pageSize]);
+
+  // Update total pages khi filtered locations thay đổi
   useEffect(() => {
-    if (showRooms) return; // Không reload locations nếu đang hiển thị rooms
-    
-    let mounted = true;
-    const run = async () => {
-      const res = (await getLocationsPagedSearch({
-        pageIndex: 1,
-        pageSize: 12,
-        keyword,
-      })) as LocationsResponse;
-      if (!mounted) return;
-      if (res.success) {
-        setLocations(res.locations || []);
-        setLocPage(1);
-        setLocTotalPages(res.pagination?.totalPages || 1);
-      } else {
-        setLocations([]);
-        setLocTotalPages(1);
-      }
-    };
-    run();
-    return () => {
-      mounted = false;
-    };
-  }, [keyword, showRooms]);
+    setLocTotalPages(totalFilteredPages || 1);
+    // Reset về trang 1 khi keyword thay đổi
+    if (keyword) {
+      setLocPage(1);
+    }
+  }, [totalFilteredPages, keyword]);
 
   const loadRoomsByLocation = async (locationId: number) => {
     setLoading(true);
@@ -267,7 +281,7 @@ export default function SearchPage() {
               <p className="text-gray-700 text-lg">
                 Tìm thấy{" "}
                 <span className="font-bold text-gray-900">
-                  {locations.length}
+                  {filteredLocations.length}
                 </span>{" "}
                 địa điểm
               </p>
@@ -275,7 +289,7 @@ export default function SearchPage() {
 
             {/* Grid */}
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
-              {locations.map((loc) => (
+              {paginatedLocations.map((loc) => (
                 <div
                   key={loc.id}
                   className="group bg-white rounded-2xl overflow-hidden shadow-sm hover:shadow-xl transition-all duration-300 border border-gray-100"
@@ -338,7 +352,7 @@ export default function SearchPage() {
             </div>
 
             {/* Empty State */}
-            {locations.length === 0 && (
+            {filteredLocations.length === 0 && (
               <div className="text-center py-20">
                 <div className="text-7xl mb-6">🌍</div>
                 <h3 className="text-2xl font-bold text-gray-900 mb-2">
@@ -355,19 +369,10 @@ export default function SearchPage() {
               <div className="mt-16 flex items-center justify-center gap-3">
                 <button
                   disabled={locPage === 1}
-                  onClick={async () => {
+                  onClick={() => {
                     const newPage = Math.max(1, locPage - 1);
-                    const res = (await getLocationsPagedSearch({
-                      pageIndex: newPage,
-                      pageSize: 12,
-                      keyword,
-                    })) as LocationsResponse;
-                    if (res.success) {
-                      setLocations(res.locations || []);
-                      setLocPage(newPage);
-                      setLocTotalPages(res.pagination?.totalPages || 1);
-                      window.scrollTo({ top: 0, behavior: "smooth" });
-                    }
+                    setLocPage(newPage);
+                    window.scrollTo({ top: 0, behavior: "smooth" });
                   }}
                   className="px-6 py-3 bg-white border-2 border-gray-200 rounded-xl font-semibold text-gray-700 disabled:opacity-40 disabled:cursor-not-allowed hover:border-blue-600 hover:text-blue-600 transition-all duration-200"
                 >
@@ -378,19 +383,10 @@ export default function SearchPage() {
                 </div>
                 <button
                   disabled={locPage === locTotalPages}
-                  onClick={async () => {
+                  onClick={() => {
                     const newPage = Math.min(locTotalPages, locPage + 1);
-                    const res = (await getLocationsPagedSearch({
-                      pageIndex: newPage,
-                      pageSize: 12,
-                      keyword,
-                    })) as LocationsResponse;
-                    if (res.success) {
-                      setLocations(res.locations || []);
-                      setLocPage(newPage);
-                      setLocTotalPages(res.pagination?.totalPages || 1);
-                      window.scrollTo({ top: 0, behavior: "smooth" });
-                    }
+                    setLocPage(newPage);
+                    window.scrollTo({ top: 0, behavior: "smooth" });
                   }}
                   className="px-6 py-3 bg-white border-2 border-gray-200 rounded-xl font-semibold text-gray-700 disabled:opacity-40 disabled:cursor-not-allowed hover:border-blue-600 hover:text-blue-600 transition-all duration-200"
                 >

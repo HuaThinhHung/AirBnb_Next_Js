@@ -1,9 +1,10 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useMemo } from "react";
 import { getRooms, deleteRoom } from "@/lib/roomService";
 import { getLocations } from "@/lib/locationService";
 import Link from "next/link";
+import { searchWithoutAccents } from "@/lib/utils";
 
 interface Room {
   id: number;
@@ -63,16 +64,18 @@ export default function AdminRoomsPage() {
     }
   };
 
+  const [allRooms, setAllRooms] = useState<Room[]>([]);
+
   const fetchRooms = async () => {
     setLoading(true);
     
-    // Nếu có filter location, cần fetch tất cả phòng để filter và phân trang đúng
-    if (selectedLocation) {
-      // Fetch tất cả phòng để filter theo location
+    // Nếu có filter (searchTerm hoặc selectedLocation), cần fetch tất cả phòng để filter client-side
+    if (searchTerm || selectedLocation) {
+      // Fetch tất cả phòng để filter client-side
       const allRoomsResult = (await getRooms({
         pageIndex: 1,
         pageSize: 1000, // Lấy nhiều để có đủ dữ liệu filter
-        keyword: searchTerm,
+        keyword: "", // Không dùng keyword ở server, sẽ filter client-side
       })) as {
         success: boolean;
         rooms: Room[];
@@ -80,28 +83,14 @@ export default function AdminRoomsPage() {
       };
 
       if (allRoomsResult.success) {
-        // Filter theo location
-        const filteredRooms = allRoomsResult.rooms.filter(
-          (room) => room.maViTri === selectedLocation
-        );
-
-        // Phân trang client-side cho filtered results
-        const totalFiltered = filteredRooms.length;
-        const totalPages = Math.ceil(totalFiltered / pageSize);
-        const startIndex = (currentPage - 1) * pageSize;
-        const endIndex = startIndex + pageSize;
-        const paginatedRooms = filteredRooms.slice(startIndex, endIndex);
-
-        setRooms(paginatedRooms);
-        setTotalPages(totalPages || 1);
-        setTotalRows(totalFiltered);
+        setAllRooms(allRoomsResult.rooms);
       }
     } else {
-      // Không filter location, dùng server-side pagination
+      // Không có filter, dùng server-side pagination
       const result = (await getRooms({
         pageIndex: currentPage,
         pageSize: 10,
-        keyword: searchTerm,
+        keyword: "",
       })) as {
         success: boolean;
         rooms: Room[];
@@ -109,13 +98,58 @@ export default function AdminRoomsPage() {
       };
 
       if (result.success) {
-        setRooms(result.rooms);
+        setAllRooms(result.rooms);
+        // Không cần filter client-side, dùng pagination từ server
         setTotalPages(result.pagination?.totalPages || 1);
         setTotalRows(result.pagination?.totalRow || 0);
       }
     }
     setLoading(false);
   };
+
+  // Filter client-side (chỉ khi có searchTerm hoặc selectedLocation)
+  const filteredRooms = useMemo(() => {
+    // Nếu không có filter, trả về rooms gốc (đã được paginate từ server)
+    if (!searchTerm && !selectedLocation) {
+      return allRooms;
+    }
+
+    let filtered = [...allRooms];
+
+    // Filter theo search term (hỗ trợ không dấu)
+    if (searchTerm) {
+      filtered = filtered.filter((room) =>
+        searchWithoutAccents(room.tenPhong, searchTerm)
+      );
+    }
+
+    // Filter theo location
+    if (selectedLocation) {
+      filtered = filtered.filter((room) => room.maViTri === selectedLocation);
+    }
+
+    return filtered;
+  }, [allRooms, searchTerm, selectedLocation]);
+
+  // Cập nhật pagination và rooms dựa trên filtered rooms
+  useEffect(() => {
+    // Nếu có filter, cần phân trang client-side
+    if (searchTerm || selectedLocation) {
+      const totalFiltered = filteredRooms.length;
+      const totalPages = Math.ceil(totalFiltered / pageSize);
+      setTotalRows(totalFiltered);
+      setTotalPages(totalPages || 1);
+
+      // Phân trang
+      const startIndex = (currentPage - 1) * pageSize;
+      const endIndex = startIndex + pageSize;
+      const paginatedRooms = filteredRooms.slice(startIndex, endIndex);
+      setRooms(paginatedRooms);
+    } else {
+      // Không có filter, dùng rooms từ server (đã được paginate)
+      setRooms(filteredRooms);
+    }
+  }, [filteredRooms, currentPage, pageSize, searchTerm, selectedLocation]);
 
   const handleDelete = async (roomId: number, roomName: string) => {
     if (!confirm(`Bạn có chắc muốn xóa phòng "${roomName}"?`)) return;
@@ -200,7 +234,7 @@ export default function AdminRoomsPage() {
                 setSearchTerm(e.target.value);
                 setCurrentPage(1);
               }}
-              className="w-full px-4 py-2 border-2 border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 text-gray-900"
+              className="w-full px-4 py-2 border-2 border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 text-gray-900 font-medium placeholder-gray-400"
             />
           </div>
 

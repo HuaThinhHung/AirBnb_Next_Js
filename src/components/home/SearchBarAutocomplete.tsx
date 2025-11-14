@@ -2,7 +2,9 @@
 
 import { useState, useEffect, useRef } from "react";
 import { useRouter } from "next/navigation";
+import { flushSync } from "react-dom";
 import { getLocations } from "@/lib/locationService";
+import { searchWithoutAccents } from "@/lib/utils";
 
 type LocationItem = {
   id: number;
@@ -48,18 +50,16 @@ export default function SearchBarAutocomplete() {
     loadLocations();
   }, []);
 
-  // Filter locations based on query
+  // Filter locations based on query (hỗ trợ không dấu)
   useEffect(() => {
     if (!query.trim()) {
       setFilteredLocations([]);
       setIsOpen(false);
     } else {
-      const q = query.toLowerCase();
-      const filtered = locations.filter((loc) =>
-        `${loc.tenViTri || ""} ${loc.tinhThanh || ""} ${loc.quocGia || ""}`
-          .toLowerCase()
-          .includes(q)
-      );
+      const filtered = locations.filter((loc) => {
+        const searchText = `${loc.tenViTri || ""} ${loc.tinhThanh || ""} ${loc.quocGia || ""}`.trim();
+        return searchWithoutAccents(searchText, query);
+      });
       setFilteredLocations(filtered.slice(0, 6));
       setIsOpen(filtered.length > 0);
     }
@@ -81,12 +81,20 @@ export default function SearchBarAutocomplete() {
   }, []);
 
   const handleSelectLocation = (loc: LocationItem) => {
-    setQuery(`${loc.tenViTri}, ${loc.tinhThanh}`);
-    setIsOpen(false);
-    // Navigate to search with location
-    router.push(
-      `/search?location=${loc.id}&checkIn=${checkIn}&checkOut=${checkOut}&guests=${guests}`
-    );
+    const locationText = `${loc.tenViTri || ""}${loc.tinhThanh ? `, ${loc.tinhThanh}` : ""}${loc.quocGia ? `, ${loc.quocGia}` : ""}`.trim();
+    
+    // Sử dụng flushSync để force update state ngay lập tức
+    flushSync(() => {
+      setQuery(locationText);
+      setIsOpen(false);
+    });
+    
+    // Delay navigation để người dùng thấy text đã được chọn
+    setTimeout(() => {
+      router.push(
+        `/search?location=${loc.id}&checkIn=${checkIn}&checkOut=${checkOut}&guests=${guests}`
+      );
+    }, 300);
   };
 
   const handleSearch = (e: React.FormEvent) => {
@@ -134,7 +142,7 @@ export default function SearchBarAutocomplete() {
                 onChange={(e) => setQuery(e.target.value)}
                 onFocus={() => query && setIsOpen(true)}
                 placeholder="Tìm kiếm điểm đến"
-                className="w-full px-4 py-3 pl-10 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 dark:bg-gray-700 dark:text-white dark:placeholder-gray-400 transition-colors duration-200"
+                className="w-full px-4 py-3 pl-10 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 dark:bg-gray-700 dark:text-white dark:placeholder-gray-400 transition-colors duration-200 text-gray-900 font-medium placeholder-gray-400"
               />
               <svg
                 className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-blue-500"
@@ -164,7 +172,11 @@ export default function SearchBarAutocomplete() {
                       <li key={loc.id}>
                         <button
                           type="button"
-                          onClick={() => handleSelectLocation(loc)}
+                          onClick={(e) => {
+                            e.preventDefault();
+                            e.stopPropagation();
+                            handleSelectLocation(loc);
+                          }}
                           className="w-full px-4 py-3 hover:bg-blue-50 dark:hover:bg-gray-700 flex items-center gap-3 transition-colors text-left"
                         >
                           <div className="flex-shrink-0 w-12 h-12 rounded-lg overflow-hidden bg-gray-100 dark:bg-gray-600">
@@ -306,7 +318,7 @@ export default function SearchBarAutocomplete() {
                 onChange={(e) => setQuery(e.target.value)}
                 onFocus={() => query && setIsOpen(true)}
                 placeholder="Tìm kiếm điểm đến"
-                className="w-full px-4 py-3 pl-10 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 dark:bg-gray-700 dark:text-white dark:placeholder-gray-400 transition-colors duration-200"
+                className="w-full px-4 py-3 pl-10 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 dark:bg-gray-700 dark:text-white dark:placeholder-gray-400 transition-colors duration-200 text-gray-900 font-medium placeholder-gray-400"
               />
               <svg
                 className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-blue-500"
@@ -331,7 +343,11 @@ export default function SearchBarAutocomplete() {
                     <li key={loc.id}>
                       <button
                         type="button"
-                        onClick={() => handleSelectLocation(loc)}
+                        onClick={(e) => {
+                          e.preventDefault();
+                          e.stopPropagation();
+                          handleSelectLocation(loc);
+                        }}
                         className="w-full px-4 py-3 hover:bg-blue-50 dark:hover:bg-gray-700 flex items-center gap-3 transition-colors text-left"
                       >
                         <div className="flex-shrink-0 w-12 h-12 rounded-lg overflow-hidden bg-gray-100 dark:bg-gray-600">

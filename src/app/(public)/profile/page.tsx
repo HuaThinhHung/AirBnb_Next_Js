@@ -4,6 +4,7 @@ import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import { getCurrentUser, updateUser, getUserBookings } from "@/lib/userService";
 import { logout } from "@/lib/authService";
+import { getRoomById } from "@/lib/roomService";
 import Link from "next/link";
 
 interface User {
@@ -26,10 +27,16 @@ interface Booking {
   maNguoiDung: number;
 }
 
+interface RoomInfo {
+  id: number;
+  tenPhong: string;
+}
+
 export default function ProfilePage() {
   const router = useRouter();
   const [user, setUser] = useState<User | null>(null);
   const [bookings, setBookings] = useState<Booking[]>([]);
+  const [roomInfoMap, setRoomInfoMap] = useState<Map<number, RoomInfo>>(new Map());
   const [loading, setLoading] = useState(true);
   const [isEditing, setIsEditing] = useState(false);
 
@@ -70,6 +77,38 @@ export default function ProfilePage() {
     };
     if (result.success) {
       setBookings(result.bookings);
+      
+      // Fetch thông tin phòng cho mỗi booking
+      const roomInfoPromises = result.bookings.map(async (booking) => {
+        try {
+          const roomResult = (await getRoomById(booking.maPhong)) as {
+            success: boolean;
+            room?: RoomInfo;
+            message?: string;
+          };
+          if (roomResult.success && roomResult.room) {
+            return {
+              roomId: booking.maPhong,
+              roomInfo: {
+                id: roomResult.room.id,
+                tenPhong: roomResult.room.tenPhong || `Phòng #${booking.maPhong}`,
+              },
+            };
+          }
+        } catch (error) {
+          console.error(`Lỗi khi lấy thông tin phòng ${booking.maPhong}:`, error);
+        }
+        return null;
+      });
+
+      const roomInfos = await Promise.all(roomInfoPromises);
+      const newRoomInfoMap = new Map<number, RoomInfo>();
+      roomInfos.forEach((info) => {
+        if (info) {
+          newRoomInfoMap.set(info.roomId, info.roomInfo);
+        }
+      });
+      setRoomInfoMap(newRoomInfoMap);
     }
     setLoading(false);
   };
@@ -334,38 +373,44 @@ export default function ProfilePage() {
                         <div className="flex-1">
                           <div className="flex items-center gap-2 mb-2">
                             <h3 className="font-bold text-gray-900 text-lg">
-                              Phòng #{booking.maPhong}
+                              {roomInfoMap.get(booking.maPhong)?.tenPhong || `Phòng #${booking.maPhong}`}
                             </h3>
                             <span className="px-3 py-1 bg-green-100 text-green-700 text-xs font-semibold rounded-full">
                               Đã xác nhận
                             </span>
                           </div>
-                          <div className="grid grid-cols-2 md:grid-cols-4 gap-4 text-sm">
-                            <div>
-                              <span className="text-gray-500">Nhận phòng:</span>
-                              <p className="font-semibold text-gray-900">
-                                {checkIn.toLocaleDateString("vi-VN")}
-                              </p>
-                            </div>
-                            <div>
-                              <span className="text-gray-500">Trả phòng:</span>
-                              <p className="font-semibold text-gray-900">
-                                {checkOut.toLocaleDateString("vi-VN")}
-                              </p>
-                            </div>
-                            <div>
-                              <span className="text-gray-500">Số đêm:</span>
-                              <p className="font-semibold text-gray-900">
-                                {nights} đêm
-                              </p>
-                            </div>
-                            <div>
-                              <span className="text-gray-500">Số khách:</span>
-                              <p className="font-semibold text-gray-900">
-                                {booking.soLuongKhach} khách
-                              </p>
-                            </div>
-                          </div>
+                           <div className="grid grid-cols-2 md:grid-cols-5 gap-4 text-sm">
+                             <div>
+                               <span className="text-gray-500">ID đặt phòng:</span>
+                               <p className="font-semibold text-gray-900">
+                                 #{booking.id}
+                               </p>
+                             </div>
+                             <div>
+                               <span className="text-gray-500">Nhận phòng:</span>
+                               <p className="font-semibold text-gray-900">
+                                 {checkIn.toLocaleDateString("vi-VN")}
+                               </p>
+                             </div>
+                             <div>
+                               <span className="text-gray-500">Trả phòng:</span>
+                               <p className="font-semibold text-gray-900">
+                                 {checkOut.toLocaleDateString("vi-VN")}
+                               </p>
+                             </div>
+                             <div>
+                               <span className="text-gray-500">Số đêm:</span>
+                               <p className="font-semibold text-gray-900">
+                                 {nights} đêm
+                               </p>
+                             </div>
+                             <div>
+                               <span className="text-gray-500">Số khách:</span>
+                               <p className="font-semibold text-gray-900">
+                                 {booking.soLuongKhach} khách
+                               </p>
+                             </div>
+                           </div>
                         </div>
                         <Link
                           href={`/rooms/${booking.maPhong}`}
