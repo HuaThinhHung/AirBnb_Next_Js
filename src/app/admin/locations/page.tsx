@@ -3,6 +3,7 @@
 import { useState, useEffect, useRef } from "react";
 import { getLocationsPagedSearch, deleteLocation } from "@/lib/locationService";
 import Link from "next/link";
+import { removeVietnameseAccents } from "@/lib/utils";
 
 interface Location {
   id: number;
@@ -39,7 +40,7 @@ export default function AdminLocationsPage() {
     keyword: string,
     page: number
   ) => {
-    const normalized = keyword.trim().toLowerCase();
+    const normalized = removeVietnameseAccents(keyword.trim());
     let filtered = [...source];
 
     if (normalized) {
@@ -51,7 +52,7 @@ export default function AdminLocationsPage() {
           loc.quocGia || "",
         ];
         return values.some((value) =>
-          value.toLowerCase().includes(normalized)
+          removeVietnameseAccents(value).includes(normalized)
         );
       });
     }

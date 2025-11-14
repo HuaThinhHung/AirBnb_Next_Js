@@ -4,7 +4,7 @@ import { useEffect, useMemo, useState } from "react";
 import { getRooms, deleteRoom } from "@/lib/roomService";
 import { getLocations } from "@/lib/locationService";
 import Link from "next/link";
-import { searchWithoutAccents } from "@/lib/utils";
+import { removeVietnameseAccents } from "@/lib/utils";
 
 interface Room {
   id: number;
@@ -137,7 +137,7 @@ export default function AdminRoomsPage() {
     locationId: number | null,
     page: number
   ) => {
-    const normalized = keyword.trim().toLowerCase();
+    const normalizedKeyword = removeVietnameseAccents(keyword.trim());
     let filteredRooms = [...sourceRooms];
 
     if (locationId) {
@@ -146,16 +146,20 @@ export default function AdminRoomsPage() {
       );
     }
 
-    if (normalized) {
+    if (normalizedKeyword) {
       filteredRooms = filteredRooms.filter((room) => {
-        const locationName = getLocationName(room.maViTri).toLowerCase();
+        const locationName = removeVietnameseAccents(
+          getLocationName(room.maViTri)
+        );
+        const roomName = removeVietnameseAccents(room.tenPhong);
+        const formattedPrice = removeVietnameseAccents(formatPrice(room.giaTien));
         const priceString = room.giaTien.toString();
         return (
-          room.tenPhong.toLowerCase().includes(normalized) ||
-          room.id.toString().includes(normalized) ||
-          locationName.includes(normalized) ||
-          priceString.includes(normalized) ||
-          formatPrice(room.giaTien).toLowerCase().includes(normalized)
+          roomName.includes(normalizedKeyword) ||
+          room.id.toString().includes(normalizedKeyword) ||
+          locationName.includes(normalizedKeyword) ||
+          priceString.includes(normalizedKeyword) ||
+          formattedPrice.includes(normalizedKeyword)
         );
       });
     }
@@ -176,49 +180,6 @@ export default function AdminRoomsPage() {
   };
 
   // Filter client-side (chỉ khi có searchTerm hoặc selectedLocation)
-  const filteredRooms = useMemo(() => {
-    // Nếu không có filter, trả về rooms gốc (đã được paginate từ server)
-    if (!searchTerm && !selectedLocation) {
-      return allRooms;
-    }
-
-    let filtered = [...allRooms];
-
-    // Filter theo search term (hỗ trợ không dấu)
-    if (searchTerm) {
-      filtered = filtered.filter((room) =>
-        searchWithoutAccents(room.tenPhong, searchTerm)
-      );
-    }
-
-    // Filter theo location
-    if (selectedLocation) {
-      filtered = filtered.filter((room) => room.maViTri === selectedLocation);
-    }
-
-    return filtered;
-  }, [allRooms, searchTerm, selectedLocation]);
-
-  // Cập nhật pagination và rooms dựa trên filtered rooms
-  useEffect(() => {
-    // Nếu có filter, cần phân trang client-side
-    if (searchTerm || selectedLocation) {
-      const totalFiltered = filteredRooms.length;
-      const totalPages = Math.ceil(totalFiltered / pageSize);
-      setTotalRows(totalFiltered);
-      setTotalPages(totalPages || 1);
-
-      // Phân trang
-      const startIndex = (currentPage - 1) * pageSize;
-      const endIndex = startIndex + pageSize;
-      const paginatedRooms = filteredRooms.slice(startIndex, endIndex);
-      setRooms(paginatedRooms);
-    } else {
-      // Không có filter, dùng rooms từ server (đã được paginate)
-      setRooms(filteredRooms);
-    }
-  }, [filteredRooms, currentPage, pageSize, searchTerm, selectedLocation]);
-
   const handleDelete = async (roomId: number, roomName: string) => {
     if (!confirm(`Bạn có chắc muốn xóa phòng "${roomName}"?`)) return;
 
