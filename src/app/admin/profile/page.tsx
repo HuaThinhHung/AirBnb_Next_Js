@@ -20,6 +20,14 @@ interface UserProfile {
   address?: string;
 }
 
+type StoredUser = {
+  id?: number;
+  user?: {
+    id?: number;
+  };
+  [key: string]: unknown;
+};
+
 export default function AdminProfilePage() {
   const [user, setUser] = useState<UserProfile | null>(null);
   const [loading, setLoading] = useState(true);
@@ -39,13 +47,19 @@ export default function AdminProfilePage() {
   useEffect(() => {
     const loadProfile = async () => {
       setLoading(true);
-      const localUser = getCurrentUser();
+      const localUser = getCurrentUser() as unknown as StoredUser | null;
       if (!localUser) {
         setLoading(false);
         setMessage("Không tìm thấy thông tin người dùng. Vui lòng đăng nhập lại.");
         return;
       }
-      const result = (await getUserById(localUser.id)) as {
+      const userId = localUser?.user?.id ?? localUser?.id;
+      if (!userId) {
+        setLoading(false);
+        setMessage("Không hợp lệ ID người dùng. Vui lòng đăng nhập lại.");
+        return;
+      }
+      const result = (await getUserById(Number(userId))) as {
         success: boolean;
         user?: UserProfile;
         message?: string;
@@ -99,7 +113,14 @@ export default function AdminProfilePage() {
     };
     setAvatarUploading(false);
     if (result.success && result.avatar) {
-      setFormData((prev) => ({ ...prev, avatar: result.avatar }));
+      const newAvatar = result.avatar ?? "";
+      setFormData((prev) => ({ ...prev, avatar: newAvatar }));
+      setUser((prev) => (prev ? { ...prev, avatar: newAvatar } : prev));
+      const currentUser = getCurrentUser();
+      if (currentUser) {
+        const updatedUser = { ...currentUser, avatar: newAvatar };
+        localStorage.setItem("user", JSON.stringify(updatedUser));
+      }
       setMessage("✅ Upload avatar thành công!");
     } else {
       setMessage(result.message || "❌ Không thể upload avatar.");

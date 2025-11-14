@@ -125,14 +125,14 @@ export default function AboutPage() {
               {
                 name: "Hứa Thịnh Hưng",
                 role: "Dev-1",
-                image:
-                  "hung.jpg",
+                image: "hung.jpg",
+                facebook: "https://www.facebook.com/huahung0601/",
               },
               {
                 name: "Trần Gia Kiệt",
                 role: "Dev-2",
-                image:
-                  "kiet.jpg",
+                image: "kiet.jpg",
+                facebook: "https://www.facebook.com/tran.kiet.646179",
               },
             ].map((member, index) => (
               <div
@@ -151,6 +151,16 @@ export default function AboutPage() {
                     {member.name}
                   </h3>
                   <p className="text-blue-600 font-medium">{member.role}</p>
+                  {member.facebook && (
+                    <Link
+                      href={member.facebook}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="inline-block mt-4 px-4 py-2 rounded-lg border border-blue-600 text-blue-600 font-semibold hover:bg-blue-50 transition-colors"
+                    >
+                      Facebook
+                    </Link>
+                  )}
                 </div>
               </div>
             ))}

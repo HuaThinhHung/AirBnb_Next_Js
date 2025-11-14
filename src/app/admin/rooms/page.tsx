@@ -1,7 +1,7 @@
 "use client";
 
-import { useState, useEffect } from "react";
-import { getRooms, getRoomsByLocation, deleteRoom } from "@/lib/roomService";
+import { useEffect, useMemo, useState } from "react";
+import { getRooms, deleteRoom } from "@/lib/roomService";
 import { getLocations } from "@/lib/locationService";
 import Link from "next/link";
 
@@ -36,29 +36,42 @@ interface Location {
 
 export default function AdminRoomsPage() {
   const [rooms, setRooms] = useState<Room[]>([]);
+  const [allRooms, setAllRooms] = useState<Room[]>([]);
   const [locations, setLocations] = useState<Location[]>([]);
   const [loading, setLoading] = useState(true);
+  const [syncing, setSyncing] = useState(false);
+  const [lastSyncedAt, setLastSyncedAt] = useState<string>("");
   const [searchTerm, setSearchTerm] = useState("");
+  const [searchSuggestions, setSearchSuggestions] = useState<string[]>([]);
   const [selectedLocation, setSelectedLocation] = useState<number | null>(null);
   const [currentPage, setCurrentPage] = useState(1);
   const [totalPages, setTotalPages] = useState(1);
   const [totalRows, setTotalRows] = useState(0);
   const pageSize = 10; // Hiển thị đúng 10 items mỗi trang
+  const fetchBatchSize = 100;
+
+  const locationMap = useMemo(() => {
+    const map = new Map<number, Location>();
+    locations.forEach((location) => {
+      map.set(location.id, location);
+    });
+    return map;
+  }, [locations]);
 
   useEffect(() => {
-    fetchLocations();
+    const initialize = async () => {
+      setLoading(true);
+      await Promise.all([fetchLocations(), syncRooms()]);
+      setLoading(false);
+    };
+    initialize();
   }, []);
 
   useEffect(() => {
-    fetchRooms();
-  }, [currentPage, searchTerm, selectedLocation]);
-
-  // Đảm bảo currentPage không vượt quá totalPages
-  useEffect(() => {
-    if (totalPages > 0 && currentPage > totalPages) {
-      setCurrentPage(1);
-    }
-  }, [totalPages, currentPage]);
+    if (allRooms.length === 0) return;
+    applyFiltersAndPaginate(allRooms, searchTerm, selectedLocation, currentPage);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [allRooms, searchTerm, selectedLocation, currentPage, locations]);
 
   const fetchLocations = async () => {
     const result = (await getLocations()) as {
@@ -70,64 +83,95 @@ export default function AdminRoomsPage() {
     }
   };
 
-  const fetchRooms = async () => {
-    setLoading(true);
-    const keyword = searchTerm.trim().toLowerCase();
+  const fetchAllRooms = async () => {
+    const aggregated: Room[] = [];
+    let pageIndex = 1;
+    let totalPageCount = 1;
 
-    if (selectedLocation) {
-      const locationResult = (await getRoomsByLocation(
-        selectedLocation
-      )) as {
-        success: boolean;
-        rooms: Room[];
-        message?: string;
-      };
-
-      if (locationResult.success) {
-        let filteredRooms = locationResult.rooms;
-        if (keyword) {
-          filteredRooms = filteredRooms.filter((room) =>
-            room.tenPhong.toLowerCase().includes(keyword)
-          );
-        }
-
-        const totalFiltered = filteredRooms.length;
-        const startIndex = (currentPage - 1) * pageSize;
-        const paginatedRooms = filteredRooms.slice(
-          startIndex,
-          startIndex + pageSize
-        );
-
-        setRooms(paginatedRooms);
-        setTotalRows(totalFiltered);
-        setTotalPages(Math.max(1, Math.ceil(totalFiltered / pageSize)));
-      } else {
-        setRooms([]);
-        setTotalRows(0);
-        setTotalPages(1);
-      }
-    } else {
+    do {
       const result = (await getRooms({
-        pageIndex: currentPage,
-        pageSize,
-        keyword: searchTerm,
+        pageIndex,
+        pageSize: fetchBatchSize,
+        keyword: "",
       })) as {
         success: boolean;
         rooms: Room[];
         pagination?: { totalPages: number; totalRow: number };
       };
 
-      if (result.success) {
-        setRooms(result.rooms);
-        setTotalPages(result.pagination?.totalPages || 1);
-        setTotalRows(result.pagination?.totalRow || 0);
-      } else {
-        setRooms([]);
-        setTotalRows(0);
-        setTotalPages(1);
+      if (!result.success) {
+        break;
       }
+
+      aggregated.push(...(result.rooms || []));
+      totalPageCount = result.pagination?.totalPages || 1;
+      pageIndex += 1;
+    } while (pageIndex <= totalPageCount);
+
+    return aggregated;
+  };
+
+  const syncRooms = async () => {
+    setSyncing(true);
+    try {
+      const aggregatedRooms = await fetchAllRooms();
+      setAllRooms(aggregatedRooms);
+      setLastSyncedAt(new Date().toLocaleString());
+    } finally {
+      setSyncing(false);
     }
-    setLoading(false);
+  };
+
+  const buildSearchSuggestions = (list: Room[]) =>
+    list.slice(0, 30).map((room) => {
+      const locationName = getLocationName(room.maViTri);
+      return `#${room.id} • ${room.tenPhong} • ${locationName} • ${formatPrice(
+        room.giaTien
+      )}`;
+    });
+
+  const applyFiltersAndPaginate = (
+    sourceRooms: Room[],
+    keyword: string,
+    locationId: number | null,
+    page: number
+  ) => {
+    const normalized = keyword.trim().toLowerCase();
+    let filteredRooms = [...sourceRooms];
+
+    if (locationId) {
+      filteredRooms = filteredRooms.filter(
+        (room) => Number(room.maViTri) === Number(locationId)
+      );
+    }
+
+    if (normalized) {
+      filteredRooms = filteredRooms.filter((room) => {
+        const locationName = getLocationName(room.maViTri).toLowerCase();
+        const priceString = room.giaTien.toString();
+        return (
+          room.tenPhong.toLowerCase().includes(normalized) ||
+          room.id.toString().includes(normalized) ||
+          locationName.includes(normalized) ||
+          priceString.includes(normalized) ||
+          formatPrice(room.giaTien).toLowerCase().includes(normalized)
+        );
+      });
+    }
+
+    const total = filteredRooms.length;
+    const totalPagesCalculated = Math.max(1, Math.ceil(total / pageSize));
+    const safePage = Math.min(Math.max(1, page), totalPagesCalculated);
+    const startIndex = (safePage - 1) * pageSize;
+    const paginated = filteredRooms.slice(startIndex, startIndex + pageSize);
+
+    setRooms(paginated);
+    setTotalRows(total);
+    setTotalPages(totalPagesCalculated);
+    setSearchSuggestions(buildSearchSuggestions(filteredRooms));
+    if (safePage !== page) {
+      setCurrentPage(safePage);
+    }
   };
 
   const handleDelete = async (roomId: number, roomName: string) => {
@@ -139,17 +183,23 @@ export default function AdminRoomsPage() {
     };
     if (result.success) {
       alert("✅ Xóa phòng thành công!");
-      fetchRooms();
+      setAllRooms((prev) => prev.filter((room) => room.id !== roomId));
     } else {
       alert("❌ Lỗi: " + (result.message || "Không thể xóa phòng"));
     }
   };
 
   const getLocationName = (maViTri: number) => {
-    const location = locations.find((loc) => loc.id === maViTri);
+    const location = locationMap.get(maViTri);
     return location
       ? `${location.tenViTri}, ${location.tinhThanh}`
       : "Chưa có vị trí";
+  };
+
+  const handleManualRefresh = async () => {
+    setLoading(true);
+    await syncRooms();
+    setLoading(false);
   };
 
   const formatPrice = (price: number) => {
@@ -176,27 +226,36 @@ export default function AdminRoomsPage() {
               ) : (
                 "Chưa có phòng nào"
               )}
+              {lastSyncedAt && (
+                <>
+                  {" "}
+                  | Lần đồng bộ:{" "}
+                  <span className="text-gray-700 font-medium">{lastSyncedAt}</span>
+                </>
+              )}
             </p>
           </div>
-          <Link
-            href="/admin/rooms/create"
-            className="flex items-center gap-2 px-6 py-3 bg-blue-600 hover:bg-blue-700 text-white font-semibold rounded-lg transition-colors shadow-md"
-          >
-            <svg
-              className="w-5 h-5"
-              fill="none"
-              stroke="currentColor"
-              viewBox="0 0 24 24"
+          <div className="flex items-center gap-3">
+            <Link
+              href="/admin/rooms/create"
+              className="flex items-center gap-2 px-6 py-3 bg-blue-600 hover:bg-blue-700 text-white font-semibold rounded-lg transition-colors shadow-md"
             >
-              <path
-                strokeLinecap="round"
-                strokeLinejoin="round"
-                strokeWidth={2}
-                d="M12 4v16m8-8H4"
-              />
-            </svg>
-            Thêm phòng mới
-          </Link>
+              <svg
+                className="w-5 h-5"
+                fill="none"
+                stroke="currentColor"
+                viewBox="0 0 24 24"
+              >
+                <path
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                  strokeWidth={2}
+                  d="M12 4v16m8-8H4"
+                />
+              </svg>
+              Thêm phòng mới
+            </Link>
+          </div>
         </div>
       </div>
 
@@ -207,14 +266,20 @@ export default function AdminRoomsPage() {
           <div className="md:col-span-2">
             <input
               type="text"
-              placeholder="🔍 Tìm kiếm theo tên phòng..."
+              placeholder="🔍 Tìm theo tên phòng, vị trí hoặc giá..."
               value={searchTerm}
               onChange={(e) => {
                 setSearchTerm(e.target.value);
                 setCurrentPage(1);
               }}
+              list="rooms-suggestions"
               className="w-full px-4 py-2 border-2 border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 text-gray-900"
             />
+            <datalist id="rooms-suggestions">
+              {searchSuggestions.map((suggestion) => (
+                <option key={suggestion} value={suggestion} />
+              ))}
+            </datalist>
           </div>
 
           {/* Filter by Location */}

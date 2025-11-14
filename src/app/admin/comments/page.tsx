@@ -25,7 +25,10 @@ interface CommentMutationResult {
 
 export default function AdminCommentsPage() {
   const [comments, setComments] = useState<CommentItem[]>([]);
+  const [allComments, setAllComments] = useState<CommentItem[]>([]);
   const [loading, setLoading] = useState(true);
+  const [syncing, setSyncing] = useState(false);
+  const [lastSyncedAt, setLastSyncedAt] = useState<string>("");
   const [searchTerm, setSearchTerm] = useState("");
   const [currentPage, setCurrentPage] = useState(1);
   const [totalPages, setTotalPages] = useState(1);
@@ -46,8 +49,19 @@ export default function AdminCommentsPage() {
   });
 
   useEffect(() => {
-    fetchComments();
-  }, [currentPage, searchTerm]);
+    const initialize = async () => {
+      setLoading(true);
+      await syncComments();
+      setLoading(false);
+    };
+    initialize();
+  }, []);
+
+  useEffect(() => {
+    if (allComments.length === 0) return;
+    applyFiltersAndPaginate(allComments, searchTerm, currentPage);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [allComments, searchTerm, currentPage]);
 
   useEffect(() => {
     if (topRef.current) {
@@ -55,44 +69,66 @@ export default function AdminCommentsPage() {
     }
   }, [currentPage]);
 
-  const fetchComments = async () => {
-    setLoading(true);
-    const result = (await getAllComments()) as {
-      success: boolean;
-      comments: CommentItem[];
-      message?: string;
-    };
+  const buildSuggestions = (list: CommentItem[]) =>
+    list
+      .slice(0, 30)
+      .map(
+        (comment) =>
+          `${comment.id} - Phòng ${comment.maPhong} - User ${comment.maNguoiBinhLuan}`
+      );
 
-    if (result.success) {
-      let filtered = result.comments;
-      if (searchTerm) {
-        const lower = searchTerm.toLowerCase();
-        filtered = filtered.filter(
-          (comment) =>
-            comment.id.toString().includes(lower) ||
-            comment.maPhong.toString().includes(lower) ||
-            comment.maNguoiBinhLuan.toString().includes(lower) ||
-            comment.noiDung.toLowerCase().includes(lower)
-        );
-      }
+  const applyFiltersAndPaginate = (
+    source: CommentItem[],
+    keyword: string,
+    page: number
+  ) => {
+    const normalized = keyword.trim().toLowerCase();
+    let filtered = [...source];
 
-      const startIndex = (currentPage - 1) * pageSize;
-      const endIndex = startIndex + pageSize;
-      setComments(filtered.slice(startIndex, endIndex));
-      setTotalRows(filtered.length);
-      setTotalPages(Math.max(1, Math.ceil(filtered.length / pageSize)));
-      const suggestionList = result.comments
-        .map(
-          (comment) =>
-            `${comment.id} - Phòng ${comment.maPhong} - User ${comment.maNguoiBinhLuan}`
-        )
-        .slice(0, 30);
-      setSearchSuggestions(suggestionList);
-    } else {
-      setComments([]);
-      setTotalRows(0);
-      setTotalPages(1);
+    if (normalized) {
+      filtered = filtered.filter(
+        (comment) =>
+          comment.id.toString().includes(normalized) ||
+          comment.maPhong.toString().includes(normalized) ||
+          comment.maNguoiBinhLuan.toString().includes(normalized) ||
+          comment.noiDung.toLowerCase().includes(normalized)
+      );
     }
+
+    const total = filtered.length;
+    const totalPagesCalc = Math.max(1, Math.ceil(total / pageSize));
+    const safePage = Math.min(Math.max(1, page), totalPagesCalc);
+    const startIndex = (safePage - 1) * pageSize;
+    setComments(filtered.slice(startIndex, startIndex + pageSize));
+    setTotalRows(total);
+    setTotalPages(totalPagesCalc);
+    setSearchSuggestions(buildSuggestions(filtered));
+    if (safePage !== page) {
+      setCurrentPage(safePage);
+    }
+  };
+
+  const syncComments = async () => {
+    setSyncing(true);
+    try {
+      const result = (await getAllComments()) as {
+        success: boolean;
+        comments: CommentItem[];
+      };
+      if (result.success) {
+        setAllComments(result.comments || []);
+        setLastSyncedAt(new Date().toLocaleString());
+      } else {
+        setAllComments([]);
+      }
+    } finally {
+      setSyncing(false);
+    }
+  };
+
+  const handleManualRefresh = async () => {
+    setLoading(true);
+    await syncComments();
     setLoading(false);
   };
 
@@ -136,7 +172,7 @@ export default function AdminCommentsPage() {
     const result = (await deleteComment(commentId)) as CommentMutationResult;
     if (result.success) {
       alert("✅ Xóa bình luận thành công!");
-      fetchComments();
+      setAllComments((prev) => prev.filter((comment) => comment.id !== commentId));
     } else {
       alert(result.message || "❌ Không thể xóa bình luận");
     }
@@ -200,7 +236,7 @@ export default function AdminCommentsPage() {
     if (result.success) {
       alert(isEditing ? "✅ Cập nhật bình luận thành công!" : "✅ Thêm bình luận thành công!");
       setModalOpen(false);
-      fetchComments();
+      await handleManualRefresh();
     } else {
       setFormError(result.message || "Đã xảy ra lỗi, vui lòng thử lại.");
     }
@@ -229,14 +265,30 @@ export default function AdminCommentsPage() {
               ) : (
                 "Chưa có bình luận nào"
               )}
+              {lastSyncedAt && (
+                <>
+                  {" "}
+                  | Lần đồng bộ:{" "}
+                  <span className="text-gray-700 font-medium">{lastSyncedAt}</span>
+                </>
+              )}
             </p>
           </div>
-          <button
-            onClick={openCreateModal}
-            className="px-6 py-2 bg-blue-600 hover:bg-blue-700 text-white font-semibold rounded-lg shadow-md transition-colors"
-          >
-            + Thêm bình luận
-          </button>
+          <div className="flex items-center gap-3">
+            <button
+              onClick={handleManualRefresh}
+              disabled={loading || syncing}
+              className="px-5 py-2 border border-gray-300 rounded-lg font-semibold text-gray-700 hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+            >
+              {syncing ? "Đang đồng bộ..." : "↻ Đồng bộ dữ liệu"}
+            </button>
+            <button
+              onClick={openCreateModal}
+              className="px-6 py-2 bg-blue-600 hover:bg-blue-700 text-white font-semibold rounded-lg shadow-md transition-colors"
+            >
+              + Thêm bình luận
+            </button>
+          </div>
         </div>
       </div>
 

@@ -14,6 +14,8 @@ import Link from "next/link";
 interface Booking {
   id: number;
   maPhong: number;
+  hinhAnh?: string;
+  tenPhong?: string;
   ngayDen: string;
   ngayDi: string;
   soLuongKhach: number;
@@ -31,13 +33,20 @@ interface BookingMutationResult {
 
 export default function AdminBookingsPage() {
   const [bookings, setBookings] = useState<Booking[]>([]);
+  const [allBookings, setAllBookings] = useState<Booking[]>([]);
   const [loading, setLoading] = useState(true);
+  const [syncing, setSyncing] = useState(false);
+  const [lastSyncedAt, setLastSyncedAt] = useState<string>("");
   const [searchTerm, setSearchTerm] = useState("");
   const [currentPage, setCurrentPage] = useState(1);
   const [totalPages, setTotalPages] = useState(1);
   const [totalRows, setTotalRows] = useState(0);
   const [roomAddresses, setRoomAddresses] = useState<RoomAddress>({});
   const [loadingAddresses, setLoadingAddresses] = useState<Set<number>>(new Set());
+  const [roomImages, setRoomImages] = useState<Record<number, string>>({});
+  const [roomNames, setRoomNames] = useState<Record<number, string>>({});
+  const defaultRoomImage =
+    "https://images.unsplash.com/photo-1566073771259-6a8506099945?q=80&w=400&auto=format&fit=crop";
   const pageSize = 10;
   const topRef = useRef<HTMLDivElement>(null);
   const [searchSuggestions, setSearchSuggestions] = useState<string[]>([]);
@@ -55,8 +64,19 @@ export default function AdminBookingsPage() {
   });
 
   useEffect(() => {
-    fetchBookings();
-  }, [currentPage, searchTerm]);
+    const initialize = async () => {
+      setLoading(true);
+      await syncBookings();
+      setLoading(false);
+    };
+    initialize();
+  }, []);
+
+  useEffect(() => {
+    if (allBookings.length === 0) return;
+    applyFiltersAndPaginate(allBookings, searchTerm, currentPage);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [allBookings, searchTerm, currentPage]);
 
   // Scroll to top khi chuyển trang
   useEffect(() => {
@@ -65,45 +85,70 @@ export default function AdminBookingsPage() {
     }
   }, [currentPage]);
 
-  const fetchBookings = async () => {
-    setLoading(true);
-    const result = (await getAllBookings()) as {
-      success: boolean;
-      bookings: Booking[];
-    };
+  const buildSuggestions = (list: Booking[]) =>
+    list
+      .slice(0, 30)
+      .map(
+        (booking) =>
+          `${booking.id} - Phòng ${booking.maPhong} - User ${booking.maNguoiDung}`
+      );
 
-    if (result.success) {
-      const normalized = searchTerm.trim().toLowerCase();
-      let filteredBookings = result.bookings;
+  const applyFiltersAndPaginate = (
+    source: Booking[],
+    keyword: string,
+    page: number
+  ) => {
+    const normalized = keyword.trim().toLowerCase();
+    let filteredBookings = [...source];
 
-      // Client-side search
-      if (searchTerm) {
-        const includesTerm = (value: string | number) =>
-          value.toString().toLowerCase().includes(normalized);
-        filteredBookings = filteredBookings.filter(
-          (booking) =>
-            includesTerm(booking.id) ||
-            includesTerm(booking.maPhong) ||
-            includesTerm(booking.maNguoiDung)
-        );
-      }
-
-      // Client-side pagination
-      const startIndex = (currentPage - 1) * pageSize;
-      const endIndex = startIndex + pageSize;
-      const paginatedBookings = filteredBookings.slice(startIndex, endIndex);
-
-      setBookings(paginatedBookings);
-      setTotalRows(filteredBookings.length);
-      setTotalPages(Math.ceil(filteredBookings.length / pageSize));
-      const suggestionList = result.bookings
-        .map(
-          (booking) =>
-            `${booking.id} - Phòng ${booking.maPhong} - User ${booking.maNguoiDung}`
-        )
-        .slice(0, 30);
-      setSearchSuggestions(suggestionList);
+    if (normalized) {
+      const includesTerm = (value: string | number) =>
+        value.toString().toLowerCase().includes(normalized);
+      filteredBookings = filteredBookings.filter(
+        (booking) =>
+          includesTerm(booking.id) ||
+          includesTerm(booking.maPhong) ||
+          includesTerm(booking.maNguoiDung)
+      );
     }
+
+    const total = filteredBookings.length;
+    const totalPagesCalc = Math.max(1, Math.ceil(total / pageSize));
+    const safePage = Math.min(Math.max(1, page), totalPagesCalc);
+    const startIndex = (safePage - 1) * pageSize;
+    const paginatedBookings = filteredBookings.slice(
+      startIndex,
+      startIndex + pageSize
+    );
+
+    setBookings(paginatedBookings);
+    setTotalRows(total);
+    setTotalPages(totalPagesCalc);
+    setSearchSuggestions(buildSuggestions(filteredBookings));
+    if (safePage !== page) {
+      setCurrentPage(safePage);
+    }
+  };
+
+  const syncBookings = async () => {
+    setSyncing(true);
+    try {
+      const result = (await getAllBookings()) as {
+        success: boolean;
+        bookings: Booking[];
+      };
+      if (result.success) {
+        setAllBookings(result.bookings || []);
+        setLastSyncedAt(new Date().toLocaleString());
+      }
+    } finally {
+      setSyncing(false);
+    }
+  };
+
+  const handleManualRefresh = async () => {
+    setLoading(true);
+    await syncBookings();
     setLoading(false);
   };
 
@@ -171,7 +216,7 @@ export default function AdminBookingsPage() {
     const result = (await deleteBooking(bookingId)) as BookingMutationResult;
     if (result.success) {
       alert("✅ Xóa đặt phòng thành công!");
-      fetchBookings();
+      await handleManualRefresh();
     } else {
       alert(result.message || "❌ Không thể xóa đặt phòng");
     }
@@ -225,17 +270,18 @@ export default function AdminBookingsPage() {
 
     setSaving(false);
     if (result.success) {
-      alert(isEditing ? "✅ Cập nhật thành công!" : "✅ Thêm đặt phòng thành công!");
+      alert(isEditing ? "✅ Cập nhật đặt phòng thành công!" : "✅ Thêm đặt phòng thành công!");
       setModalOpen(false);
-      fetchBookings();
+      await handleManualRefresh();
     } else {
       setFormError(result.message || "Đã xảy ra lỗi, vui lòng thử lại.");
     }
   };
 
-  const fetchRoomAddress = async (maPhong: number) => {
-    // Nếu đã có trong cache, không fetch lại
-    if (roomAddresses[maPhong] || loadingAddresses.has(maPhong)) {
+  const fetchRoomDetails = async (maPhong: number) => {
+    const alreadyLoaded =
+      roomAddresses[maPhong] && roomNames[maPhong] && roomImages[maPhong];
+    if (alreadyLoaded || loadingAddresses.has(maPhong)) {
       return;
     }
 
@@ -244,10 +290,20 @@ export default function AdminBookingsPage() {
     try {
       const roomResult = (await getRoomById(maPhong)) as {
         success: boolean;
-        room?: { maViTri: number; tenPhong: string };
+        room?: { maViTri: number; tenPhong: string; hinhAnh?: string };
       };
 
       if (roomResult.success && roomResult.room) {
+        const { maViTri, tenPhong, hinhAnh } = roomResult.room;
+
+        if (tenPhong) {
+          setRoomNames((prev) => ({ ...prev, [maPhong]: tenPhong }));
+        }
+
+        if (hinhAnh) {
+          setRoomImages((prev) => ({ ...prev, [maPhong]: hinhAnh }));
+        }
+
         const locationResult = (await getLocationById(roomResult.room.maViTri)) as {
           success: boolean;
           location?: { tenViTri: string; tinhThanh: string; quocGia: string };
@@ -276,9 +332,7 @@ export default function AdminBookingsPage() {
   useEffect(() => {
     if (bookings.length > 0) {
       bookings.forEach((booking) => {
-        if (!roomAddresses[booking.maPhong]) {
-          fetchRoomAddress(booking.maPhong);
-        }
+        fetchRoomDetails(booking.maPhong);
       });
     }
   }, [bookings]);
@@ -305,14 +359,30 @@ export default function AdminBookingsPage() {
               ) : (
                 "Chưa có đặt phòng nào"
               )}
+              {lastSyncedAt && (
+                <>
+                  {" "}
+                  | Lần đồng bộ:{" "}
+                  <span className="text-gray-700 font-medium">{lastSyncedAt}</span>
+                </>
+              )}
             </p>
           </div>
-          <button
-            onClick={openCreateModal}
-            className="px-6 py-2 bg-blue-600 hover:bg-blue-700 text-white font-semibold rounded-lg shadow-md transition-colors"
-          >
-            + Thêm đặt phòng
-          </button>
+          <div className="flex items-center gap-3">
+            <button
+              onClick={handleManualRefresh}
+              disabled={loading || syncing}
+              className="px-5 py-2 border border-gray-300 rounded-lg font-semibold text-gray-700 hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+            >
+              {syncing ? "Đang đồng bộ..." : "↻ Đồng bộ dữ liệu"}
+            </button>
+            <button
+              onClick={openCreateModal}
+              className="px-6 py-2 bg-blue-600 hover:bg-blue-700 text-white font-semibold rounded-lg shadow-md transition-colors"
+            >
+              + Thêm đặt phòng
+            </button>
+          </div>
         </div>
       </div>
 
@@ -366,7 +436,7 @@ export default function AdminBookingsPage() {
                         ID
                       </th>
                       <th className="px-4 py-3 text-left text-xs font-semibold text-gray-700 uppercase tracking-wider">
-                        Mã phòng
+                        Phòng
                       </th>
                       <th className="px-4 py-3 text-left text-xs font-semibold text-gray-700 uppercase tracking-wider">
                         Người đặt
@@ -408,39 +478,63 @@ export default function AdminBookingsPage() {
                             </span>
                           </td>
                           <td className="px-4 py-4">
-                            <div>
-                              <Link
-                                href={`/admin/rooms/${booking.maPhong}`}
-                                className="text-blue-600 hover:text-blue-800 font-semibold block mb-1"
-                              >
-                                Phòng #{booking.maPhong}
-                              </Link>
-                              {loadingAddresses.has(booking.maPhong) ? (
-                                <span className="text-xs text-gray-400">Đang tải...</span>
-                              ) : roomAddresses[booking.maPhong] ? (
-                                <span className="text-xs text-gray-600 flex items-center gap-1">
-                                  <svg
-                                    className="w-3 h-3 text-gray-400"
-                                    fill="none"
-                                    stroke="currentColor"
-                                    viewBox="0 0 24 24"
-                                  >
-                                    <path
-                                      strokeLinecap="round"
-                                      strokeLinejoin="round"
-                                      strokeWidth={2}
-                                      d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z"
-                                    />
-                                    <path
-                                      strokeLinecap="round"
-                                      strokeLinejoin="round"
-                                      strokeWidth={2}
-                                      d="M15 11a3 3 0 11-6 0 3 3 0 016 0z"
-                                    />
-                                  </svg>
-                                  {roomAddresses[booking.maPhong]}
-                                </span>
-                              ) : null}
+                            <div className="flex items-center gap-3">
+                              <div className="w-14 h-14 rounded-lg overflow-hidden bg-gray-100 border border-gray-200 flex-shrink-0">
+                                {loadingAddresses.has(booking.maPhong) ? (
+                                  <div className="w-full h-full flex items-center justify-center text-gray-400 text-xs">
+                                    ...
+                                  </div>
+                                ) : (
+                                  <img
+                                    src={
+                                      roomImages[booking.maPhong] ||
+                                      defaultRoomImage
+                                    }
+                                    alt={
+                                      roomNames[booking.maPhong] ||
+                                      `Phòng #${booking.maPhong}`
+                                    }
+                                    className="w-full h-full object-cover"
+                                  />
+                                )}
+                              </div>
+                              <div>
+                                <Link
+                                  href={`/admin/rooms/${booking.maPhong}`}
+                                  className="text-blue-600 hover:text-blue-800 font-semibold block mb-1"
+                                >
+                                  {roomNames[booking.maPhong] ||
+                                    `Phòng #${booking.maPhong}`}
+                                </Link>
+                                {loadingAddresses.has(booking.maPhong) ? (
+                                  <span className="text-xs text-gray-400">
+                                    Đang tải...
+                                  </span>
+                                ) : roomAddresses[booking.maPhong] ? (
+                                  <span className="text-xs text-gray-600 flex items-center gap-1">
+                                    <svg
+                                      className="w-3 h-3 text-gray-400"
+                                      fill="none"
+                                      stroke="currentColor"
+                                      viewBox="0 0 24 24"
+                                    >
+                                      <path
+                                        strokeLinecap="round"
+                                        strokeLinejoin="round"
+                                        strokeWidth={2}
+                                        d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z"
+                                      />
+                                      <path
+                                        strokeLinecap="round"
+                                        strokeLinejoin="round"
+                                        strokeWidth={2}
+                                        d="M15 11a3 3 0 11-6 0 3 3 0 016 0z"
+                                      />
+                                    </svg>
+                                    {roomAddresses[booking.maPhong]}
+                                  </span>
+                                ) : null}
+                              </div>
                             </div>
                           </td>
                           <td className="px-4 py-4">

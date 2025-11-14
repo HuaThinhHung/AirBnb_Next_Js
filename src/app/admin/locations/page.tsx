@@ -14,8 +14,12 @@ interface Location {
 
 export default function AdminLocationsPage() {
   const [locations, setLocations] = useState<Location[]>([]);
+  const [allLocations, setAllLocations] = useState<Location[]>([]);
   const [loading, setLoading] = useState(true);
+  const [syncing, setSyncing] = useState(false);
+  const [lastSyncedAt, setLastSyncedAt] = useState<string>("");
   const [searchKeyword, setSearchKeyword] = useState("");
+  const [activeKeyword, setActiveKeyword] = useState("");
   const [currentPage, setCurrentPage] = useState(1);
   const [totalPages, setTotalPages] = useState(1);
   const [totalCount, setTotalCount] = useState(0);
@@ -23,53 +27,109 @@ export default function AdminLocationsPage() {
   const topRef = useRef<HTMLDivElement>(null);
   const [searchSuggestions, setSearchSuggestions] = useState<string[]>([]);
 
-  // Fetch locations
-  const fetchLocations = async (page = 1, keyword = "") => {
-    setLoading(true);
-    const result = (await getLocationsPagedSearch({
-      pageIndex: page,
-      pageSize,
-      keyword,
-    })) as {
-      success: boolean;
-      locations: Location[];
-      pagination?: {
-        totalPages: number;
-        totalRow: number;
-      };
-      totalPages?: number;
-      totalCount?: number;
-    };
+  const buildSuggestions = (list: Location[]) =>
+    list
+      .slice(0, 20)
+      .map(
+        (loc) => `${loc.id} - ${loc.tenViTri}, ${loc.tinhThanh || ""}`.trim()
+      );
 
-    if (result.success) {
-      // Đảm bảo chỉ lấy đúng số lượng items theo pageSize
-      const limitedLocations = result.locations.slice(0, pageSize);
-      setLocations(limitedLocations);
-      setTotalPages(result.pagination?.totalPages || result.totalPages || 1);
-      setTotalCount(result.pagination?.totalRow || result.totalCount || 0);
-      setCurrentPage(page);
-      const suggestionList = result.locations
-        .map(
-          (loc) =>
-            `${loc.id} - ${loc.tenViTri}, ${loc.tinhThanh || ""}`.trim()
-        )
-        .slice(0, 20);
-      setSearchSuggestions(suggestionList);
+  const applyFiltersAndPaginate = (
+    source: Location[],
+    keyword: string,
+    page: number
+  ) => {
+    const normalized = keyword.trim().toLowerCase();
+    let filtered = [...source];
+
+    if (normalized) {
+      filtered = filtered.filter((loc) => {
+        const values = [
+          loc.id?.toString() || "",
+          loc.tenViTri || "",
+          loc.tinhThanh || "",
+          loc.quocGia || "",
+        ];
+        return values.some((value) =>
+          value.toLowerCase().includes(normalized)
+        );
+      });
     }
-    setLoading(false);
+
+    const total = filtered.length;
+    const totalPagesCalc = Math.max(1, Math.ceil(total / pageSize));
+    const safePage = Math.min(Math.max(1, page), totalPagesCalc);
+    const startIndex = (safePage - 1) * pageSize;
+    const paginated = filtered.slice(startIndex, startIndex + pageSize);
+
+    setLocations(paginated);
+    setTotalCount(total);
+    setTotalPages(totalPagesCalc);
+    if (safePage !== page) {
+      setCurrentPage(safePage);
+    }
+    setSearchSuggestions(buildSuggestions(filtered));
+  };
+
+  const syncLocations = async () => {
+    setSyncing(true);
+    try {
+      const result = (await getLocationsPagedSearch({
+        pageIndex: 1,
+        pageSize: 200,
+      })) as {
+        success: boolean;
+        locations: Location[];
+        pagination?: { totalPages: number };
+      };
+
+      if (!result.success) return;
+
+      let aggregated = [...(result.locations || [])];
+      const totalPagesApi = result.pagination?.totalPages || 1;
+
+      for (let page = 2; page <= totalPagesApi; page++) {
+        const pageResult = (await getLocationsPagedSearch({
+          pageIndex: page,
+          pageSize: 200,
+        })) as { success: boolean; locations: Location[] };
+        if (pageResult.success) {
+          aggregated = aggregated.concat(pageResult.locations || []);
+        } else {
+          break;
+        }
+      }
+
+      setAllLocations(aggregated);
+      setLastSyncedAt(new Date().toLocaleString());
+    } finally {
+      setSyncing(false);
+    }
   };
 
   // Search
   const handleSearch = () => {
     setCurrentPage(1);
-    fetchLocations(1, searchKeyword);
+    setActiveKeyword(searchKeyword.trim());
+    if (allLocations.length === 0) {
+      setLoading(true);
+      syncLocations().finally(() => setLoading(false));
+    } else {
+      applyFiltersAndPaginate(allLocations, searchKeyword.trim(), 1);
+    }
   };
 
   // Reset
   const handleReset = () => {
     setSearchKeyword("");
     setCurrentPage(1);
-    fetchLocations(1, "");
+    setActiveKeyword("");
+    if (allLocations.length === 0) {
+      setLoading(true);
+      syncLocations().finally(() => setLoading(false));
+    } else {
+      applyFiltersAndPaginate(allLocations, "", 1);
+    }
   };
 
   // Delete
@@ -82,21 +142,39 @@ export default function AdminLocationsPage() {
     };
     if (result.success) {
       alert("✅ Xóa vị trí thành công!");
-      fetchLocations(currentPage, searchKeyword);
+      setAllLocations((prev) => prev.filter((loc) => loc.id !== id));
     } else {
       alert("❌ Lỗi: " + (result.message || "Không thể xóa vị trí"));
     }
   };
 
+  const handleManualRefresh = async () => {
+    setLoading(true);
+    await syncLocations();
+    setLoading(false);
+    setCurrentPage(1);
+  };
+
   // Pagination
   const handlePageChange = (page: number) => {
     if (page < 1 || page > totalPages) return;
-    fetchLocations(page, searchKeyword);
+    setCurrentPage(page);
   };
 
   useEffect(() => {
-    fetchLocations();
+    const initialize = async () => {
+      setLoading(true);
+      await syncLocations();
+      setLoading(false);
+    };
+    initialize();
   }, []);
+
+  useEffect(() => {
+    if (allLocations.length === 0) return;
+    applyFiltersAndPaginate(allLocations, activeKeyword, currentPage);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [allLocations, activeKeyword, currentPage]);
 
   // Scroll to top khi chuyển trang
   useEffect(() => {
@@ -303,14 +381,30 @@ export default function AdminLocationsPage() {
               ) : (
                 "Chưa có vị trí nào"
               )}
+              {lastSyncedAt && (
+                <>
+                  {" "}
+                  | Lần đồng bộ:{" "}
+                  <span className="text-gray-700 font-medium">{lastSyncedAt}</span>
+                </>
+              )}
             </p>
           </div>
-          <Link
-            href="/admin/locations/create"
-            className="px-6 py-2 bg-blue-600 hover:bg-blue-700 text-white font-semibold rounded-lg shadow-md transition-colors"
-          >
-            + Thêm vị trí mới
-          </Link>
+          <div className="flex items-center gap-3">
+            <button
+              onClick={handleManualRefresh}
+              disabled={loading || syncing}
+              className="px-5 py-2 border border-gray-300 rounded-lg font-semibold text-gray-700 hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+            >
+              {syncing ? "Đang đồng bộ..." : "↻ Đồng bộ dữ liệu"}
+            </button>
+            <Link
+              href="/admin/locations/create"
+              className="px-6 py-2 bg-blue-600 hover:bg-blue-700 text-white font-semibold rounded-lg shadow-md transition-colors"
+            >
+              + Thêm vị trí mới
+            </Link>
+          </div>
         </div>
       </div>
 
@@ -334,12 +428,6 @@ export default function AdminLocationsPage() {
               className="px-8 py-3 bg-blue-600 hover:bg-blue-700 disabled:bg-gray-400 text-white font-semibold rounded-lg transition-colors"
             >
               🔍 Tìm
-            </button>
-            <button
-              onClick={handleReset}
-              className="px-6 py-3 bg-gray-100 hover:bg-gray-200 text-gray-700 font-semibold rounded-lg transition-colors"
-            >
-              ✕ Reset
             </button>
           </div>
         <datalist id="locations-suggestions">
