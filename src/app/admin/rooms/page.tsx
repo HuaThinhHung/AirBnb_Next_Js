@@ -218,8 +218,8 @@ export default function AdminRoomsPage() {
   return (
     <div className="min-h-screen bg-gray-50">
       {/* Header */}
-      <div className="bg-white border-b border-gray-200 px-6 py-4">
-        <div className="flex items-center justify-between">
+      <div className="bg-white border-b border-gray-200 px-4 py-4 sm:px-6">
+        <div className="flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
           <div>
             <h1 className="text-2xl font-bold text-gray-900">Quản lý phòng</h1>
             <p className="text-sm text-gray-500 mt-1">
@@ -241,7 +241,7 @@ export default function AdminRoomsPage() {
               )}
             </p>
           </div>
-          <div className="flex items-center gap-3">
+          <div className="flex flex-wrap items-center gap-3">
             <Link
               href="/admin/rooms/create"
               className="flex items-center gap-2 px-6 py-3 bg-blue-600 hover:bg-blue-700 text-white font-semibold rounded-lg transition-colors shadow-md"
@@ -266,7 +266,7 @@ export default function AdminRoomsPage() {
       </div>
 
       {/* Filters */}
-      <div className="bg-white border-b border-gray-200 px-6 py-4">
+      <div className="bg-white border-b border-gray-200 px-4 py-4 sm:px-6">
         <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
           {/* Search */}
           <div className="md:col-span-2">
@@ -310,7 +310,7 @@ export default function AdminRoomsPage() {
       </div>
 
       {/* Content */}
-      <div className="px-6 py-6 pb-24">
+      <div className="px-4 py-6 pb-24 sm:px-6">
         {loading ? (
           <div className="flex items-center justify-center py-20">
             <div className="text-center">
@@ -334,8 +334,8 @@ export default function AdminRoomsPage() {
             {/* Table */}
             <div className="bg-white rounded-lg shadow-sm border border-gray-200 overflow-hidden mb-4">
               <div className="overflow-x-auto">
-                <div className="max-h-[calc(100vh-500px)] overflow-y-auto">
-                  <table className="w-full">
+                <div className="lg:max-h-[calc(100vh-500px)] overflow-y-auto">
+                  <table className="w-full admin-responsive-table">
                     <thead className="bg-gray-50 border-b border-gray-200 sticky top-0 z-10">
                       <tr>
                         <th className="px-4 py-3 text-left text-xs font-semibold text-gray-700 uppercase tracking-wider w-24 bg-gray-50">
@@ -361,7 +361,7 @@ export default function AdminRoomsPage() {
                         key={room.id}
                         className="hover:bg-gray-50 transition-colors"
                       >
-                        <td className="px-4 py-3">
+                        <td className="px-4 py-3" data-label="Hình ảnh">
                           {room.hinhAnh ? (
                             <img
                               src={room.hinhAnh}
@@ -386,7 +386,7 @@ export default function AdminRoomsPage() {
                             </div>
                           )}
                         </td>
-                        <td className="px-4 py-3">
+                        <td className="px-4 py-3" data-label="Thông tin phòng">
                           <div className="font-semibold text-gray-900 mb-1 text-sm">
                             {room.tenPhong}
                           </div>
@@ -460,7 +460,7 @@ export default function AdminRoomsPage() {
                             ID: #{room.id}
                           </div>
                         </td>
-                        <td className="px-4 py-3">
+                        <td className="px-4 py-3" data-label="Vị trí">
                           <div className="flex items-start gap-2">
                             <svg
                               className="w-4 h-4 text-gray-400 mt-0.5 flex-shrink-0"
@@ -486,13 +486,13 @@ export default function AdminRoomsPage() {
                             </span>
                           </div>
                         </td>
-                        <td className="px-4 py-3 text-right">
+                        <td className="px-4 py-3 text-right md:text-right" data-label="Giá/đêm">
                           <div className="font-bold text-blue-600 text-xs">
                             {formatPrice(room.giaTien)}
                           </div>
                           <div className="text-xs text-gray-500">mỗi đêm</div>
                         </td>
-                        <td className="px-4 py-3">
+                        <td className="px-4 py-3" data-label="Hành động">
                           <div className="flex items-center justify-center gap-1.5">
                             <Link
                               href={`/admin/rooms/${room.id}`}
@@ -571,7 +571,7 @@ export default function AdminRoomsPage() {
 
             {/* Pagination - Luôn hiển thị nếu có dữ liệu */}
             {totalRows > 0 && totalPages > 0 && (
-              <div className="bg-white border border-gray-200 px-6 py-4 rounded-lg shadow-sm relative z-20 mt-4">
+              <div className="bg-white border border-gray-200 px-4 py-4 rounded-lg shadow-sm relative z-20 mt-4 sm:px-6">
                 <div className="flex flex-col sm:flex-row items-center justify-between gap-4">
                   {/* Info */}
                   <div className="text-sm text-gray-600">

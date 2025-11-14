@@ -325,8 +325,8 @@ export default function AdminUsersPage() {
       <div ref={topRef} className="h-0" />
 
       {/* Header */}
-      <div className="bg-white border-b border-gray-200 px-6 py-4">
-        <div className="flex items-center justify-between">
+      <div className="bg-white border-b border-gray-200 px-4 py-4 sm:px-6">
+        <div className="flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
           <div>
             <h1 className="text-2xl font-bold text-gray-900">
               Quản lý người dùng
@@ -343,7 +343,7 @@ export default function AdminUsersPage() {
               )}
             </p>
           </div>
-          <div className="flex items-center gap-3">
+          <div className="flex flex-wrap items-center gap-3">
             <button
               onClick={handleManualRefresh}
               disabled={loading || syncing}
@@ -362,9 +362,9 @@ export default function AdminUsersPage() {
       </div>
 
       {/* Main Content */}
-      <div className="max-w-7xl mx-auto px-6 py-6">
+      <div className="max-w-7xl mx-auto px-4 py-6 sm:px-6">
         {/* Search & Filter */}
-        <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-6 mb-6">
+        <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-4 sm:p-6 mb-6">
           <div className="flex flex-col gap-4">
             <div className="flex flex-col md:flex-row gap-3">
               <div className="flex-1">
@@ -444,7 +444,7 @@ export default function AdminUsersPage() {
             </div>
           ) : (
             <div className="overflow-x-auto">
-              <table className="w-full">
+              <table className="w-full admin-responsive-table">
                 <thead className="bg-gray-50 border-b border-gray-200">
                   <tr>
                     <th className="px-6 py-4 text-left text-xs font-semibold text-gray-700 uppercase tracking-wider">
@@ -473,10 +473,10 @@ export default function AdminUsersPage() {
                       key={user.id}
                       className="hover:bg-gray-50 transition-colors"
                     >
-                      <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">
+                      <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900" data-label="STT">
                         {(currentPage - 1) * pageSize + index + 1}
                       </td>
-                      <td className="px-6 py-4">
+                      <td className="px-6 py-4" data-label="Thông tin">
                         <div className="text-sm font-medium text-gray-900">
                           {user.name}
                         </div>
@@ -484,7 +484,7 @@ export default function AdminUsersPage() {
                           {user.email}
                         </div>
                       </td>
-                      <td className="px-6 py-4 whitespace-nowrap">
+                      <td className="px-6 py-4 whitespace-nowrap" data-label="Avatar">
                         {user.avatar ? (
                           <img
                             src={user.avatar}
@@ -497,7 +497,7 @@ export default function AdminUsersPage() {
                           </div>
                         )}
                       </td>
-                      <td className="px-6 py-4">
+                      <td className="px-6 py-4" data-label="Chi tiết">
                         <div className="text-sm text-gray-900">
                           📞 {user.phone || "N/A"}
                         </div>
@@ -513,7 +513,7 @@ export default function AdminUsersPage() {
                           {user.gender ? "👨 Nam" : "👩 Nữ"}
                         </div>
                       </td>
-                      <td className="px-6 py-4 whitespace-nowrap">
+                      <td className="px-6 py-4 whitespace-nowrap" data-label="Role">
                         <span
                           className={`px-3 py-1 inline-flex text-xs leading-5 font-semibold rounded-full ${
                             user.role === "ADMIN"
@@ -524,7 +524,7 @@ export default function AdminUsersPage() {
                           {user.role}
                         </span>
                       </td>
-                      <td className="px-6 py-4 whitespace-nowrap text-center">
+                      <td className="px-6 py-4 whitespace-nowrap text-center" data-label="Hành động">
                         <div className="flex items-center justify-center gap-2">
                           <Link
                             href={`/admin/users/${user.id}`}

@@ -252,8 +252,8 @@ export default function AdminCommentsPage() {
     <div className="min-h-screen bg-gray-50">
       <div ref={topRef} className="h-0" />
 
-      <div className="bg-white border-b border-gray-200 px-6 py-4">
-        <div className="flex items-center justify-between">
+      <div className="bg-white border-b border-gray-200 px-4 py-4 sm:px-6">
+        <div className="flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
           <div>
             <h1 className="text-2xl font-bold text-gray-900">Quản lý bình luận</h1>
             <p className="text-sm text-gray-500 mt-1">
@@ -274,7 +274,7 @@ export default function AdminCommentsPage() {
               )}
             </p>
           </div>
-          <div className="flex items-center gap-3">
+          <div className="flex flex-wrap items-center gap-3">
             <button
               onClick={handleManualRefresh}
               disabled={loading || syncing}
@@ -292,7 +292,7 @@ export default function AdminCommentsPage() {
         </div>
       </div>
 
-      <div className="bg-white border-b border-gray-200 px-6 py-4">
+      <div className="bg-white border-b border-gray-200 px-4 py-4 sm:px-6">
         <div className="max-w-md">
           <input
             type="text"
@@ -308,7 +308,7 @@ export default function AdminCommentsPage() {
         </div>
       </div>
 
-      <div className="px-6 py-8">
+      <div className="px-4 py-8 sm:px-6">
         {loading ? (
           <div className="flex items-center justify-center py-20">
             <div className="text-center">
@@ -325,7 +325,7 @@ export default function AdminCommentsPage() {
           <>
             <div className="bg-white rounded-lg shadow-sm border border-gray-200 overflow-hidden">
               <div className="overflow-x-auto">
-                <table className="w-full">
+                <table className="w-full admin-responsive-table">
                   <thead className="bg-gray-50 border-b border-gray-200">
                     <tr>
                       <th className="px-4 py-3 text-left text-xs font-semibold text-gray-700 uppercase">
@@ -354,8 +354,10 @@ export default function AdminCommentsPage() {
                   <tbody className="divide-y divide-gray-100 bg-white">
                     {comments.map((comment) => (
                       <tr key={comment.id} className="hover:bg-gray-50 transition-colors">
-                        <td className="px-4 py-4 text-sm font-mono text-gray-900">#{comment.id}</td>
-                        <td className="px-4 py-4">
+                        <td className="px-4 py-4 text-sm font-mono text-gray-900" data-label="ID">
+                          #{comment.id}
+                        </td>
+                        <td className="px-4 py-4" data-label="Phòng">
                           <Link
                             href={`/admin/rooms/${comment.maPhong}`}
                             className="text-blue-600 hover:text-blue-800 font-semibold"
@@ -363,7 +365,7 @@ export default function AdminCommentsPage() {
                             Phòng #{comment.maPhong}
                           </Link>
                         </td>
-                        <td className="px-4 py-4">
+                        <td className="px-4 py-4" data-label="Người bình luận">
                           <Link
                             href={`/admin/users/${comment.maNguoiBinhLuan}`}
                             className="text-blue-600 hover:text-blue-800 font-semibold"
@@ -371,10 +373,10 @@ export default function AdminCommentsPage() {
                             User #{comment.maNguoiBinhLuan}
                           </Link>
                         </td>
-                        <td className="px-4 py-4">
+                        <td className="px-4 py-4" data-label="Nội dung">
                           <p className="text-sm text-gray-900 line-clamp-2">{comment.noiDung}</p>
                         </td>
-                        <td className="px-4 py-4 text-center">
+                        <td className="px-4 py-4 text-center" data-label="Đánh giá">
                           <span
                             className={`inline-flex items-center justify-center px-3 py-1 rounded-full text-sm font-semibold ${ratingBadge(
                               comment.saoBinhLuan
@@ -383,10 +385,10 @@ export default function AdminCommentsPage() {
                             ⭐ {comment.saoBinhLuan}/5
                           </span>
                         </td>
-                        <td className="px-4 py-4 text-sm text-gray-600">
+                        <td className="px-4 py-4 text-sm text-gray-600" data-label="Ngày bình luận">
                           {formatDate(comment.ngayBinhLuan || new Date().toISOString())}
                         </td>
-                        <td className="px-4 py-4">
+                        <td className="px-4 py-4" data-label="Hành động">
                           <div className="flex items-center justify-center gap-2">
                             <button
                               onClick={() => openEditModal(comment)}
@@ -426,7 +428,7 @@ export default function AdminCommentsPage() {
             </div>
 
             {totalPages > 1 && (
-              <div className="bg-white border-t border-gray-200 px-6 py-4 mt-6 rounded-b-lg">
+              <div className="bg-white border-t border-gray-200 px-4 py-4 mt-6 rounded-b-lg sm:px-6">
                 <div className="flex flex-col sm:flex-row items-center justify-between gap-4">
                   <div className="text-sm text-gray-600">
                     Trang{" "}

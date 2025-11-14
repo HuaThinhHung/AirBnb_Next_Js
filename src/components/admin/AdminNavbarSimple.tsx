@@ -39,10 +39,10 @@ export default function AdminNavbarSimple({ onMenuClick }: AdminNavbarSimpleProp
 
   return (
     <nav className="bg-white shadow-sm border-b border-blue-100 sticky top-0 z-20">
-      <div className="px-6 py-4">
-        <div className="flex items-center justify-between">
+      <div className="px-4 py-4 sm:px-6">
+        <div className="flex flex-wrap items-center justify-between gap-4">
           {/* Left side */}
-          <div className="flex items-center space-x-4">
+          <div className="flex items-center gap-3">
             {/* Mobile menu button */}
             <button
               onClick={onMenuClick}

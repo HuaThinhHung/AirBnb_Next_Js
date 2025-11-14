@@ -343,8 +343,8 @@ export default function AdminBookingsPage() {
       <div ref={topRef} className="h-0" />
 
       {/* Header */}
-      <div className="bg-white border-b border-gray-200 px-6 py-4">
-        <div className="flex items-center justify-between">
+      <div className="bg-white border-b border-gray-200 px-4 py-4 sm:px-6">
+        <div className="flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
           <div>
             <h1 className="text-2xl font-bold text-gray-900">
               Quản lý đặt phòng
@@ -368,7 +368,7 @@ export default function AdminBookingsPage() {
               )}
             </p>
           </div>
-          <div className="flex items-center gap-3">
+          <div className="flex flex-wrap items-center gap-3">
             <button
               onClick={handleManualRefresh}
               disabled={loading || syncing}
@@ -387,7 +387,7 @@ export default function AdminBookingsPage() {
       </div>
 
       {/* Search & Filters */}
-      <div className="bg-white border-b border-gray-200 px-6 py-4">
+      <div className="bg-white border-b border-gray-200 px-4 py-4 sm:px-6">
         <div className="max-w-md">
           <input
             type="text"
@@ -409,7 +409,7 @@ export default function AdminBookingsPage() {
       </datalist>
 
       {/* Content */}
-      <div className="px-6 py-8">
+      <div className="px-4 py-8 sm:px-6">
         {loading ? (
           <div className="flex items-center justify-center py-20">
             <div className="text-center">
@@ -429,7 +429,7 @@ export default function AdminBookingsPage() {
             {/* Table */}
             <div className="bg-white rounded-lg shadow-sm border border-gray-200 overflow-hidden">
               <div className="overflow-x-auto">
-                <table className="w-full">
+                <table className="w-full admin-responsive-table">
                   <thead className="bg-gray-50 border-b border-gray-200">
                     <tr>
                       <th className="px-4 py-3 text-left text-xs font-semibold text-gray-700 uppercase tracking-wider w-20">
@@ -472,12 +472,12 @@ export default function AdminBookingsPage() {
                           key={booking.id}
                           className="hover:bg-gray-50 transition-colors"
                         >
-                          <td className="px-4 py-4">
+                          <td className="px-4 py-4" data-label="ID">
                             <span className="text-sm font-mono text-gray-900">
                               #{booking.id}
                             </span>
                           </td>
-                          <td className="px-4 py-4">
+                          <td className="px-4 py-4" data-label="Phòng">
                             <div className="flex items-center gap-3">
                               <div className="w-14 h-14 rounded-lg overflow-hidden bg-gray-100 border border-gray-200 flex-shrink-0">
                                 {loadingAddresses.has(booking.maPhong) ? (
@@ -537,7 +537,7 @@ export default function AdminBookingsPage() {
                               </div>
                             </div>
                           </td>
-                          <td className="px-4 py-4">
+                          <td className="px-4 py-4" data-label="Người đặt">
                             <Link
                               href={`/admin/users/${booking.maNguoiDung}`}
                               className="text-blue-600 hover:text-blue-800 font-semibold"
@@ -545,7 +545,7 @@ export default function AdminBookingsPage() {
                               User #{booking.maNguoiDung}
                             </Link>
                           </td>
-                          <td className="px-4 py-4">
+                          <td className="px-4 py-4" data-label="Ngày đến">
                             <div className="flex items-center gap-2 text-sm text-gray-700">
                               <svg
                                 className="w-4 h-4 text-gray-400"
@@ -563,7 +563,7 @@ export default function AdminBookingsPage() {
                               {formatDate(booking.ngayDen)}
                             </div>
                           </td>
-                          <td className="px-4 py-4">
+                          <td className="px-4 py-4" data-label="Ngày đi">
                             <div className="flex items-center gap-2 text-sm text-gray-700">
                               <svg
                                 className="w-4 h-4 text-gray-400"
@@ -581,25 +581,25 @@ export default function AdminBookingsPage() {
                               {formatDate(booking.ngayDi)}
                             </div>
                           </td>
-                          <td className="px-4 py-4 text-center">
+                          <td className="px-4 py-4 text-center" data-label="Số đêm">
                             <span className="inline-flex items-center justify-center px-3 py-1 rounded-full text-sm font-semibold bg-purple-100 text-purple-700">
                               {calculateNights(booking.ngayDen, booking.ngayDi)}{" "}
                               đêm
                             </span>
                           </td>
-                          <td className="px-4 py-4 text-center">
+                          <td className="px-4 py-4 text-center" data-label="Khách">
                             <span className="text-sm font-semibold text-gray-900">
                               {booking.soLuongKhach}
                             </span>
                           </td>
-                          <td className="px-4 py-4 text-center">
+                          <td className="px-4 py-4 text-center" data-label="Trạng thái">
                             <span
                               className={`inline-flex items-center px-3 py-1 rounded-full text-xs font-semibold ${status.color}`}
                             >
                               {status.label}
                             </span>
                           </td>
-                          <td className="px-4 py-4">
+                          <td className="px-4 py-4" data-label="Hành động">
                             <div className="flex items-center justify-center gap-2">
                               <Link
                                 href={`/admin/bookings/${booking.id}`}
@@ -676,7 +676,7 @@ export default function AdminBookingsPage() {
 
             {/* Pagination */}
             {totalPages > 1 && (
-              <div className="bg-white border-t border-gray-200 px-6 py-4 mt-6 rounded-b-lg">
+              <div className="bg-white border-t border-gray-200 px-4 py-4 mt-6 rounded-b-lg sm:px-6">
                 <div className="flex flex-col sm:flex-row items-center justify-between gap-4">
                   {/* Info */}
                   <div className="text-sm text-gray-600">

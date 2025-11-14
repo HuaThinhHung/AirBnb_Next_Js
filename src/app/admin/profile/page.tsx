@@ -168,14 +168,14 @@ export default function AdminProfilePage() {
 
   return (
     <div className="min-h-screen bg-gray-50">
-      <div className="bg-white border-b border-gray-200 px-6 py-4 mb-6">
+      <div className="bg-white border-b border-gray-200 px-4 py-4 sm:px-6 mb-6">
         <h1 className="text-2xl font-bold text-gray-900">Hồ sơ cá nhân</h1>
         <p className="text-sm text-gray-700">
           Quản lý thông tin & avatar của tài khoản Admin
         </p>
       </div>
 
-      <div className="max-w-5xl mx-auto px-6 pb-16 space-y-6 text-gray-900">
+      <div className="max-w-5xl mx-auto px-4 pb-16 space-y-6 text-gray-900 sm:px-6">
         {message && (
           <div
             className={`p-4 rounded-xl ${
