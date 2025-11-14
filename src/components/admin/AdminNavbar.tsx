@@ -10,13 +10,21 @@ interface AdminNavbarProps {
   onMenuClick: () => void
 }
 
+type DisplayUser = {
+  name?: string
+  email?: string
+  role?: string
+  avatar?: string
+  [key: string]: any
+}
+
 export default function AdminNavbar({ onMenuClick }: AdminNavbarProps) {
   const router = useRouter()
   const [showProfile, setShowProfile] = useState(false)
-  const [currentUser, setCurrentUser] = useState<Record<string, any> | null>(null)
+  const [currentUser, setCurrentUser] = useState<DisplayUser | null>(null)
 
   useEffect(() => {
-    const storedUser = getCurrentUser()
+    const storedUser = getCurrentUser() as (DisplayUser & { user?: DisplayUser }) | null
     if (storedUser) {
       setCurrentUser(storedUser.user || storedUser)
     }
@@ -126,13 +134,10 @@ export default function AdminNavbar({ onMenuClick }: AdminNavbarProps) {
       </div>
 
       {/* Click outside to close dropdowns */}
-      {(showNotifications || showProfile) && (
+      {showProfile && (
         <div
           className="fixed inset-0 z-40"
-          onClick={() => {
-            setShowNotifications(false)
-            setShowProfile(false)
-          }}
+          onClick={() => setShowProfile(false)}
         />
       )}
     </nav>
