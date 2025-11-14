@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useEffect } from "react";
-import { getRooms, deleteRoom } from "@/lib/roomService";
+import { getRooms, getRoomsByLocation, deleteRoom } from "@/lib/roomService";
 import { getLocations } from "@/lib/locationService";
 import Link from "next/link";
 
@@ -72,42 +72,44 @@ export default function AdminRoomsPage() {
 
   const fetchRooms = async () => {
     setLoading(true);
-    
-    // Nếu có filter location, cần fetch tất cả phòng để filter và phân trang đúng
+    const keyword = searchTerm.trim().toLowerCase();
+
     if (selectedLocation) {
-      // Fetch tất cả phòng để filter theo location
-      const allRoomsResult = (await getRooms({
-        pageIndex: 1,
-        pageSize: 1000, // Lấy nhiều để có đủ dữ liệu filter
-        keyword: searchTerm,
-      })) as {
+      const locationResult = (await getRoomsByLocation(
+        selectedLocation
+      )) as {
         success: boolean;
         rooms: Room[];
-        pagination?: { totalPages: number; totalRow: number };
+        message?: string;
       };
 
-      if (allRoomsResult.success) {
-        // Filter theo location
-        const filteredRooms = allRoomsResult.rooms.filter(
-          (room) => room.maViTri === selectedLocation
+      if (locationResult.success) {
+        let filteredRooms = locationResult.rooms;
+        if (keyword) {
+          filteredRooms = filteredRooms.filter((room) =>
+            room.tenPhong.toLowerCase().includes(keyword)
+          );
+        }
+
+        const totalFiltered = filteredRooms.length;
+        const startIndex = (currentPage - 1) * pageSize;
+        const paginatedRooms = filteredRooms.slice(
+          startIndex,
+          startIndex + pageSize
         );
 
-        // Phân trang client-side cho filtered results
-        const totalFiltered = filteredRooms.length;
-        const totalPages = Math.ceil(totalFiltered / pageSize);
-        const startIndex = (currentPage - 1) * pageSize;
-        const endIndex = startIndex + pageSize;
-        const paginatedRooms = filteredRooms.slice(startIndex, endIndex);
-
         setRooms(paginatedRooms);
-        setTotalPages(totalPages || 1);
         setTotalRows(totalFiltered);
+        setTotalPages(Math.max(1, Math.ceil(totalFiltered / pageSize)));
+      } else {
+        setRooms([]);
+        setTotalRows(0);
+        setTotalPages(1);
       }
     } else {
-      // Không filter location, dùng server-side pagination
       const result = (await getRooms({
         pageIndex: currentPage,
-        pageSize: pageSize,
+        pageSize,
         keyword: searchTerm,
       })) as {
         success: boolean;
@@ -116,11 +118,13 @@ export default function AdminRoomsPage() {
       };
 
       if (result.success) {
-        // Đảm bảo chỉ lấy đúng số lượng items theo pageSize
-        const limitedRooms = result.rooms.slice(0, pageSize);
-        setRooms(limitedRooms);
+        setRooms(result.rooms);
         setTotalPages(result.pagination?.totalPages || 1);
         setTotalRows(result.pagination?.totalRow || 0);
+      } else {
+        setRooms([]);
+        setTotalRows(0);
+        setTotalPages(1);
       }
     }
     setLoading(false);
