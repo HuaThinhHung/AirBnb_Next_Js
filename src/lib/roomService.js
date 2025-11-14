@@ -17,9 +17,13 @@ export const getRooms = async (params = {}) => {
   try {
     const pageIndex = params.pageIndex || 1;
     const pageSize = params.pageSize || 10;
-    const keyword = params.keyword || "";
+    const keyword = params.keyword?.trim() || "";
 
-    console.log("📦 Đang lấy danh sách phòng...", { pageIndex, pageSize, keyword });
+    console.log("📦 Đang lấy danh sách phòng...", {
+      pageIndex,
+      pageSize,
+      keyword,
+    });
 
     const queryParams = new URLSearchParams({
       pageIndex: pageIndex.toString(),
@@ -27,7 +31,7 @@ export const getRooms = async (params = {}) => {
     });
     if (keyword) queryParams.append("keyword", keyword);
 
-    const url = `/api/phong-thue?${queryParams.toString()}`;
+    const url = `/api/phong-thue/phan-trang-tim-kiem?${queryParams.toString()}`;
     const response = await api.get(url);
 
     console.log("✅ Response từ API:", response.data);

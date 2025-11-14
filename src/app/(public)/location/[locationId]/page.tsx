@@ -5,6 +5,7 @@ import Link from "next/link";
 import { useParams } from "next/navigation";
 import { getRoomsByLocation } from "@/lib/roomService";
 import { getLocationById } from "@/lib/locationService";
+import type { LocationResponse, RoomsResponse } from "@/types/api";
 
 type RoomItem = {
   id: number;
@@ -59,13 +60,17 @@ export default function RoomsByLocationPage() {
 
       try {
         // Fetch location info
-        const locRes = await getLocationById(Number(locationId));
+        const locRes = (await getLocationById(
+          Number(locationId)
+        )) as LocationResponse;
         if (locRes.success && locRes.location) {
           setLocation(locRes.location);
         }
 
         // Fetch rooms
-        const roomsRes = await getRoomsByLocation(Number(locationId));
+        const roomsRes = (await getRoomsByLocation(
+          Number(locationId)
+        )) as RoomsResponse;
         if (roomsRes.success) {
           setRooms(roomsRes.rooms || []);
         } else {
@@ -141,12 +146,39 @@ export default function RoomsByLocationPage() {
     );
   };
 
+  const formatCurrency = (price?: number) =>
+    new Intl.NumberFormat("vi-VN", {
+      style: "currency",
+      currency: "VND",
+      maximumFractionDigits: 0,
+    }).format(price ?? 0);
+
   if (loading) {
     return (
-      <div className="flex items-center justify-center min-h-screen">
+      <div className="flex items-center justify-center min-h-screen bg-white">
         <div className="text-center">
           <div className="inline-block animate-spin rounded-full h-16 w-16 border-b-4 border-blue-600 mb-4"></div>
           <p className="text-gray-600 font-semibold text-lg">Đang tải phòng...</p>
+        </div>
+      </div>
+    );
+  }
+
+  if (error) {
+    return (
+      <div className="min-h-screen bg-white flex items-center justify-center px-6">
+        <div className="text-center max-w-lg">
+          <div className="text-6xl mb-4">⚠️</div>
+          <h2 className="text-2xl font-semibold text-gray-900 mb-2">
+            Đã xảy ra lỗi
+          </h2>
+          <p className="text-gray-600 mb-6">{error}</p>
+          <button
+            onClick={() => window.location.reload()}
+            className="px-6 py-3 bg-blue-600 text-white font-semibold rounded-lg shadow hover:bg-blue-700 transition-colors"
+          >
+            Thử lại
+          </button>
         </div>
       </div>
     );
@@ -249,6 +281,7 @@ export default function RoomsByLocationPage() {
               onClick={() => toggleAmenity("doXe")}
               className={`px-4 py-2 rounded-full border text-sm font-medium whitespace-nowrap transition-all ${
                 amenities.includes("doXe")
+                  ? "bg-gray-900 text-white border-gray-900"
                   : "bg-white text-gray-700 border-gray-300 hover:border-gray-900"
               }`}
             >
@@ -362,7 +395,7 @@ export default function RoomsByLocationPage() {
                     <div className="flex items-end justify-between mt-4">
                       <div>
                         <span className="text-xl font-bold text-gray-900">
-                          {room.giaTien.toLocaleString()}₫
+                          {formatCurrency(room.giaTien)}
                         </span>
                         <span className="text-sm text-gray-600"> / đêm</span>
                       </div>

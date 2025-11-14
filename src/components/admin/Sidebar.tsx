@@ -119,6 +119,26 @@ export default function Sidebar({ isOpen, onClose }: SidebarProps) {
       ),
     },
     {
+      title: "Bình luận",
+      path: "/admin/comments",
+      description: "Quản lý bình luận",
+      icon: (
+        <svg
+          className="w-5 h-5"
+          fill="none"
+          stroke="currentColor"
+          viewBox="0 0 24 24"
+        >
+          <path
+            strokeLinecap="round"
+            strokeLinejoin="round"
+            strokeWidth={2}
+            d="M7 8h10M7 12h4m-2 8a8 8 0 110-16 8 8 0 110 16zm8 0l4 4"
+          />
+        </svg>
+      ),
+    },
+    {
       title: "Cài đặt",
       path: "/admin/settings",
       description: "Settings",

@@ -14,48 +14,122 @@ interface Location {
 
 export default function AdminLocationsPage() {
   const [locations, setLocations] = useState<Location[]>([]);
+  const [allLocations, setAllLocations] = useState<Location[]>([]);
   const [loading, setLoading] = useState(true);
+  const [syncing, setSyncing] = useState(false);
+  const [lastSyncedAt, setLastSyncedAt] = useState<string>("");
   const [searchKeyword, setSearchKeyword] = useState("");
+  const [activeKeyword, setActiveKeyword] = useState("");
   const [currentPage, setCurrentPage] = useState(1);
   const [totalPages, setTotalPages] = useState(1);
   const [totalCount, setTotalCount] = useState(0);
-  const pageSize = 10;
+  const pageSize = 12; // Tăng lên 12 items mỗi trang để hiển thị nhiều hơn
   const topRef = useRef<HTMLDivElement>(null);
+  const [searchSuggestions, setSearchSuggestions] = useState<string[]>([]);
 
-  // Fetch locations
-  const fetchLocations = async (page = 1, keyword = "") => {
-    setLoading(true);
-    const result = (await getLocationsPagedSearch({
-      pageIndex: page,
-      pageSize,
-      keyword,
-    })) as {
-      success: boolean;
-      locations: Location[];
-      totalPages: number;
-      totalCount: number;
-    };
+  const buildSuggestions = (list: Location[]) =>
+    list
+      .slice(0, 20)
+      .map(
+        (loc) => `${loc.id} - ${loc.tenViTri}, ${loc.tinhThanh || ""}`.trim()
+      );
 
-    if (result.success) {
-      setLocations(result.locations);
-      setTotalPages(result.totalPages);
-      setTotalCount(result.totalCount);
-      setCurrentPage(page);
+  const applyFiltersAndPaginate = (
+    source: Location[],
+    keyword: string,
+    page: number
+  ) => {
+    const normalized = keyword.trim().toLowerCase();
+    let filtered = [...source];
+
+    if (normalized) {
+      filtered = filtered.filter((loc) => {
+        const values = [
+          loc.id?.toString() || "",
+          loc.tenViTri || "",
+          loc.tinhThanh || "",
+          loc.quocGia || "",
+        ];
+        return values.some((value) =>
+          value.toLowerCase().includes(normalized)
+        );
+      });
     }
-    setLoading(false);
+
+    const total = filtered.length;
+    const totalPagesCalc = Math.max(1, Math.ceil(total / pageSize));
+    const safePage = Math.min(Math.max(1, page), totalPagesCalc);
+    const startIndex = (safePage - 1) * pageSize;
+    const paginated = filtered.slice(startIndex, startIndex + pageSize);
+
+    setLocations(paginated);
+    setTotalCount(total);
+    setTotalPages(totalPagesCalc);
+    if (safePage !== page) {
+      setCurrentPage(safePage);
+    }
+    setSearchSuggestions(buildSuggestions(filtered));
+  };
+
+  const syncLocations = async () => {
+    setSyncing(true);
+    try {
+      const result = (await getLocationsPagedSearch({
+        pageIndex: 1,
+        pageSize: 200,
+      })) as {
+        success: boolean;
+        locations: Location[];
+        pagination?: { totalPages: number };
+      };
+
+      if (!result.success) return;
+
+      let aggregated = [...(result.locations || [])];
+      const totalPagesApi = result.pagination?.totalPages || 1;
+
+      for (let page = 2; page <= totalPagesApi; page++) {
+        const pageResult = (await getLocationsPagedSearch({
+          pageIndex: page,
+          pageSize: 200,
+        })) as { success: boolean; locations: Location[] };
+        if (pageResult.success) {
+          aggregated = aggregated.concat(pageResult.locations || []);
+        } else {
+          break;
+        }
+      }
+
+      setAllLocations(aggregated);
+      setLastSyncedAt(new Date().toLocaleString());
+    } finally {
+      setSyncing(false);
+    }
   };
 
   // Search
   const handleSearch = () => {
     setCurrentPage(1);
-    fetchLocations(1, searchKeyword);
+    setActiveKeyword(searchKeyword.trim());
+    if (allLocations.length === 0) {
+      setLoading(true);
+      syncLocations().finally(() => setLoading(false));
+    } else {
+      applyFiltersAndPaginate(allLocations, searchKeyword.trim(), 1);
+    }
   };
 
   // Reset
   const handleReset = () => {
     setSearchKeyword("");
     setCurrentPage(1);
-    fetchLocations(1, "");
+    setActiveKeyword("");
+    if (allLocations.length === 0) {
+      setLoading(true);
+      syncLocations().finally(() => setLoading(false));
+    } else {
+      applyFiltersAndPaginate(allLocations, "", 1);
+    }
   };
 
   // Delete
@@ -68,21 +142,39 @@ export default function AdminLocationsPage() {
     };
     if (result.success) {
       alert("✅ Xóa vị trí thành công!");
-      fetchLocations(currentPage, searchKeyword);
+      setAllLocations((prev) => prev.filter((loc) => loc.id !== id));
     } else {
       alert("❌ Lỗi: " + (result.message || "Không thể xóa vị trí"));
     }
   };
 
+  const handleManualRefresh = async () => {
+    setLoading(true);
+    await syncLocations();
+    setLoading(false);
+    setCurrentPage(1);
+  };
+
   // Pagination
   const handlePageChange = (page: number) => {
     if (page < 1 || page > totalPages) return;
-    fetchLocations(page, searchKeyword);
+    setCurrentPage(page);
   };
 
   useEffect(() => {
-    fetchLocations();
+    const initialize = async () => {
+      setLoading(true);
+      await syncLocations();
+      setLoading(false);
+    };
+    initialize();
   }, []);
+
+  useEffect(() => {
+    if (allLocations.length === 0) return;
+    applyFiltersAndPaginate(allLocations, activeKeyword, currentPage);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [allLocations, activeKeyword, currentPage]);
 
   // Scroll to top khi chuyển trang
   useEffect(() => {
@@ -93,57 +185,176 @@ export default function AdminLocationsPage() {
 
   // Render pagination - Modern Style
   const renderPagination = () => {
-    if (totalPages <= 1) return null;
+    if (totalCount === 0 || totalPages <= 1) return null;
 
     return (
-      <div className="flex items-center justify-center gap-2 mt-8">
-        {/* Previous */}
-        <button
-          onClick={() => handlePageChange(Math.max(1, currentPage - 1))}
-          disabled={currentPage === 1}
-          className="px-4 py-2 bg-white border border-gray-300 rounded-md hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed font-medium text-gray-700 transition-colors"
-        >
-          ← Trước
-        </button>
+      <div className="bg-white border border-gray-200 px-6 py-4 rounded-lg shadow-sm mt-6">
+        <div className="flex flex-col sm:flex-row items-center justify-between gap-4">
+          {/* Info */}
+          <div className="text-sm text-gray-600">
+            Hiển thị{" "}
+            <span className="font-semibold text-gray-900">
+              {(currentPage - 1) * pageSize + 1}
+            </span>
+            {" - "}
+            <span className="font-semibold text-gray-900">
+              {Math.min(currentPage * pageSize, totalCount)}
+            </span>
+            {" trong tổng số "}
+            <span className="font-semibold text-gray-900">{totalCount}</span>
+            {" vị trí"}
+          </div>
 
-        {/* Page Numbers */}
-        {Array.from({ length: Math.min(5, totalPages) }, (_, i) => {
-          let pageNum;
-          if (totalPages <= 5) {
-            pageNum = i + 1;
-          } else if (currentPage <= 3) {
-            pageNum = i + 1;
-          } else if (currentPage >= totalPages - 2) {
-            pageNum = totalPages - 4 + i;
-          } else {
-            pageNum = currentPage - 2 + i;
-          }
-
-          return (
+          {/* Pagination Buttons */}
+          <div className="flex items-center justify-center gap-1 flex-wrap">
+            {/* First Page */}
             <button
-              key={pageNum}
-              onClick={() => handlePageChange(pageNum)}
-              className={`min-w-[40px] px-3 py-2 border rounded-md font-medium transition-colors ${
-                currentPage === pageNum
-                  ? "bg-blue-600 text-white border-blue-600"
-                  : "bg-white text-gray-700 border-gray-300 hover:bg-gray-50"
-              }`}
+              onClick={() => {
+                handlePageChange(1);
+                window.scrollTo({ top: 0, behavior: 'smooth' });
+              }}
+              disabled={currentPage === 1 || totalPages <= 1}
+              className="px-3 py-2 bg-white border border-gray-300 rounded-md hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed font-medium text-gray-700 transition-colors cursor-pointer"
+              title="Trang đầu"
             >
-              {pageNum}
+              <svg
+                className="w-4 h-4"
+                fill="none"
+                stroke="currentColor"
+                viewBox="0 0 24 24"
+              >
+                <path
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                  strokeWidth={2}
+                  d="M11 19l-7-7 7-7m8 14l-7-7 7-7"
+                />
+              </svg>
             </button>
-          );
-        })}
 
-        {/* Next */}
-        <button
-          onClick={() =>
-            handlePageChange(Math.min(totalPages, currentPage + 1))
-          }
-          disabled={currentPage === totalPages}
-          className="px-4 py-2 bg-white border border-gray-300 rounded-md hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed font-medium text-gray-700 transition-colors"
-        >
-          Sau →
-        </button>
+            {/* Previous */}
+            <button
+              onClick={() => {
+                handlePageChange(Math.max(1, currentPage - 1));
+                window.scrollTo({ top: 0, behavior: 'smooth' });
+              }}
+              disabled={currentPage === 1 || totalPages <= 1}
+              className="px-4 py-2 bg-white border border-gray-300 rounded-md hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed font-medium text-gray-700 transition-colors cursor-pointer"
+            >
+              ← Trước
+            </button>
+
+            {/* Page Numbers */}
+            {totalPages > 0 && (
+              <div className="flex items-center gap-1">
+                {(() => {
+                  const pages: number[] = [];
+                  const maxVisible = 5;
+
+                  if (totalPages <= maxVisible) {
+                    // Hiển thị tất cả các trang nếu <= 5
+                    for (let i = 1; i <= totalPages; i++) {
+                      pages.push(i);
+                    }
+                  } else {
+                    // Logic hiển thị trang thông minh
+                    if (currentPage <= 3) {
+                      // Gần đầu: 1, 2, 3, 4, 5
+                      for (let i = 1; i <= 5; i++) {
+                        pages.push(i);
+                      }
+                    } else if (currentPage >= totalPages - 2) {
+                      // Gần cuối: ... n-4, n-3, n-2, n-1, n
+                      for (let i = totalPages - 4; i <= totalPages; i++) {
+                        pages.push(i);
+                      }
+                    } else {
+                      // Ở giữa: ... p-1, p, p+1 ...
+                      pages.push(1);
+                      if (currentPage > 4) pages.push(-1); // Dấu ...
+                      for (
+                        let i = currentPage - 1;
+                        i <= currentPage + 1;
+                        i++
+                      ) {
+                        pages.push(i);
+                      }
+                      if (currentPage < totalPages - 3) pages.push(-1); // Dấu ...
+                      pages.push(totalPages);
+                    }
+                  }
+
+                  return pages.map((pageNum, idx) => {
+                    if (pageNum === -1) {
+                      return (
+                        <span
+                          key={`ellipsis-${idx}`}
+                          className="px-2 text-gray-400"
+                        >
+                          ...
+                        </span>
+                      );
+                    }
+
+                    return (
+                      <button
+                        key={pageNum}
+                        onClick={() => {
+                          handlePageChange(pageNum);
+                          window.scrollTo({ top: 0, behavior: 'smooth' });
+                        }}
+                        className={`min-w-[40px] px-3 py-2 border rounded-md font-medium transition-colors cursor-pointer ${
+                          currentPage === pageNum
+                            ? "bg-blue-600 text-white border-blue-600 hover:bg-blue-700"
+                            : "bg-white text-gray-700 border-gray-300 hover:bg-gray-50"
+                        }`}
+                      >
+                        {pageNum}
+                      </button>
+                    );
+                  });
+                })()}
+              </div>
+            )}
+
+            {/* Next */}
+            <button
+              onClick={() => {
+                handlePageChange(Math.min(totalPages, currentPage + 1));
+                window.scrollTo({ top: 0, behavior: 'smooth' });
+              }}
+              disabled={currentPage === totalPages || totalPages <= 1}
+              className="px-4 py-2 bg-white border border-gray-300 rounded-md hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed font-medium text-gray-700 transition-colors cursor-pointer"
+            >
+              Sau →
+            </button>
+
+            {/* Last Page */}
+            <button
+              onClick={() => {
+                handlePageChange(totalPages);
+                window.scrollTo({ top: 0, behavior: 'smooth' });
+              }}
+              disabled={currentPage === totalPages || totalPages <= 1}
+              className="px-3 py-2 bg-white border border-gray-300 rounded-md hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed font-medium text-gray-700 transition-colors cursor-pointer"
+              title="Trang cuối"
+            >
+              <svg
+                className="w-4 h-4"
+                fill="none"
+                stroke="currentColor"
+                viewBox="0 0 24 24"
+              >
+                <path
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                  strokeWidth={2}
+                  d="M13 5l7 7-7 7M5 5l7 7-7 7"
+                />
+              </svg>
+            </button>
+          </div>
+        </div>
       </div>
     );
   };
@@ -161,16 +372,32 @@ export default function AdminLocationsPage() {
               📍 Quản lý vị trí
             </h1>
             <p className="text-sm text-gray-500 mt-1">
-              Tổng số: {totalCount} vị trí | Trang {currentPage}/{totalPages}
+              {totalCount > 0 ? (
+                <>
+                  Hiển thị {(currentPage - 1) * pageSize + 1} -{" "}
+                  {Math.min(currentPage * pageSize, totalCount)} trong tổng số{" "}
+                  {totalCount} vị trí
+                </>
+              ) : (
+                "Chưa có vị trí nào"
+              )}
+              {lastSyncedAt && (
+                <>
+                  {" "}
+                  | Lần đồng bộ:{" "}
+                  <span className="text-gray-700 font-medium">{lastSyncedAt}</span>
+                </>
+              )}
             </p>
           </div>
           <div className="flex items-center gap-3">
-            <Link
-              href="/admin/dashboard"
-              className="px-4 py-2 text-gray-600 hover:text-gray-900 font-medium"
+            <button
+              onClick={handleManualRefresh}
+              disabled={loading || syncing}
+              className="px-5 py-2 border border-gray-300 rounded-lg font-semibold text-gray-700 hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
             >
-              ← Dashboard
-            </Link>
+              {syncing ? "Đang đồng bộ..." : "↻ Đồng bộ dữ liệu"}
+            </button>
             <Link
               href="/admin/locations/create"
               className="px-6 py-2 bg-blue-600 hover:bg-blue-700 text-white font-semibold rounded-lg shadow-md transition-colors"
@@ -192,6 +419,7 @@ export default function AdminLocationsPage() {
               onChange={(e) => setSearchKeyword(e.target.value)}
               onKeyPress={(e) => e.key === "Enter" && handleSearch()}
               placeholder="Tìm kiếm theo tên vị trí, tỉnh thành hoặc quốc gia..."
+              list="locations-suggestions"
               className="flex-1 px-4 py-3 border-2 border-gray-200 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 text-gray-900"
             />
             <button
@@ -201,13 +429,12 @@ export default function AdminLocationsPage() {
             >
               🔍 Tìm
             </button>
-            <button
-              onClick={handleReset}
-              className="px-6 py-3 bg-gray-100 hover:bg-gray-200 text-gray-700 font-semibold rounded-lg transition-colors"
-            >
-              ✕ Reset
-            </button>
           </div>
+        <datalist id="locations-suggestions">
+          {searchSuggestions.map((suggestion) => (
+            <option key={suggestion} value={suggestion} />
+          ))}
+        </datalist>
         </div>
 
         {/* Grid View */}

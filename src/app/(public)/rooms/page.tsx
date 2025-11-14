@@ -2,10 +2,14 @@
 
 import { Suspense, useEffect, useMemo, useState } from "react";
 import Link from "next/link";
-import { useSearchParams } from "next/navigation";
+import { useRouter, useSearchParams } from "next/navigation";
 import { getRooms, getRoomsByLocation } from "@/lib/roomService";
 import { getLocationById } from "@/lib/locationService";
+<<<<<<< HEAD
 import { searchWithoutAccents } from "@/lib/utils";
+=======
+import type { LocationResponse } from "@/types/api";
+>>>>>>> cbfc25bbd4e55b0a3577dbafa8db804526988361
 
 type RoomItem = {
   id: number;
@@ -39,6 +43,7 @@ type LocationInfo = {
 function RoomsContent() {
   const searchParams = useSearchParams();
   const locationParam = searchParams.get("location");
+  const router = useRouter();
 
   const [rooms, setRooms] = useState<RoomItem[]>([]);
   const [location, setLocation] = useState<LocationInfo | null>(null);
@@ -59,6 +64,10 @@ function RoomsContent() {
   // pagination
   const [page, setPage] = useState(1);
   const pageSize = 12;
+
+  const handleBookNow = (roomId: number) => {
+    router.push(`/rooms/${roomId}?action=book`);
+  };
 
   useEffect(() => {
     const fetchData = async () => {
@@ -112,6 +121,8 @@ function RoomsContent() {
 
   // Fetch locations for rooms
   useEffect(() => {
+    let isMounted = true;
+
     const fetchLocations = async () => {
       const uniqueLocationIds = new Set<number>();
       rooms.forEach((room) => {
@@ -120,36 +131,50 @@ function RoomsContent() {
         }
       });
 
-      const newCache = new Map(locationCache);
-      const promises: Promise<void>[] = [];
+      const idsToFetch = Array.from(uniqueLocationIds).filter(
+        (locationId) => !locationCache.has(locationId)
+      );
 
-      uniqueLocationIds.forEach((locationId) => {
-        if (!newCache.has(locationId)) {
-          promises.push(
-            getLocationById(locationId)
-              .then((res) => {
-                if (res.success && res.location) {
-                  newCache.set(locationId, res.location);
-                }
-              })
-              .catch(() => {
-                // Ignore errors for individual locations
-              })
-          );
-        }
+      if (idsToFetch.length === 0) return;
+
+      const results = await Promise.all(
+        idsToFetch.map(async (locationId) => {
+          try {
+            const res = (await getLocationById(locationId)) as LocationResponse;
+            return { locationId, res };
+          } catch {
+            return null;
+          }
+        })
+      );
+
+      if (!isMounted) return;
+
+      setLocationCache((prevCache) => {
+        const updatedCache = new Map(prevCache);
+        let hasChange = false;
+
+        results.forEach((result) => {
+          if (result && result.res.success && result.res.location) {
+            if (!updatedCache.has(result.locationId)) {
+              updatedCache.set(result.locationId, result.res.location);
+              hasChange = true;
+            }
+          }
+        });
+
+        return hasChange ? updatedCache : prevCache;
       });
-
-      if (promises.length > 0) {
-        await Promise.all(promises);
-        setLocationCache(newCache);
-      }
     };
 
     if (rooms.length > 0) {
       fetchLocations();
     }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [rooms]);
+
+    return () => {
+      isMounted = false;
+    };
+  }, [rooms, locationCache]);
 
   const getLocationName = (maViTri?: number): string => {
     if (!maViTri) return "Chưa có địa điểm";
@@ -232,7 +257,28 @@ function RoomsContent() {
     );
   };
 
-  const totalPages = Math.ceil(filteredRooms.length / pageSize);
+  useEffect(() => {
+    setPage(1);
+  }, [
+    locationParam,
+    keyword,
+    priceRange,
+    bedrooms,
+    guests,
+    amenities,
+    sortBy,
+    rooms.length,
+  ]);
+
+  const totalPages = Math.max(1, Math.ceil(filteredRooms.length / pageSize));
+
+  useEffect(() => {
+    if (page > totalPages) {
+      setPage(totalPages);
+    } else if (page < 1) {
+      setPage(1);
+    }
+  }, [page, totalPages]);
   const paginatedRooms = filteredRooms.slice(
     (page - 1) * pageSize,
     page * pageSize
@@ -240,7 +286,7 @@ function RoomsContent() {
 
   return (
     <div
-      className="min-h-screen bg-gray-50"
+      className="min-h-screen bg-gray-50 text-gray-900"
       style={{ fontFamily: "'Inter', sans-serif" }}
     >
       {/* Header */}
@@ -251,7 +297,7 @@ function RoomsContent() {
               <h1 className="text-5xl font-extrabold text-gray-900 mb-3">
                 {location.tenViTri}
               </h1>
-              <p className="text-xl text-gray-600 flex items-center gap-2">
+              <p className="text-xl text-gray-900 flex items-center gap-2">
                 <svg
                   className="w-6 h-6 text-blue-600"
                   fill="currentColor"
@@ -271,7 +317,7 @@ function RoomsContent() {
               <h1 className="text-5xl font-extrabold text-gray-900 mb-3">
                 Tất Cả Chỗ Ở
               </h1>
-              <p className="text-xl text-gray-600">
+              <p className="text-xl text-gray-900">
                 Khám phá hàng nghìn nơi lưu trú tuyệt vời
               </p>
             </div>
@@ -369,10 +415,10 @@ function RoomsContent() {
                 <button
                   key={amenity.value}
                   onClick={() => toggleAmenity(amenity.value)}
-                  className={`px-4 py-2 rounded-xl font-semibold transition-all duration-200 ${
+                    className={`px-4 py-2 rounded-xl font-semibold transition-all duration-200 ${
                     amenities.includes(amenity.value)
                       ? "bg-blue-600 text-white shadow-md"
-                      : "bg-gray-100 text-gray-700 hover:bg-gray-200"
+                      : "bg-gray-100 text-gray-900 hover:bg-gray-200"
                   }`}
                 >
                   {amenity.icon} {amenity.label}
@@ -392,7 +438,7 @@ function RoomsContent() {
                 setAmenities([]);
                 setPage(1);
               }}
-              className="px-6 py-3 bg-gray-100 hover:bg-gray-200 text-gray-700 font-semibold rounded-xl transition-all"
+              className="px-6 py-3 bg-gray-100 hover:bg-gray-200 text-gray-900 font-semibold rounded-xl transition-all"
             >
               Xóa bộ lọc
             </button>
@@ -401,7 +447,7 @@ function RoomsContent() {
 
         {/* Sort and Count */}
         <div className="flex items-center justify-between mb-8">
-          <p className="text-lg text-gray-700">
+          <p className="text-lg text-gray-900">
             <span className="text-3xl font-bold text-gray-900">
               {filteredRooms.length}
             </span>{" "}
@@ -423,7 +469,7 @@ function RoomsContent() {
         {loading && (
           <div className="text-center py-20">
             <div className="inline-block animate-spin rounded-full h-16 w-16 border-b-4 border-blue-600 mb-4"></div>
-            <p className="text-gray-600 font-semibold text-lg">Đang tải...</p>
+            <p className="text-gray-900 font-semibold text-lg">Đang tải...</p>
           </div>
         )}
 
@@ -439,12 +485,12 @@ function RoomsContent() {
           <>
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
               {paginatedRooms.map((room) => (
-                <Link
+                <div
                   key={room.id}
-                  href={`/rooms/${room.id}`}
                   className="group bg-white rounded-2xl overflow-hidden shadow-sm hover:shadow-xl transition-all duration-300 border border-gray-100"
                 >
-                  <div className="relative aspect-[4/3] overflow-hidden bg-gray-100">
+                  <Link href={`/rooms/${room.id}`} className="block">
+                    <div className="relative aspect-[4/3] overflow-hidden bg-gray-100">
                     <img
                       src={
                         room.hinhAnh ||
@@ -457,7 +503,7 @@ function RoomsContent() {
                       <span className="text-lg font-bold text-gray-900">
                         ${room.giaTien}
                       </span>
-                      <span className="text-sm text-gray-600">/đêm</span>
+                      <span className="text-sm text-gray-900">/đêm</span>
                     </div>
                   </div>
 
@@ -466,7 +512,7 @@ function RoomsContent() {
                       {room.tenPhong}
                     </h3>
                     {/* Location */}
-                    <div className="flex items-center gap-1.5 mb-3 text-gray-600">
+                    <div className="flex items-center gap-1.5 mb-3 text-gray-900">
                       <svg
                         className="w-4 h-4 text-gray-400 flex-shrink-0"
                         fill="none"
@@ -486,15 +532,15 @@ function RoomsContent() {
                           d="M15 11a3 3 0 11-6 0 3 3 0 016 0z"
                         />
                       </svg>
-                      <span className="text-sm font-medium text-gray-700 line-clamp-1">
+                      <span className="text-sm font-medium text-gray-900 line-clamp-1">
                         {getLocationName(room.maViTri)}
                       </span>
                     </div>
-                    <p className="text-gray-600 line-clamp-2 mb-4">
+                    <p className="text-gray-900 line-clamp-2 mb-4">
                       {room.moTa || "Chỗ ở tuyệt vời"}
                     </p>
 
-                    <div className="flex items-center gap-6 text-gray-600 border-t border-gray-100 pt-4 mb-4">
+                    <div className="flex items-center gap-6 text-gray-900 border-t border-gray-100 pt-4 mb-4">
                       <span className="flex items-center gap-1.5">
                         <svg
                           className="w-5 h-5"
@@ -570,6 +616,16 @@ function RoomsContent() {
                     </div>
                   </div>
                 </Link>
+                <div className="px-6 pb-6">
+                  <button
+                    type="button"
+                    onClick={() => handleBookNow(room.id)}
+                    className="w-full py-3 px-4 bg-blue-600 hover:bg-blue-700 text-white font-semibold rounded-xl transition-colors"
+                  >
+                    Đặt phòng ngay
+                  </button>
+                </div>
+              </div>
               ))}
             </div>
 
@@ -580,35 +636,55 @@ function RoomsContent() {
                 <h3 className="text-2xl font-bold text-gray-900 mb-2">
                   Không tìm thấy chỗ ở phù hợp
                 </h3>
-                <p className="text-gray-600 text-lg">
+                <p className="text-gray-900 text-lg">
                   Thử điều chỉnh bộ lọc của bạn
                 </p>
               </div>
             )}
 
             {/* Pagination */}
-            {totalPages > 1 && (
+            {filteredRooms.length > pageSize && (
               <div className="mt-16 flex items-center justify-center gap-3">
                 <button
-                  disabled={page === 1}
+                  disabled={page <= 1}
                   onClick={() => {
-                    setPage(page - 1);
+                    setPage((prev) => Math.max(1, prev - 1));
                     window.scrollTo({ top: 0, behavior: "smooth" });
                   }}
-                  className="px-6 py-3 border-2 border-gray-200 rounded-xl font-semibold text-gray-700 disabled:opacity-40 disabled:cursor-not-allowed hover:border-blue-600 hover:text-blue-600 transition-all"
+                  className="px-6 py-3 border-2 border-gray-200 rounded-xl font-semibold text-gray-900 disabled:opacity-40 disabled:cursor-not-allowed hover:border-blue-600 hover:text-blue-600 transition-all"
                 >
                   ← Trước
                 </button>
                 <div className="px-8 py-3 bg-blue-600 text-white rounded-xl font-bold shadow-md">
                   {page} / {totalPages}
                 </div>
+                <div className="flex items-center gap-2">
+                  {Array.from({ length: totalPages }, (_, index) => index + 1).map(
+                    (pageNumber) => (
+                      <button
+                        key={pageNumber}
+                        onClick={() => {
+                          setPage(pageNumber);
+                          window.scrollTo({ top: 0, behavior: "smooth" });
+                        }}
+                        className={`w-10 h-10 rounded-full font-semibold transition-all ${
+                          pageNumber === page
+                            ? "bg-blue-600 text-white shadow-lg"
+                            : "border-2 border-gray-200 text-gray-900 hover:border-blue-600 hover:text-blue-600"
+                        }`}
+                      >
+                        {pageNumber}
+                      </button>
+                    )
+                  )}
+                </div>
                 <button
-                  disabled={page === totalPages}
+                  disabled={page >= totalPages}
                   onClick={() => {
-                    setPage(page + 1);
+                    setPage((prev) => Math.min(totalPages, prev + 1));
                     window.scrollTo({ top: 0, behavior: "smooth" });
                   }}
-                  className="px-6 py-3 border-2 border-gray-200 rounded-xl font-semibold text-gray-700 disabled:opacity-40 disabled:cursor-not-allowed hover:border-blue-600 hover:text-blue-600 transition-all"
+                  className="px-6 py-3 border-2 border-gray-200 rounded-xl font-semibold text-gray-900 disabled:opacity-40 disabled:cursor-not-allowed hover:border-blue-600 hover:text-blue-600 transition-all"
                 >
                   Sau →
                 </button>
@@ -628,7 +704,7 @@ export default function RoomsPage() {
         <div className="min-h-screen flex items-center justify-center">
           <div className="text-center">
             <div className="inline-block animate-spin rounded-full h-16 w-16 border-b-4 border-blue-600 mb-4"></div>
-            <p className="text-gray-600 font-semibold text-lg">Đang tải...</p>
+            <p className="text-gray-900 font-semibold text-lg">Đang tải...</p>
           </div>
         </div>
       }

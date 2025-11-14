@@ -3,7 +3,8 @@
 import { useState, useEffect, useRef } from "react";
 import { getUsersPaginated, deleteUser } from "@/lib/userService";
 import Link from "next/link";
-import { useRouter } from "next/navigation";
+
+type RoleFilter = "all" | "ADMIN" | "USER";
 
 interface User {
   id: number;
@@ -17,46 +18,199 @@ interface User {
 }
 
 export default function AdminUsersPage() {
-  const router = useRouter();
   const [users, setUsers] = useState<User[]>([]);
   const [loading, setLoading] = useState(true);
   const [searchKeyword, setSearchKeyword] = useState("");
+  const [roleFilter, setRoleFilter] = useState<RoleFilter>("all");
   const [currentPage, setCurrentPage] = useState(1);
   const [totalPages, setTotalPages] = useState(1);
   const [totalCount, setTotalCount] = useState(0);
+  const [allUsersCache, setAllUsersCache] = useState<User[]>([]);
+  const [lastSyncedAt, setLastSyncedAt] = useState<string>("");
+  const [syncing, setSyncing] = useState(false);
   const pageSize = 10;
+  const fetchAllPageSize = 100;
   const topRef = useRef<HTMLDivElement>(null);
+  const [searchSuggestions, setSearchSuggestions] = useState<string[]>([]);
 
-  // Fetch users với phân trang
-  const fetchUsers = async (page = 1, keyword = "") => {
-    setLoading(true);
-    const result = (await getUsersPaginated(page, pageSize, keyword)) as {
+  const roleLabels: Record<RoleFilter, string> = {
+    all: "Tất cả",
+    ADMIN: "Admin",
+    USER: "User",
+  };
+  const roleOptions: RoleFilter[] = ["all", "ADMIN", "USER"];
+
+  const buildSuggestionList = (list: User[]) =>
+    list.slice(0, 20).map((user) => {
+      const safeName = user.name || "Không tên";
+      const safeEmail = user.email || "Không email";
+      return `${user.id} - ${safeName} | ${safeEmail}`;
+    });
+
+  const extractSearchTerm = (value: string) => {
+    if (!value) return "";
+    const trimmed = value.trim();
+    if (!trimmed) return "";
+    if (trimmed.includes("|")) {
+      return trimmed.split("|").pop()?.trim() || "";
+    }
+    if (/^\d+\s*-\s*/.test(trimmed)) {
+      return trimmed.replace(/^\d+\s*-\s*/, "").trim();
+    }
+    return trimmed;
+  };
+
+  const filterUsersByKeyword = (list: User[], keyword: string) => {
+    if (!keyword) return list;
+    const normalized = keyword.toLowerCase();
+    return list.filter((user) => {
+      const matchesName = user.name?.toLowerCase().includes(normalized);
+      const matchesEmail = user.email?.toLowerCase().includes(normalized);
+      const matchesPhone = user.phone?.toLowerCase().includes(normalized);
+      const matchesRole = user.role?.toLowerCase().includes(normalized);
+      const matchesId = user.id?.toString().includes(normalized);
+      return (
+        matchesName ||
+        matchesEmail ||
+        matchesPhone ||
+        matchesRole ||
+        matchesId
+      );
+    });
+  };
+
+  const filterUsersByRole = (list: User[], role: RoleFilter) => {
+    if (role === "all") return list;
+    return list.filter(
+      (user) => user.role?.toUpperCase() === role.toUpperCase()
+    );
+  };
+
+  const applySearchPagination = (list: User[], page: number) => {
+    const total = list.length;
+    const totalPagesCalc = Math.max(1, Math.ceil(total / pageSize));
+    const safePage = Math.min(Math.max(1, page), totalPagesCalc);
+    const paginated = list.slice((safePage - 1) * pageSize, safePage * pageSize);
+    setUsers(paginated);
+    setTotalPages(totalPagesCalc);
+    setTotalCount(total);
+    setCurrentPage(safePage);
+    setSearchSuggestions(buildSuggestionList(list));
+  };
+
+  const fetchAllUsers = async (keyword: string) => {
+    const firstPage = (await getUsersPaginated(
+      1,
+      fetchAllPageSize,
+      keyword
+    )) as {
       success: boolean;
       users: User[];
       totalPages: number;
-      totalCount: number;
     };
 
-    if (result.success) {
-      setUsers(result.users);
-      setTotalPages(result.totalPages);
-      setTotalCount(result.totalCount);
-      setCurrentPage(page);
+    if (!firstPage.success) {
+      return null;
     }
-    setLoading(false);
+
+    let aggregated = [...firstPage.users];
+    const totalPagesToFetch = firstPage.totalPages;
+
+    for (let page = 2; page <= totalPagesToFetch; page++) {
+      const nextPage = (await getUsersPaginated(
+        page,
+        fetchAllPageSize,
+        keyword
+      )) as {
+        success: boolean;
+        users: User[];
+      };
+      if (nextPage.success) {
+        aggregated = aggregated.concat(nextPage.users);
+      } else {
+        break;
+      }
+    }
+
+    return aggregated;
+  };
+
+  const applyFiltersAndPaginate = (
+    sourceList: User[],
+    keyword: string,
+    page: number,
+    role: RoleFilter
+  ) => {
+    const processedKeyword = extractSearchTerm(keyword);
+    const filteredList = filterUsersByRole(
+      filterUsersByKeyword(sourceList, processedKeyword),
+      role
+    );
+    applySearchPagination(filteredList, page);
+  };
+
+  const syncAllUsers = async () => {
+    setSyncing(true);
+    try {
+      const aggregated = await fetchAllUsers("");
+      if (aggregated) {
+        setAllUsersCache(aggregated);
+        setLastSyncedAt(new Date().toLocaleString());
+        return aggregated;
+      }
+      return [];
+    } finally {
+      setSyncing(false);
+    }
+  };
+
+  // Fetch users with caching (minimize reload)
+  const fetchUsers = async (
+    page = 1,
+    keyword = "",
+    options?: { forceRefresh?: boolean }
+  ) => {
+    const forceRefresh = options?.forceRefresh ?? false;
+    setLoading(true);
+    try {
+      let cache = allUsersCache;
+      if (forceRefresh || cache.length === 0) {
+        cache = await syncAllUsers();
+      }
+      applyFiltersAndPaginate(cache, keyword, page, roleFilter);
+    } catch (error) {
+      console.error("❌ Lỗi tải người dùng:", error);
+      setUsers([]);
+      setTotalPages(1);
+      setTotalCount(0);
+    } finally {
+      setLoading(false);
+    }
   };
 
   // Search users
   const handleSearch = () => {
     setCurrentPage(1);
-    fetchUsers(1, searchKeyword);
+    if (allUsersCache.length === 0) {
+      fetchUsers(1, searchKeyword);
+      return;
+    }
+    applyFiltersAndPaginate(allUsersCache, searchKeyword, 1, roleFilter);
   };
 
   // Reset search
   const handleReset = () => {
     setSearchKeyword("");
     setCurrentPage(1);
-    fetchUsers(1, "");
+    const targetRole: RoleFilter = "all";
+    if (roleFilter !== targetRole) {
+      setRoleFilter(targetRole);
+    }
+    if (allUsersCache.length === 0) {
+      fetchUsers(1, "");
+      return;
+    }
+    applyFiltersAndPaginate(allUsersCache, "", 1, targetRole);
   };
 
   // Change page
@@ -76,15 +230,30 @@ export default function AdminUsersPage() {
 
     if (result.success) {
       alert("✅ Xóa người dùng thành công!");
-      fetchUsers(currentPage, searchKeyword);
+      setAllUsersCache((prev) => {
+        const updated = prev.filter((user) => user.id !== userId);
+        applyFiltersAndPaginate(updated, searchKeyword, currentPage, roleFilter);
+        return updated;
+      });
     } else {
       alert("❌ Lỗi: " + (result.message || "Không thể xóa người dùng"));
     }
   };
 
+  const handleManualRefresh = () => {
+    fetchUsers(1, searchKeyword, { forceRefresh: true });
+  };
+
   useEffect(() => {
     fetchUsers();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
+
+  useEffect(() => {
+    if (allUsersCache.length === 0) return;
+    applyFiltersAndPaginate(allUsersCache, searchKeyword, 1, roleFilter);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [roleFilter]);
 
   // Scroll to top khi chuyển trang
   useEffect(() => {
@@ -164,16 +333,24 @@ export default function AdminUsersPage() {
             </h1>
             <p className="text-sm text-gray-500 mt-1">
               Tổng số: {totalCount} người dùng | Trang {currentPage}/
-              {totalPages}
+              {totalPages} | Vai trò: {roleLabels[roleFilter]}
+              {lastSyncedAt && (
+                <>
+                  {" "}
+                  | Lần đồng bộ:{" "}
+                  <span className="font-medium text-gray-700">{lastSyncedAt}</span>
+                </>
+              )}
             </p>
           </div>
           <div className="flex items-center gap-3">
-            <Link
-              href="/admin/dashboard"
-              className="px-4 py-2 text-gray-600 hover:text-gray-900 font-medium"
+            <button
+              onClick={handleManualRefresh}
+              disabled={loading || syncing}
+              className="px-5 py-2 border border-gray-300 rounded-lg font-semibold text-gray-700 hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
             >
-              ← Quay lại Dashboard
-            </Link>
+              {syncing ? "Đang đồng bộ..." : "↻ Đồng bộ dữ liệu"}
+            </button>
             <Link
               href="/admin/users/create"
               className="px-6 py-2 bg-blue-600 hover:bg-blue-700 text-white font-semibold rounded-lg shadow-md transition-colors"
@@ -188,30 +365,68 @@ export default function AdminUsersPage() {
       <div className="max-w-7xl mx-auto px-6 py-6">
         {/* Search & Filter */}
         <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-6 mb-6">
-          <div className="flex items-center gap-3">
-            <input
-              type="text"
-              value={searchKeyword}
-              onChange={(e) => setSearchKeyword(e.target.value)}
-              onKeyPress={(e) => e.key === "Enter" && handleSearch()}
-              placeholder="Nhập vào tên hoặc email người dùng"
-              className="flex-1 px-4 py-3 border-2 border-gray-200 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 text-gray-900"
-            />
-            <button
-              onClick={handleSearch}
-              disabled={loading}
-              className="px-8 py-3 bg-blue-600 hover:bg-blue-700 disabled:bg-gray-400 text-white font-semibold rounded-lg transition-colors"
-            >
-              🔍 Tìm
-            </button>
-            <button
-              onClick={handleReset}
-              className="px-6 py-3 bg-gray-100 hover:bg-gray-200 text-gray-700 font-semibold rounded-lg transition-colors"
-            >
-              ✕ Reset
-            </button>
+          <div className="flex flex-col gap-4">
+            <div className="flex flex-col md:flex-row gap-3">
+              <div className="flex-1">
+                <label className="text-sm font-semibold text-gray-700">
+                  Tìm kiếm nhanh
+                </label>
+                <input
+                  type="text"
+                  value={searchKeyword}
+                  onChange={(e) => setSearchKeyword(e.target.value)}
+                  onKeyDown={(e) => e.key === "Enter" && handleSearch()}
+                  placeholder="Nhập tên, email (ví dụ: gmail), số điện thoại hoặc ID người dùng"
+                  list="users-suggestions"
+                  className="mt-1 w-full px-4 py-3 border-2 border-gray-200 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 text-gray-900"
+                />
+              </div>
+              <div className="flex items-end gap-3">
+                <button
+                  onClick={handleSearch}
+                  disabled={loading}
+                  className="px-8 py-3 bg-blue-600 hover:bg-blue-700 disabled:bg-gray-400 text-white font-semibold rounded-lg transition-colors"
+                >
+                  🔍 Tìm
+                </button>
+              </div>
+            </div>
+
+            <div>
+              <div className="flex items-center gap-2 text-sm font-semibold text-gray-700 mb-2">
+                <span>Lọc theo vai trò</span>
+      
+              </div>
+              <div className="flex flex-wrap gap-2">
+                {roleOptions.map((roleOption) => {
+                  const isActive = roleFilter === roleOption;
+                  return (
+                    <button
+                      key={roleOption}
+                      type="button"
+                      onClick={() => {
+                        setCurrentPage(1);
+                        setRoleFilter(roleOption);
+                      }}
+                      className={`px-4 py-2 rounded-full border font-semibold transition-all ${
+                        isActive
+                          ? "bg-blue-600 text-white border-blue-600 shadow-md"
+                          : "bg-white text-gray-700 border-gray-300 hover:bg-gray-50"
+                      }`}
+                    >
+                      {roleLabels[roleOption]}
+                    </button>
+                  );
+                })}
+              </div>
+            </div>
           </div>
         </div>
+        <datalist id="users-suggestions">
+          {searchSuggestions.map((suggestion) => (
+            <option key={suggestion} value={suggestion} />
+          ))}
+        </datalist>
 
         {/* Table */}
         <div className="bg-white rounded-lg shadow-sm border border-gray-200 overflow-hidden">

@@ -125,14 +125,14 @@ export default function AboutPage() {
               {
                 name: "Hứa Thịnh Hưng",
                 role: "Dev-1",
-                image:
-                  "https://scontent.fsgn5-14.fna.fbcdn.net/v/t39.30808-6/514586091_1454937598851305_6812281531904977493_n.jpg?_nc_cat=106&ccb=1-7&_nc_sid=6ee11a&_nc_ohc=BxiWGqantaIQ7kNvwEEQAYq&_nc_oc=Adl3wJFA_ZL7PnGOtJmtSbcMamzCtveYskC0qF26iWh0ynWNrgGYPTl4qlO4eHB9HUQICbQAACdtKEVvMmx0-1lN&_nc_zt=23&_nc_ht=scontent.fsgn5-14.fna&_nc_gid=bx5POA-TjJGOPvVEwE6AgQ&oh=00_Afe4SoKcgze_lBMByXgJFbsnmwuJM8WGnR0ggArVZ-PWZQ&oe=68E9E51A",
+                image: "hung.jpg",
+                facebook: "https://www.facebook.com/huahung0601/",
               },
               {
                 name: "Trần Gia Kiệt",
                 role: "Dev-2",
-                image:
-                  "https://scontent.fsgn5-8.fna.fbcdn.net/v/t39.30808-6/472625037_1636788023913775_1664464095007845043_n.jpg?_nc_cat=109&ccb=1-7&_nc_sid=6ee11a&_nc_ohc=YCdfpk_MDNIQ7kNvwHiQI5p&_nc_oc=Adkd6OO63fSJrcRyRYCFSV_NUlD6cOZ7EDFcoqTZuhl1Z0yNqK0o3115Ebdl0YpsMFr2Jjn_JB_0Epo2PReDngjf&_nc_zt=23&_nc_ht=scontent.fsgn5-8.fna&_nc_gid=HXHYZMwbo0pPlGEv6u0ilQ&oh=00_Afe6QosEfZwnto0FMbxlBw9QGoDeginc03ooDTj86IE4qQ&oe=68E9B83E",
+                image: "kiet.jpg",
+                facebook: "https://www.facebook.com/tran.kiet.646179",
               },
             ].map((member, index) => (
               <div
@@ -151,6 +151,16 @@ export default function AboutPage() {
                     {member.name}
                   </h3>
                   <p className="text-blue-600 font-medium">{member.role}</p>
+                  {member.facebook && (
+                    <Link
+                      href={member.facebook}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="inline-block mt-4 px-4 py-2 rounded-lg border border-blue-600 text-blue-600 font-semibold hover:bg-blue-50 transition-colors"
+                    >
+                      Facebook
+                    </Link>
+                  )}
                 </div>
               </div>
             ))}

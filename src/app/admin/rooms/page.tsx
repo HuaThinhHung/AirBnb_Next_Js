@@ -1,6 +1,10 @@
 "use client";
 
+<<<<<<< HEAD
 import { useState, useEffect, useMemo } from "react";
+=======
+import { useEffect, useMemo, useState } from "react";
+>>>>>>> cbfc25bbd4e55b0a3577dbafa8db804526988361
 import { getRooms, deleteRoom } from "@/lib/roomService";
 import { getLocations } from "@/lib/locationService";
 import Link from "next/link";
@@ -37,22 +41,42 @@ interface Location {
 
 export default function AdminRoomsPage() {
   const [rooms, setRooms] = useState<Room[]>([]);
+  const [allRooms, setAllRooms] = useState<Room[]>([]);
   const [locations, setLocations] = useState<Location[]>([]);
   const [loading, setLoading] = useState(true);
+  const [syncing, setSyncing] = useState(false);
+  const [lastSyncedAt, setLastSyncedAt] = useState<string>("");
   const [searchTerm, setSearchTerm] = useState("");
+  const [searchSuggestions, setSearchSuggestions] = useState<string[]>([]);
   const [selectedLocation, setSelectedLocation] = useState<number | null>(null);
   const [currentPage, setCurrentPage] = useState(1);
   const [totalPages, setTotalPages] = useState(1);
   const [totalRows, setTotalRows] = useState(0);
-  const pageSize = 10;
+  const pageSize = 10; // Hiển thị đúng 10 items mỗi trang
+  const fetchBatchSize = 100;
+
+  const locationMap = useMemo(() => {
+    const map = new Map<number, Location>();
+    locations.forEach((location) => {
+      map.set(location.id, location);
+    });
+    return map;
+  }, [locations]);
 
   useEffect(() => {
-    fetchLocations();
+    const initialize = async () => {
+      setLoading(true);
+      await Promise.all([fetchLocations(), syncRooms()]);
+      setLoading(false);
+    };
+    initialize();
   }, []);
 
   useEffect(() => {
-    fetchRooms();
-  }, [currentPage, searchTerm, selectedLocation]);
+    if (allRooms.length === 0) return;
+    applyFiltersAndPaginate(allRooms, searchTerm, selectedLocation, currentPage);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [allRooms, searchTerm, selectedLocation, currentPage, locations]);
 
   const fetchLocations = async () => {
     const result = (await getLocations()) as {
@@ -64,6 +88,7 @@ export default function AdminRoomsPage() {
     }
   };
 
+<<<<<<< HEAD
   const [allRooms, setAllRooms] = useState<Room[]>([]);
 
   const fetchRooms = async () => {
@@ -90,6 +115,17 @@ export default function AdminRoomsPage() {
       const result = (await getRooms({
         pageIndex: currentPage,
         pageSize: 10,
+=======
+  const fetchAllRooms = async () => {
+    const aggregated: Room[] = [];
+    let pageIndex = 1;
+    let totalPageCount = 1;
+
+    do {
+      const result = (await getRooms({
+        pageIndex,
+        pageSize: fetchBatchSize,
+>>>>>>> cbfc25bbd4e55b0a3577dbafa8db804526988361
         keyword: "",
       })) as {
         success: boolean;
@@ -97,14 +133,87 @@ export default function AdminRoomsPage() {
         pagination?: { totalPages: number; totalRow: number };
       };
 
+<<<<<<< HEAD
       if (result.success) {
         setAllRooms(result.rooms);
         // Không cần filter client-side, dùng pagination từ server
         setTotalPages(result.pagination?.totalPages || 1);
         setTotalRows(result.pagination?.totalRow || 0);
+=======
+      if (!result.success) {
+        break;
+>>>>>>> cbfc25bbd4e55b0a3577dbafa8db804526988361
       }
+
+      aggregated.push(...(result.rooms || []));
+      totalPageCount = result.pagination?.totalPages || 1;
+      pageIndex += 1;
+    } while (pageIndex <= totalPageCount);
+
+    return aggregated;
+  };
+
+  const syncRooms = async () => {
+    setSyncing(true);
+    try {
+      const aggregatedRooms = await fetchAllRooms();
+      setAllRooms(aggregatedRooms);
+      setLastSyncedAt(new Date().toLocaleString());
+    } finally {
+      setSyncing(false);
     }
-    setLoading(false);
+  };
+
+  const buildSearchSuggestions = (list: Room[]) =>
+    list.slice(0, 30).map((room) => {
+      const locationName = getLocationName(room.maViTri);
+      return `#${room.id} • ${room.tenPhong} • ${locationName} • ${formatPrice(
+        room.giaTien
+      )}`;
+    });
+
+  const applyFiltersAndPaginate = (
+    sourceRooms: Room[],
+    keyword: string,
+    locationId: number | null,
+    page: number
+  ) => {
+    const normalized = keyword.trim().toLowerCase();
+    let filteredRooms = [...sourceRooms];
+
+    if (locationId) {
+      filteredRooms = filteredRooms.filter(
+        (room) => Number(room.maViTri) === Number(locationId)
+      );
+    }
+
+    if (normalized) {
+      filteredRooms = filteredRooms.filter((room) => {
+        const locationName = getLocationName(room.maViTri).toLowerCase();
+        const priceString = room.giaTien.toString();
+        return (
+          room.tenPhong.toLowerCase().includes(normalized) ||
+          room.id.toString().includes(normalized) ||
+          locationName.includes(normalized) ||
+          priceString.includes(normalized) ||
+          formatPrice(room.giaTien).toLowerCase().includes(normalized)
+        );
+      });
+    }
+
+    const total = filteredRooms.length;
+    const totalPagesCalculated = Math.max(1, Math.ceil(total / pageSize));
+    const safePage = Math.min(Math.max(1, page), totalPagesCalculated);
+    const startIndex = (safePage - 1) * pageSize;
+    const paginated = filteredRooms.slice(startIndex, startIndex + pageSize);
+
+    setRooms(paginated);
+    setTotalRows(total);
+    setTotalPages(totalPagesCalculated);
+    setSearchSuggestions(buildSearchSuggestions(filteredRooms));
+    if (safePage !== page) {
+      setCurrentPage(safePage);
+    }
   };
 
   // Filter client-side (chỉ khi có searchTerm hoặc selectedLocation)
@@ -160,17 +269,23 @@ export default function AdminRoomsPage() {
     };
     if (result.success) {
       alert("✅ Xóa phòng thành công!");
-      fetchRooms();
+      setAllRooms((prev) => prev.filter((room) => room.id !== roomId));
     } else {
       alert("❌ Lỗi: " + (result.message || "Không thể xóa phòng"));
     }
   };
 
   const getLocationName = (maViTri: number) => {
-    const location = locations.find((loc) => loc.id === maViTri);
+    const location = locationMap.get(maViTri);
     return location
       ? `${location.tenViTri}, ${location.tinhThanh}`
       : "Chưa có vị trí";
+  };
+
+  const handleManualRefresh = async () => {
+    setLoading(true);
+    await syncRooms();
+    setLoading(false);
   };
 
   const formatPrice = (price: number) => {
@@ -197,27 +312,36 @@ export default function AdminRoomsPage() {
               ) : (
                 "Chưa có phòng nào"
               )}
+              {lastSyncedAt && (
+                <>
+                  {" "}
+                  | Lần đồng bộ:{" "}
+                  <span className="text-gray-700 font-medium">{lastSyncedAt}</span>
+                </>
+              )}
             </p>
           </div>
-          <Link
-            href="/admin/rooms/create"
-            className="flex items-center gap-2 px-6 py-3 bg-blue-600 hover:bg-blue-700 text-white font-semibold rounded-lg transition-colors shadow-md"
-          >
-            <svg
-              className="w-5 h-5"
-              fill="none"
-              stroke="currentColor"
-              viewBox="0 0 24 24"
+          <div className="flex items-center gap-3">
+            <Link
+              href="/admin/rooms/create"
+              className="flex items-center gap-2 px-6 py-3 bg-blue-600 hover:bg-blue-700 text-white font-semibold rounded-lg transition-colors shadow-md"
             >
-              <path
-                strokeLinecap="round"
-                strokeLinejoin="round"
-                strokeWidth={2}
-                d="M12 4v16m8-8H4"
-              />
-            </svg>
-            Thêm phòng mới
-          </Link>
+              <svg
+                className="w-5 h-5"
+                fill="none"
+                stroke="currentColor"
+                viewBox="0 0 24 24"
+              >
+                <path
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                  strokeWidth={2}
+                  d="M12 4v16m8-8H4"
+                />
+              </svg>
+              Thêm phòng mới
+            </Link>
+          </div>
         </div>
       </div>
 
@@ -228,14 +352,24 @@ export default function AdminRoomsPage() {
           <div className="md:col-span-2">
             <input
               type="text"
-              placeholder="🔍 Tìm kiếm theo tên phòng..."
+              placeholder="🔍 Tìm theo tên phòng, vị trí hoặc giá..."
               value={searchTerm}
               onChange={(e) => {
                 setSearchTerm(e.target.value);
                 setCurrentPage(1);
               }}
+<<<<<<< HEAD
               className="w-full px-4 py-2 border-2 border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 text-gray-900 font-medium placeholder-gray-400"
+=======
+              list="rooms-suggestions"
+              className="w-full px-4 py-2 border-2 border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 text-gray-900"
+>>>>>>> cbfc25bbd4e55b0a3577dbafa8db804526988361
             />
+            <datalist id="rooms-suggestions">
+              {searchSuggestions.map((suggestion) => (
+                <option key={suggestion} value={suggestion} />
+              ))}
+            </datalist>
           </div>
 
           {/* Filter by Location */}
@@ -260,7 +394,7 @@ export default function AdminRoomsPage() {
       </div>
 
       {/* Content */}
-      <div className="px-6 py-8">
+      <div className="px-6 py-6 pb-24">
         {loading ? (
           <div className="flex items-center justify-center py-20">
             <div className="text-center">
@@ -282,45 +416,46 @@ export default function AdminRoomsPage() {
         ) : (
           <>
             {/* Table */}
-            <div className="bg-white rounded-lg shadow-sm border border-gray-200 overflow-hidden">
+            <div className="bg-white rounded-lg shadow-sm border border-gray-200 overflow-hidden mb-4">
               <div className="overflow-x-auto">
-                <table className="w-full">
-                  <thead className="bg-gray-50 border-b border-gray-200">
-                    <tr>
-                      <th className="px-4 py-3 text-left text-xs font-semibold text-gray-700 uppercase tracking-wider w-24">
-                        Hình ảnh
-                      </th>
-                      <th className="px-4 py-3 text-left text-xs font-semibold text-gray-700 uppercase tracking-wider">
-                        Thông tin phòng
-                      </th>
-                      <th className="px-4 py-3 text-left text-xs font-semibold text-gray-700 uppercase tracking-wider w-48">
-                        Vị trí
-                      </th>
-                      <th className="px-4 py-3 text-right text-xs font-semibold text-gray-700 uppercase tracking-wider w-32">
-                        Giá/đêm
-                      </th>
-                      <th className="px-4 py-3 text-center text-xs font-semibold text-gray-700 uppercase tracking-wider w-32">
-                        Hành động
-                      </th>
-                    </tr>
-                  </thead>
-                  <tbody className="divide-y divide-gray-100 bg-white">
+                <div className="max-h-[calc(100vh-500px)] overflow-y-auto">
+                  <table className="w-full">
+                    <thead className="bg-gray-50 border-b border-gray-200 sticky top-0 z-10">
+                      <tr>
+                        <th className="px-4 py-3 text-left text-xs font-semibold text-gray-700 uppercase tracking-wider w-24 bg-gray-50">
+                          Hình ảnh
+                        </th>
+                        <th className="px-4 py-3 text-left text-xs font-semibold text-gray-700 uppercase tracking-wider bg-gray-50">
+                          Thông tin phòng
+                        </th>
+                        <th className="px-4 py-3 text-left text-xs font-semibold text-gray-700 uppercase tracking-wider w-48 bg-gray-50">
+                          Vị trí
+                        </th>
+                        <th className="px-4 py-3 text-right text-xs font-semibold text-gray-700 uppercase tracking-wider w-32 bg-gray-50">
+                          Giá/đêm
+                        </th>
+                        <th className="px-4 py-3 text-center text-xs font-semibold text-gray-700 uppercase tracking-wider w-32 bg-gray-50">
+                          Hành động
+                        </th>
+                      </tr>
+                    </thead>
+                    <tbody className="divide-y divide-gray-100 bg-white">
                     {rooms.map((room) => (
                       <tr
                         key={room.id}
                         className="hover:bg-gray-50 transition-colors"
                       >
-                        <td className="px-4 py-4">
+                        <td className="px-4 py-3">
                           {room.hinhAnh ? (
                             <img
                               src={room.hinhAnh}
                               alt={room.tenPhong}
-                              className="w-16 h-16 object-cover rounded-lg border border-gray-200 shadow-sm"
+                              className="w-14 h-14 object-cover rounded-lg border border-gray-200 shadow-sm"
                             />
                           ) : (
-                            <div className="w-16 h-16 flex items-center justify-center bg-gradient-to-br from-blue-100 to-cyan-100 rounded-lg">
+                            <div className="w-14 h-14 flex items-center justify-center bg-gradient-to-br from-blue-100 to-cyan-100 rounded-lg">
                               <svg
-                                className="w-8 h-8 text-blue-600"
+                                className="w-7 h-7 text-blue-600"
                                 fill="none"
                                 stroke="currentColor"
                                 viewBox="0 0 24 24"
@@ -335,11 +470,11 @@ export default function AdminRoomsPage() {
                             </div>
                           )}
                         </td>
-                        <td className="px-4 py-4">
-                          <div className="font-semibold text-gray-900 mb-1">
+                        <td className="px-4 py-3">
+                          <div className="font-semibold text-gray-900 mb-1 text-sm">
                             {room.tenPhong}
                           </div>
-                          <div className="flex flex-wrap gap-x-4 gap-y-1 text-xs text-gray-600">
+                          <div className="flex flex-wrap gap-x-3 gap-y-1 text-xs text-gray-600">
                             <span className="flex items-center gap-1">
                               <svg
                                 className="w-3.5 h-3.5"
@@ -409,7 +544,7 @@ export default function AdminRoomsPage() {
                             ID: #{room.id}
                           </div>
                         </td>
-                        <td className="px-4 py-4">
+                        <td className="px-4 py-3">
                           <div className="flex items-start gap-2">
                             <svg
                               className="w-4 h-4 text-gray-400 mt-0.5 flex-shrink-0"
@@ -430,26 +565,26 @@ export default function AdminRoomsPage() {
                                 d="M15 11a3 3 0 11-6 0 3 3 0 016 0z"
                               />
                             </svg>
-                            <span className="text-sm text-gray-700 line-clamp-2">
+                            <span className="text-xs text-gray-700 line-clamp-2">
                               {getLocationName(room.maViTri)}
                             </span>
                           </div>
                         </td>
-                        <td className="px-4 py-4 text-right">
-                          <div className="font-bold text-blue-600 text-sm">
+                        <td className="px-4 py-3 text-right">
+                          <div className="font-bold text-blue-600 text-xs">
                             {formatPrice(room.giaTien)}
                           </div>
                           <div className="text-xs text-gray-500">mỗi đêm</div>
                         </td>
-                        <td className="px-6 py-4">
-                          <div className="flex items-center justify-center gap-2">
+                        <td className="px-4 py-3">
+                          <div className="flex items-center justify-center gap-1.5">
                             <Link
                               href={`/admin/rooms/${room.id}`}
-                              className="p-2 bg-blue-50 hover:bg-blue-100 text-blue-600 rounded-lg transition-colors"
+                              className="p-1.5 bg-blue-50 hover:bg-blue-100 text-blue-600 rounded-lg transition-colors"
                               title="Xem chi tiết"
                             >
                               <svg
-                                className="w-5 h-5"
+                                className="w-4 h-4"
                                 fill="none"
                                 stroke="currentColor"
                                 viewBox="0 0 24 24"
@@ -470,11 +605,11 @@ export default function AdminRoomsPage() {
                             </Link>
                             <Link
                               href={`/admin/rooms/${room.id}/edit`}
-                              className="p-2 bg-yellow-50 hover:bg-yellow-100 text-yellow-600 rounded-lg transition-colors"
+                              className="p-1.5 bg-yellow-50 hover:bg-yellow-100 text-yellow-600 rounded-lg transition-colors"
                               title="Chỉnh sửa"
                             >
                               <svg
-                                className="w-5 h-5"
+                                className="w-4 h-4"
                                 fill="none"
                                 stroke="currentColor"
                                 viewBox="0 0 24 24"
@@ -491,11 +626,11 @@ export default function AdminRoomsPage() {
                               onClick={() =>
                                 handleDelete(room.id, room.tenPhong)
                               }
-                              className="p-2 bg-red-50 hover:bg-red-100 text-red-600 rounded-lg transition-colors"
+                              className="p-1.5 bg-red-50 hover:bg-red-100 text-red-600 rounded-lg transition-colors"
                               title="Xóa"
                             >
                               <svg
-                                className="w-5 h-5"
+                                className="w-4 h-4"
                                 fill="none"
                                 stroke="currentColor"
                                 viewBox="0 0 24 24"
@@ -512,76 +647,186 @@ export default function AdminRoomsPage() {
                         </td>
                       </tr>
                     ))}
-                  </tbody>
-                </table>
+                    </tbody>
+                  </table>
+                </div>
               </div>
             </div>
 
-            {/* Pagination */}
-            {totalRows > pageSize && (
-              <div className="bg-white border-t border-gray-200 px-6 py-4 mt-6 rounded-b-lg">
+            {/* Pagination - Luôn hiển thị nếu có dữ liệu */}
+            {totalRows > 0 && totalPages > 0 && (
+              <div className="bg-white border border-gray-200 px-6 py-4 rounded-lg shadow-sm relative z-20 mt-4">
                 <div className="flex flex-col sm:flex-row items-center justify-between gap-4">
                   {/* Info */}
                   <div className="text-sm text-gray-600">
-                    Trang{" "}
+                    Hiển thị{" "}
                     <span className="font-semibold text-gray-900">
-                      {currentPage}
-                    </span>{" "}
-                    của{" "}
-                    <span className="font-semibold text-gray-900">
-                      {totalPages}
+                      {(currentPage - 1) * pageSize + 1}
                     </span>
-                    {" "}(Tổng: {totalRows} phòng)
+                    {" - "}
+                    <span className="font-semibold text-gray-900">
+                      {Math.min(currentPage * pageSize, totalRows)}
+                    </span>
+                    {" trong tổng số "}
+                    <span className="font-semibold text-gray-900">
+                      {totalRows}
+                    </span>
+                    {" phòng"}
                   </div>
 
                   {/* Pagination Buttons */}
-                  <div className="flex items-center justify-center gap-2">
+                  <div className="flex items-center justify-center gap-1 flex-wrap">
+                    {/* First Page */}
+                    <button
+                      onClick={() => {
+                        setCurrentPage(1);
+                        window.scrollTo({ top: 0, behavior: 'smooth' });
+                      }}
+                      disabled={currentPage === 1 || totalPages <= 1}
+                      className="px-3 py-2 bg-white border border-gray-300 rounded-md hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed font-medium text-gray-700 transition-colors cursor-pointer"
+                      title="Trang đầu"
+                    >
+                      <svg
+                        className="w-4 h-4"
+                        fill="none"
+                        stroke="currentColor"
+                        viewBox="0 0 24 24"
+                      >
+                        <path
+                          strokeLinecap="round"
+                          strokeLinejoin="round"
+                          strokeWidth={2}
+                          d="M11 19l-7-7 7-7m8 14l-7-7 7-7"
+                        />
+                      </svg>
+                    </button>
+
                     {/* Previous */}
                     <button
-                      onClick={() => setCurrentPage((p) => Math.max(1, p - 1))}
-                      disabled={currentPage === 1}
-                      className="px-4 py-2 bg-white border border-gray-300 rounded-md hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed font-medium text-gray-700 transition-colors"
+                      onClick={() => {
+                        setCurrentPage((p) => {
+                          const newPage = Math.max(1, p - 1);
+                          window.scrollTo({ top: 0, behavior: 'smooth' });
+                          return newPage;
+                        });
+                      }}
+                      disabled={currentPage === 1 || totalPages <= 1}
+                      className="px-4 py-2 bg-white border border-gray-300 rounded-md hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed font-medium text-gray-700 transition-colors cursor-pointer"
                     >
                       ← Trước
                     </button>
 
                     {/* Page Numbers */}
-                    {Array.from({ length: Math.min(5, totalPages) }, (_, i) => {
-                      let pageNum;
-                      if (totalPages <= 5) {
-                        pageNum = i + 1;
-                      } else if (currentPage <= 3) {
-                        pageNum = i + 1;
-                      } else if (currentPage >= totalPages - 2) {
-                        pageNum = totalPages - 4 + i;
-                      } else {
-                        pageNum = currentPage - 2 + i;
-                      }
+                    {totalPages > 0 && (
+                      <div className="flex items-center gap-1">
+                        {(() => {
+                          const pages: number[] = [];
+                          const maxVisible = 5;
 
-                      return (
-                        <button
-                          key={pageNum}
-                          onClick={() => setCurrentPage(pageNum)}
-                          className={`min-w-[40px] px-3 py-2 border rounded-md font-medium transition-colors ${
-                            currentPage === pageNum
-                              ? "bg-blue-600 text-white border-blue-600"
-                              : "bg-white text-gray-700 border-gray-300 hover:bg-gray-50"
-                          }`}
-                        >
-                          {pageNum}
-                        </button>
-                      );
-                    })}
+                          if (totalPages <= maxVisible) {
+                            // Hiển thị tất cả các trang nếu <= 5
+                            for (let i = 1; i <= totalPages; i++) {
+                              pages.push(i);
+                            }
+                          } else {
+                            // Logic hiển thị trang thông minh
+                            if (currentPage <= 3) {
+                              // Gần đầu: 1, 2, 3, 4, 5
+                              for (let i = 1; i <= 5; i++) {
+                                pages.push(i);
+                              }
+                            } else if (currentPage >= totalPages - 2) {
+                              // Gần cuối: ... n-4, n-3, n-2, n-1, n
+                              for (let i = totalPages - 4; i <= totalPages; i++) {
+                                pages.push(i);
+                              }
+                            } else {
+                              // Ở giữa: ... p-1, p, p+1 ...
+                              pages.push(1);
+                              if (currentPage > 4) pages.push(-1); // Dấu ...
+                              for (
+                                let i = currentPage - 1;
+                                i <= currentPage + 1;
+                                i++
+                              ) {
+                                pages.push(i);
+                              }
+                              if (currentPage < totalPages - 3) pages.push(-1); // Dấu ...
+                              pages.push(totalPages);
+                            }
+                          }
+
+                          return pages.map((pageNum, idx) => {
+                            if (pageNum === -1) {
+                              return (
+                                <span
+                                  key={`ellipsis-${idx}`}
+                                  className="px-2 text-gray-400"
+                                >
+                                  ...
+                                </span>
+                              );
+                            }
+
+                            return (
+                              <button
+                                key={pageNum}
+                                onClick={() => {
+                                  setCurrentPage(pageNum);
+                                  window.scrollTo({ top: 0, behavior: 'smooth' });
+                                }}
+                                className={`min-w-[40px] px-3 py-2 border rounded-md font-medium transition-colors cursor-pointer ${
+                                  currentPage === pageNum
+                                    ? "bg-blue-600 text-white border-blue-600 hover:bg-blue-700"
+                                    : "bg-white text-gray-700 border-gray-300 hover:bg-gray-50"
+                                }`}
+                              >
+                                {pageNum}
+                              </button>
+                            );
+                          });
+                        })()}
+                      </div>
+                    )}
 
                     {/* Next */}
                     <button
-                      onClick={() =>
-                        setCurrentPage((p) => Math.min(totalPages, p + 1))
-                      }
-                      disabled={currentPage === totalPages}
-                      className="px-4 py-2 bg-white border border-gray-300 rounded-md hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed font-medium text-gray-700 transition-colors"
+                      onClick={() => {
+                        setCurrentPage((p) => {
+                          const newPage = Math.min(totalPages, p + 1);
+                          window.scrollTo({ top: 0, behavior: 'smooth' });
+                          return newPage;
+                        });
+                      }}
+                      disabled={currentPage === totalPages || totalPages <= 1}
+                      className="px-4 py-2 bg-white border border-gray-300 rounded-md hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed font-medium text-gray-700 transition-colors cursor-pointer"
                     >
                       Sau →
+                    </button>
+
+                    {/* Last Page */}
+                    <button
+                      onClick={() => {
+                        setCurrentPage(totalPages);
+                        window.scrollTo({ top: 0, behavior: 'smooth' });
+                      }}
+                      disabled={currentPage === totalPages || totalPages <= 1}
+                      className="px-3 py-2 bg-white border border-gray-300 rounded-md hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed font-medium text-gray-700 transition-colors cursor-pointer"
+                      title="Trang cuối"
+                    >
+                      <svg
+                        className="w-4 h-4"
+                        fill="none"
+                        stroke="currentColor"
+                        viewBox="0 0 24 24"
+                      >
+                        <path
+                          strokeLinecap="round"
+                          strokeLinejoin="round"
+                          strokeWidth={2}
+                          d="M13 5l7 7-7 7M5 5l7 7-7 7"
+                        />
+                      </svg>
                     </button>
                   </div>
                 </div>

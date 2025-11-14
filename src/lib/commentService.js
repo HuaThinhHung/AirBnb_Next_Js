@@ -6,6 +6,30 @@ import api from "./api";
  */
 
 /**
+ * Lấy tất cả bình luận (Admin)
+ * @returns {Promise<Object>} Danh sách bình luận
+ */
+export const getAllComments = async () => {
+  try {
+    console.log("📥 [Comment] Đang lấy tất cả bình luận...");
+    const response = await api.get("/api/binh-luan");
+
+    return {
+      success: true,
+      comments: response.data?.content || [],
+      message: response.data?.message || "Lấy danh sách bình luận thành công",
+    };
+  } catch (error) {
+    console.error("❌ [Comment] Lỗi lấy tất cả bình luận:", error);
+    return {
+      success: false,
+      comments: [],
+      message: error.message || "Không thể lấy danh sách bình luận",
+    };
+  }
+};
+
+/**
  * Lấy danh sách bình luận theo phòng
  * @param {number} roomId - ID phòng
  * @param {Object} params - Tham số phân trang (optional)
