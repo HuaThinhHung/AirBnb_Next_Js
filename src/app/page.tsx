@@ -372,11 +372,11 @@ export default function Home() {
             </p>
           </div>
 
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
+          <div className="flex gap-4 overflow-x-auto hide-scrollbar snap-x snap-mandatory -mx-4 px-4 md:mx-0 md:px-0 md:grid md:grid-cols-3 md:gap-8 md:overflow-visible md:snap-none">
             {testimonials.map((testimonial) => (
               <div
                 key={testimonial.id}
-                className="bg-blue-100 rounded-2xl p-6 shadow-lg hover:shadow-xl transition-all duration-300"
+                className="bg-blue-100 rounded-2xl p-6 shadow-lg hover:shadow-xl transition-all duration-300 min-w-[85%] flex-shrink-0 snap-center md:min-w-0"
               >
                 <div className="flex items-center mb-4">
                   <img

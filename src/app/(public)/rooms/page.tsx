@@ -57,6 +57,7 @@ function RoomsContent() {
   const [sortBy, setSortBy] = useState<
     "priceAsc" | "priceDesc" | "nameAsc" | "nameDesc"
   >("priceAsc");
+  const [showMobileFilters, setShowMobileFilters] = useState(false);
 
   // pagination
   const [page, setPage] = useState(1);
@@ -281,6 +282,16 @@ function RoomsContent() {
     page * pageSize
   );
 
+  const resetFilters = () => {
+    setKeyword("");
+    setPriceRange("all");
+    setBedrooms("");
+    setGuests("");
+    setAmenities([]);
+    setSortBy("priceAsc");
+    setPage(1);
+  };
+
   return (
     <div
       className="min-h-screen bg-gray-50 text-gray-900"
@@ -288,7 +299,7 @@ function RoomsContent() {
     >
       {/* Header */}
       <div className="bg-white border-b border-gray-200">
-        <div className="max-w-[1400px] mx-auto px-6 lg:px-12 py-8">
+        <div className="max-w-[1400px] mx-auto px-4 sm:px-6 lg:px-12 py-8">
           {location ? (
             <div>
               <h1 className="text-5xl font-extrabold text-gray-900 mb-3">
@@ -322,9 +333,25 @@ function RoomsContent() {
         </div>
       </div>
 
-      <div className="max-w-[1400px] mx-auto px-6 lg:px-12 py-12">
+      <div className="max-w-[1400px] mx-auto px-4 sm:px-6 lg:px-12 py-12">
         {/* Filters Bar */}
-        <div className="bg-white rounded-2xl shadow-sm border border-gray-200 p-6 mb-12">
+        <div className="lg:hidden flex items-center justify-between mb-4">
+          <p className="text-sm text-gray-600">
+            {filteredRooms.length} chỗ ở phù hợp
+          </p>
+          <button
+            type="button"
+            onClick={() => setShowMobileFilters((prev) => !prev)}
+            className="px-4 py-2 border border-gray-300 rounded-lg font-semibold text-gray-900 bg-white shadow-sm"
+          >
+            {showMobileFilters ? "Ẩn bộ lọc" : "Bộ lọc & sắp xếp"}
+          </button>
+        </div>
+        <div
+          className={`bg-white rounded-2xl shadow-sm border border-gray-200 p-6 mb-12 ${
+            showMobileFilters ? "block" : "hidden"
+          } lg:block`}
+        >
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
             {/* Search */}
             <div>
@@ -427,23 +454,38 @@ function RoomsContent() {
           {/* Clear Filter */}
           <div className="mt-6 flex items-center justify-between">
             <button
-              onClick={() => {
-                setKeyword("");
-                setPriceRange("all");
-                setBedrooms("");
-                setGuests("");
-                setAmenities([]);
-                setPage(1);
-              }}
+              onClick={resetFilters}
               className="px-6 py-3 bg-gray-100 hover:bg-gray-200 text-gray-900 font-semibold rounded-xl transition-all"
             >
               Xóa bộ lọc
             </button>
           </div>
+
+          {showMobileFilters && (
+            <div className="mt-6 flex flex-col gap-3 lg:hidden">
+              <button
+                type="button"
+                onClick={() => setShowMobileFilters(false)}
+                className="w-full px-4 py-3 bg-blue-600 text-white font-semibold rounded-xl shadow-md"
+              >
+                Áp dụng
+              </button>
+              <button
+                type="button"
+                onClick={() => {
+                  resetFilters();
+                  setShowMobileFilters(false);
+                }}
+                className="w-full px-4 py-3 border-2 border-gray-200 rounded-xl font-semibold text-gray-900"
+              >
+                Đặt lại bộ lọc
+              </button>
+            </div>
+          )}
         </div>
 
         {/* Sort and Count */}
-        <div className="flex items-center justify-between mb-8">
+        <div className="flex flex-col gap-4 md:flex-row md:items-center md:justify-between mb-8">
           <p className="text-lg text-gray-900">
             <span className="text-3xl font-bold text-gray-900">
               {filteredRooms.length}
@@ -453,7 +495,7 @@ function RoomsContent() {
           <select
             value={sortBy}
             onChange={(e) => setSortBy(e.target.value as typeof sortBy)}
-            className="px-6 py-3 border-2 border-gray-200 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all font-semibold"
+            className="px-6 py-3 border-2 border-gray-200 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all font-semibold w-full md:w-auto"
           >
             <option value="priceAsc">Giá: Thấp → Cao</option>
             <option value="priceDesc">Giá: Cao → Thấp</option>
