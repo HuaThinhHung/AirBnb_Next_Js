@@ -858,44 +858,7 @@ export default function RegisterPage() {
                     </div>
                   </div>
 
-                  {/* Role Selection */}
-                  <div>
-                    <label className="block text-sm font-semibold text-gray-700 mb-3">
-                      Role
-                    </label>
-                    <div className="flex space-x-6">
-                      <label className="flex items-center">
-                        <input
-                          type="radio"
-                          name="role"
-                          value="USER"
-                          checked={formData.role === "USER"}
-                          onChange={() =>
-                            setFormData((prev) => ({ ...prev, role: "USER" }))
-                          }
-                          className="w-5 h-5 text-blue-600 bg-white border-2 border-gray-300 rounded-lg focus:ring-blue-500 focus:ring-2 transition-all duration-200"
-                        />
-                        <span className="ml-3 text-gray-700 font-medium">
-                          User
-                        </span>
-                      </label>
-                      <label className="flex items-center">
-                        <input
-                          type="radio"
-                          name="role"
-                          value="ADMIN"
-                          checked={formData.role === "ADMIN"}
-                          onChange={() =>
-                            setFormData((prev) => ({ ...prev, role: "ADMIN" }))
-                          }
-                          className="w-5 h-5 text-blue-600 bg-white border-2 border-gray-300 rounded-lg focus:ring-blue-500 focus:ring-2 transition-all duration-200"
-                        />
-                        <span className="ml-3 text-gray-700 font-medium">
-                          Admin
-                        </span>
-                      </label>
-                    </div>
-                  </div>
+                  {/* Role is fixed to USER; no manual selection */}
 
                   {/* Terms and Conditions */}
                   <div className="flex items-start">
