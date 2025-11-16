@@ -2,8 +2,15 @@
 
 import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
-import { getCurrentUser, updateUser, getUserBookings } from "@/lib/userService";
+import {
+  getCurrentUser,
+  getUserById,
+  updateUser,
+  getUserBookings,
+  uploadAvatar,
+} from "@/lib/userService";
 import { logout } from "@/lib/authService";
+import { useToast } from "@/components/ui/AppToastProvider";
 import { getRoomById } from "@/lib/roomService";
 import Link from "next/link";
 
@@ -32,13 +39,23 @@ interface RoomInfo {
   tenPhong: string;
 }
 
+type StoredUser = {
+  id?: number;
+  user?: {
+    id?: number;
+  };
+  [key: string]: unknown;
+};
+
 export default function ProfilePage() {
   const router = useRouter();
+  const { showToast } = useToast();
   const [user, setUser] = useState<User | null>(null);
   const [bookings, setBookings] = useState<Booking[]>([]);
   const [roomInfoMap, setRoomInfoMap] = useState<Map<number, RoomInfo>>(new Map());
   const [loading, setLoading] = useState(true);
   const [isEditing, setIsEditing] = useState(false);
+  const [avatarUploading, setAvatarUploading] = useState(false);
 
   // Form state
   const [formData, setFormData] = useState({
@@ -51,23 +68,51 @@ export default function ProfilePage() {
   });
 
   useEffect(() => {
-    const currentUser = getCurrentUser() as User | null;
-    if (!currentUser) {
-      router.push("/login");
-      return;
-    }
+    const loadProfile = async () => {
+      const localUser = getCurrentUser() as StoredUser | null;
+      if (!localUser) {
+        router.push("/login");
+        return;
+      }
 
-    setUser(currentUser);
-    setFormData({
-      name: currentUser.name || "",
-      email: currentUser.email || "",
-      phone: currentUser.phone || "",
-      birthday: currentUser.birthday || "",
-      gender: currentUser.gender !== undefined ? currentUser.gender : true,
-      avatar: currentUser.avatar || "",
-    });
+      const userId = localUser?.user?.id ?? localUser?.id;
+      if (!userId) {
+        router.push("/login");
+        return;
+      }
 
-    fetchUserBookings(currentUser.id);
+      const result = (await getUserById(Number(userId))) as {
+        success: boolean;
+        user?: User;
+        message?: string;
+      };
+
+      if (result.success && result.user) {
+        const fetchedUser = result.user;
+        setUser(fetchedUser);
+        setFormData({
+          name: fetchedUser.name || "",
+          email: fetchedUser.email || "",
+          phone: fetchedUser.phone || "",
+          birthday: fetchedUser.birthday || "",
+          gender:
+            fetchedUser.gender !== undefined && fetchedUser.gender !== null
+              ? fetchedUser.gender
+              : true,
+          avatar: fetchedUser.avatar || "",
+        });
+        // Đồng bộ lại localStorage giống admin
+        if (typeof window !== "undefined") {
+          localStorage.setItem("user", JSON.stringify(fetchedUser));
+          window.dispatchEvent(new Event("user-updated"));
+        }
+        fetchUserBookings(fetchedUser.id);
+      } else {
+        router.push("/login");
+      }
+    };
+
+    loadProfile();
   }, []);
 
   const fetchUserBookings = async (userId: number) => {
@@ -124,12 +169,31 @@ export default function ProfilePage() {
       user?: User;
       message?: string;
     };
-    if (result.success) {
-      setUser(result.user || null);
+    if (result.success && result.user) {
+      const updated = result.user as User;
+      setUser(updated);
+      setFormData((prev) => ({
+        ...prev,
+        name: updated.name || prev.name,
+        email: updated.email || prev.email,
+        phone: updated.phone || prev.phone,
+        birthday: updated.birthday || prev.birthday,
+        gender:
+          updated.gender !== undefined && updated.gender !== null
+            ? updated.gender
+            : prev.gender,
+      }));
       setIsEditing(false);
-      alert("Cập nhật thông tin thành công!");
+
+      // Ghi đè lại localStorage với user mới (dạng phẳng) để Header đọc avatar chuẩn
+      if (typeof window !== "undefined") {
+        localStorage.setItem("user", JSON.stringify(updated));
+        window.dispatchEvent(new Event("user-updated"));
+      }
+
+      showToast("Cập nhật thông tin thành công!", "success");
     } else {
-      alert("Lỗi: " + result.message);
+      showToast(result.message || "Lỗi khi cập nhật thông tin", "error");
     }
   };
 
@@ -138,7 +202,80 @@ export default function ProfilePage() {
     if (result.success) {
       router.push("/");
     } else {
-      alert(result.message || "Có lỗi xảy ra khi đăng xuất");
+      showToast(result.message || "Có lỗi xảy ra khi đăng xuất", "error");
+    }
+  };
+
+  const handleAvatarChange = async (
+    e: React.ChangeEvent<HTMLInputElement>
+  ) => {
+    if (!user) return;
+    if (!e.target.files || e.target.files.length === 0) return;
+
+    const file = e.target.files[0];
+    if (!file.type.startsWith("image/")) {
+      showToast("Vui lòng chọn file ảnh hợp lệ (jpg, png...)", "error");
+      return;
+    }
+    if (file.size > 5 * 1024 * 1024) {
+      showToast("File quá lớn! Vui lòng chọn ảnh dưới 5MB.", "error");
+      return;
+    }
+
+    setAvatarUploading(true);
+    const result = (await uploadAvatar(file)) as {
+      success: boolean;
+      avatar?: string;
+      message?: string;
+    };
+    setAvatarUploading(false);
+
+    if (result.success && result.avatar) {
+      const newAvatar = result.avatar ?? "";
+
+      // Sau khi upload file thành công, gọi luôn updateUser để lưu avatar mới giống admin
+      if (!user) {
+        showToast("Không tìm thấy thông tin người dùng, vui lòng đăng nhập lại.", "error");
+        return;
+      }
+
+      const payload = {
+        name: formData.name,
+        email: formData.email,
+        phone: formData.phone,
+        birthday: formData.birthday || null,
+        gender: formData.gender,
+        avatar: newAvatar,
+      };
+
+      const updateResult = (await updateUser(user.id, payload)) as {
+        success: boolean;
+        user?: User;
+        message?: string;
+      };
+
+      if (updateResult.success && updateResult.user) {
+        const updatedUser = updateResult.user;
+        setUser(updatedUser);
+        setFormData((prev) => ({
+          ...prev,
+          avatar: updatedUser.avatar || newAvatar,
+        }));
+
+        if (typeof window !== "undefined") {
+          localStorage.setItem("user", JSON.stringify(updatedUser));
+          window.dispatchEvent(new Event("user-updated"));
+        }
+
+        showToast("Upload avatar thành công!", "success");
+      } else {
+        showToast(
+          updateResult.message || "Không thể lưu avatar mới, vui lòng thử lại.",
+          "error"
+        );
+      }
+    } else {
+      showToast(result.message || "Không thể upload avatar.", "error");
     }
   };
 
@@ -190,19 +327,28 @@ export default function ProfilePage() {
               <div className="text-center">
                 {/* Avatar */}
                 <div className="relative inline-block">
-                  <div className="w-32 h-32 rounded-full bg-gradient-to-br from-blue-500 to-cyan-500 flex items-center justify-center text-white text-4xl font-bold shadow-lg mx-auto">
-                    {user.avatar ? (
-                      <img
-                        src={user.avatar}
-                        alt={user.name}
-                        className="w-full h-full rounded-full object-cover"
-                      />
-                    ) : (
-                      user.name.charAt(0).toUpperCase()
-                    )}
-                  </div>
+                  {(() => {
+                    const avatarUrl = formData.avatar || user.avatar;
+                    return (
+                      <div className="w-32 h-32 rounded-full bg-gradient-to-br from-blue-500 to-cyan-500 flex items-center justify-center text-white text-4xl font-bold shadow-lg mx-auto overflow-hidden">
+                        {avatarUrl ? (
+                          // eslint-disable-next-line @next/next/no-img-element
+                          <img
+                            src={avatarUrl}
+                            alt={user.name}
+                            className="w-full h-full object-cover"
+                          />
+                        ) : (
+                          user.name.charAt(0).toUpperCase()
+                        )}
+                      </div>
+                    );
+                  })()}
                   <div className="absolute bottom-2 right-2 w-6 h-6 bg-green-500 rounded-full border-4 border-white"></div>
                 </div>
+                {avatarUploading && (
+                  <p className="mt-4 text-xs text-gray-500">Đang upload ảnh...</p>
+                )}
 
                 <h2 className="text-2xl font-bold text-gray-900 mt-4">
                   {user.name}
@@ -271,10 +417,8 @@ export default function ProfilePage() {
                       <input
                         type="email"
                         value={formData.email}
-                        onChange={(e) =>
-                          setFormData({ ...formData, email: e.target.value })
-                        }
-                        className="w-full px-4 py-3 border-2 border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 text-gray-900"
+                        disabled
+                        className="w-full px-4 py-3 border-2 border-gray-200 rounded-lg bg-gray-100 text-gray-500 cursor-not-allowed"
                       />
                     </div>
                     <div>

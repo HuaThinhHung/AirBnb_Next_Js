@@ -7,6 +7,8 @@ import Link from "next/link";
 import { removeVietnameseAccents } from "@/lib/utils";
 import { useAdminConfirm } from "@/components/admin/AdminConfirmDialog";
 import { useAdminToast } from "@/components/admin/AdminToastProvider";
+import AdminPageHeader from "@/components/admin/AdminPageHeader";
+import AdminTableContainer from "@/components/admin/AdminTableContainer";
 
 interface Room {
   id: number;
@@ -217,53 +219,41 @@ export default function AdminRoomsPage() {
 
   return (
     <div className="min-h-screen bg-gray-50">
-      {/* Header */}
-      <div className="bg-white border-b border-gray-200 px-4 py-4 sm:px-6">
-        <div className="flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
-          <div>
-            <h1 className="text-2xl font-bold text-gray-900">Quản lý phòng</h1>
-            <p className="text-sm text-gray-500 mt-1">
-              {totalRows > 0 ? (
-                <>
-                  Hiển thị {(currentPage - 1) * pageSize + 1} -{" "}
-                  {Math.min(currentPage * pageSize, totalRows)} của {totalRows}{" "}
-                  phòng
-                </>
-              ) : (
-                "Chưa có phòng nào"
-              )}
-              {lastSyncedAt && (
-                <>
-                  {" "}
-                  | Lần đồng bộ:{" "}
-                  <span className="text-gray-700 font-medium">{lastSyncedAt}</span>
-                </>
-              )}
-            </p>
-          </div>
-          <div className="flex flex-wrap items-center gap-3">
-            <Link
-              href="/admin/rooms/create"
-              className="flex items-center gap-2 px-6 py-3 bg-blue-600 hover:bg-blue-700 text-white font-semibold rounded-lg transition-colors shadow-md"
+      <AdminPageHeader
+        title="Quản lý phòng"
+        subtitle={
+          totalRows > 0
+            ? `Hiển thị ${(currentPage - 1) * pageSize + 1} - ${Math.min(
+                currentPage * pageSize,
+                totalRows
+              )} của ${totalRows} phòng`
+            : "Chưa có phòng nào"
+        }
+        meta={lastSyncedAt ? `Lần đồng bộ: ${lastSyncedAt}` : undefined}
+        primaryAction={{
+          label: "Thêm phòng mới",
+          href: "/admin/rooms/create",
+          icon: (
+            <svg
+              className="w-5 h-5"
+              fill="none"
+              stroke="currentColor"
+              viewBox="0 0 24 24"
             >
-              <svg
-                className="w-5 h-5"
-                fill="none"
-                stroke="currentColor"
-                viewBox="0 0 24 24"
-              >
-                <path
-                  strokeLinecap="round"
-                  strokeLinejoin="round"
-                  strokeWidth={2}
-                  d="M12 4v16m8-8H4"
-                />
-              </svg>
-              Thêm phòng mới
-            </Link>
-          </div>
-        </div>
-      </div>
+              <path
+                strokeLinecap="round"
+                strokeLinejoin="round"
+                strokeWidth={2}
+                d="M12 4v16m8-8H4"
+              />
+            </svg>
+          ),
+        }}
+        secondaryAction={{
+          label: syncing ? "Đang đồng bộ..." : "↻ Đồng bộ dữ liệu",
+          onClick: handleManualRefresh,
+        }}
+      />
 
       {/* Filters */}
       <div className="bg-white border-b border-gray-200 px-4 py-4 sm:px-6">
@@ -305,30 +295,16 @@ export default function AdminRoomsPage() {
 
       {/* Content */}
       <div className="px-4 py-6 pb-24 sm:px-6">
-        {loading ? (
-          <div className="flex items-center justify-center py-20">
-            <div className="text-center">
-              <div className="inline-block animate-spin rounded-full h-16 w-16 border-b-4 border-blue-600 mb-4"></div>
-              <p className="text-gray-600">Đang tải...</p>
-            </div>
-          </div>
-        ) : rooms.length === 0 ? (
-          <div className="text-center py-20">
-            <div className="text-6xl mb-4">🏠</div>
-            <p className="text-xl text-gray-600">Không tìm thấy phòng nào</p>
-            <Link
-              href="/admin/rooms/create"
-              className="inline-block mt-4 text-blue-600 hover:underline"
-            >
-              Thêm phòng mới
-            </Link>
-          </div>
-        ) : (
-          <>
-            {/* Table */}
-            <div className="bg-white rounded-lg shadow-sm border border-gray-200 overflow-hidden mb-4">
-              <div className="overflow-x-auto">
-                  <table className="w-full admin-responsive-table">
+        <AdminTableContainer
+          loading={loading}
+          empty={!loading && rooms.length === 0}
+          emptyIcon="🏠"
+          emptyTitle="Không tìm thấy phòng nào"
+          emptyDescription="Hãy thêm phòng mới hoặc thay đổi bộ lọc tìm kiếm."
+        >
+          {rooms.length > 0 && (
+            <div className="mb-4">
+              <table className="w-full admin-responsive-table">
                     <thead className="bg-gray-50 border-b border-gray-200 sticky top-0 z-10">
                       <tr>
                         <th className="px-4 py-3 text-left text-xs font-semibold text-gray-700 uppercase tracking-wider w-24 bg-gray-50">
@@ -556,13 +532,14 @@ export default function AdminRoomsPage() {
                         </td>
                       </tr>
                     ))}
-                    </tbody>
-                  </table>
-              </div>
+                </tbody>
+              </table>
             </div>
+          )}
+        </AdminTableContainer>
 
-            {/* Pagination - Luôn hiển thị nếu có dữ liệu */}
-            {totalRows > 0 && totalPages > 0 && (
+        {/* Pagination - Luôn hiển thị nếu có dữ liệu */}
+        {totalRows > 0 && totalPages > 0 && (
               <div className="bg-white border border-gray-200 px-4 py-4 rounded-lg shadow-sm relative z-20 mt-4 sm:px-6">
                 <div className="flex flex-col sm:flex-row items-center justify-between gap-4">
                   {/* Info */}
@@ -740,8 +717,6 @@ export default function AdminRoomsPage() {
                 </div>
               </div>
             )}
-          </>
-        )}
       </div>
     </div>
   );

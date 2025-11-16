@@ -95,7 +95,11 @@ export const getRoomById = async (roomId) => {
       message: response.data.message || "Lấy thông tin phòng thành công",
     };
   } catch (error) {
-    console.error("Lỗi lấy thông tin phòng:", error);
+    // 404 phòng không tồn tại là case thường gặp khi phòng đã bị xoá → không log lỗi lớn
+    const status = error?.status || error?.response?.status;
+    if (status !== 404) {
+      console.error("Lỗi lấy thông tin phòng:", error);
+    }
     return {
       success: false,
       message: error.message || "Không thể lấy thông tin phòng",

@@ -4,28 +4,47 @@ import Link from "next/link";
 import { useState, useEffect } from "react";
 import { useRouter, usePathname } from "next/navigation";
 import { logout } from "@/lib/authService";
+import { useToast } from "@/components/ui/AppToastProvider";
 
 export default function Header() {
   const [isMenuOpen, setIsMenuOpen] = useState(false);
-  const [user, setUser] = useState<{ name?: string; email?: string } | null>(
-    null
-  );
+  const [user, setUser] = useState<{ name?: string; email?: string; avatar?: string } | null>(null);
   const router = useRouter();
   const pathname = usePathname();
+  const { showToast } = useToast();
 
-  // Check if user is logged in
+  // Đọc thông tin user từ localStorage (và lắng nghe sự kiện cập nhật user)
   useEffect(() => {
-    if (typeof window !== "undefined") {
+    if (typeof window === "undefined") return;
+
+    const readUserFromStorage = () => {
       const userStr = localStorage.getItem("user");
-      if (userStr) {
-        try {
-          const userData = JSON.parse(userStr);
-          setUser(userData);
-        } catch (error) {
-          console.error("Error parsing user data:", error);
-        }
+      if (!userStr) {
+        setUser(null);
+        return;
       }
-    }
+      try {
+        const raw = JSON.parse(userStr);
+        const userData = raw?.user || raw; // Hỗ trợ cả hai dạng {user:{...}} và {...}
+        setUser(userData);
+      } catch (error) {
+        console.error("Error parsing user data:", error);
+      }
+    };
+
+    readUserFromStorage();
+
+    const handleUserUpdated = () => {
+      readUserFromStorage();
+    };
+
+    window.addEventListener("user-updated", handleUserUpdated);
+    window.addEventListener("storage", handleUserUpdated);
+
+    return () => {
+      window.removeEventListener("user-updated", handleUserUpdated);
+      window.removeEventListener("storage", handleUserUpdated);
+    };
   }, []);
 
   const handleLogout = () => {
@@ -35,7 +54,7 @@ export default function Header() {
       setIsMenuOpen(false);
       router.push("/");
     } else {
-      alert(result.message || "Có lỗi xảy ra khi đăng xuất");
+      showToast(result.message || "Có lỗi xảy ra khi đăng xuất", "error");
     }
   };
 
@@ -109,10 +128,21 @@ export default function Header() {
                   href="/profile"
                   className="flex items-center space-x-2.5 hover:bg-gray-50 px-4 py-2.5 rounded-full transition-all duration-200 border border-gray-300 hover:shadow-md"
                 >
-                  <div className="w-8 h-8 bg-gradient-to-br from-blue-500 to-cyan-600 rounded-full flex items-center justify-center shadow-sm">
-                    <span className="text-white text-sm font-bold">
-                      {user.name?.charAt(0).toUpperCase() || "U"}
-                    </span>
+                  <div className="w-8 h-8 rounded-full overflow-hidden bg-gradient-to-br from-blue-500 to-cyan-600 flex items-center justify-center shadow-sm">
+                    {user.avatar ? (
+                      // eslint-disable-next-line @next/next/no-img-element
+                      <img
+                        src={user.avatar}
+                        alt={user.name || user.email || "Avatar"}
+                        className="w-full h-full object-cover"
+                      />
+                    ) : (
+                      <span className="text-white text-sm font-bold">
+                        {user.name?.charAt(0).toUpperCase() ||
+                          user.email?.charAt(0).toUpperCase() ||
+                          "U"}
+                      </span>
+                    )}
                   </div>
                   <span
                     className="text-sm font-semibold text-gray-900"
@@ -210,10 +240,21 @@ export default function Header() {
                     onClick={() => setIsMenuOpen(false)}
                     className="flex items-center space-x-3 px-4 py-3 hover:bg-gray-50 rounded-xl transition-all"
                   >
-                    <div className="w-11 h-11 bg-gradient-to-br from-blue-500 to-cyan-600 rounded-full flex items-center justify-center shadow-md">
-                      <span className="text-white font-bold text-[15px]">
-                        {user.name?.charAt(0).toUpperCase() || "U"}
-                      </span>
+                    <div className="w-11 h-11 rounded-full overflow-hidden bg-gradient-to-br from-blue-500 to-cyan-600 flex items-center justify-center shadow-md">
+                      {user.avatar ? (
+                        // eslint-disable-next-line @next/next/no-img-element
+                        <img
+                          src={user.avatar}
+                          alt={user.name || user.email || "Avatar"}
+                          className="w-full h-full object-cover"
+                        />
+                      ) : (
+                        <span className="text-white font-bold text-[15px]">
+                          {user.name?.charAt(0).toUpperCase() ||
+                            user.email?.charAt(0).toUpperCase() ||
+                            "U"}
+                        </span>
+                      )}
                     </div>
                     <div>
                       <div

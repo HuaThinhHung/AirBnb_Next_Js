@@ -168,8 +168,13 @@ api.interceptors.response.use(
       // Log lỗi với thông báo đã được xử lý (giảm verbosity cho 404)
       if (!isNetworkError) {
         if (status === 404) {
-          // Chỉ log ngắn gọn cho 404 (thường là expected)
-          console.warn(`⚠️ API ${status}: ${friendlyMessage}`);
+          // 404 cho một số tài nguyên (ví dụ phòng đã xoá) là trường hợp thường gặp → hạn chế log để tránh spam console
+          const url = error.config?.url?.toLowerCase() || "";
+          const isRoomDetail404 = url.includes("/api/phong-thue/");
+
+          if (!isRoomDetail404) {
+            console.warn(`⚠️ API ${status}: ${friendlyMessage}`);
+          }
         } else {
           // Log chi tiết cho các lỗi khác
           console.error(`❌ API Error (${status}):`, friendlyMessage);

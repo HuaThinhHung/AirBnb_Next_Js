@@ -4,8 +4,6 @@ interface PublicLayoutProps {
 
 export default function PublicLayout({ children }: PublicLayoutProps) {
   return (
-    <div className="min-h-screen">
-      {children}
-    </div>
+    <div className="min-h-screen">{children}</div>
   );
 }

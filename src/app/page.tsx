@@ -10,6 +10,7 @@ import LocationCard from "@/components/home/LocationCard";
 import PropertyTypeCard from "@/components/home/PropertyTypeCard";
 import { getRooms } from "@/lib/roomService";
 import { getLocations } from "@/lib/locationService";
+import { useToast } from "@/components/ui/AppToastProvider";
 
 import type { Room, Location } from "@/types/api";
 
@@ -24,6 +25,7 @@ export default function Home() {
   // States cho locations
   const [locations, setLocations] = useState<Location[]>([]);
   const [loadingLocations, setLoadingLocations] = useState(true);
+  const { showToast } = useToast();
 
   // Lấy danh sách phòng từ API Cybersoft
   useEffect(() => {
@@ -150,7 +152,7 @@ export default function Home() {
     // Simulate navigation
     setTimeout(() => {
       setIsLoading(false);
-      alert("Redirecting to all properties...");
+      showToast("Đang điều hướng đến tất cả phòng...", "info");
     }, 1000);
   };
 

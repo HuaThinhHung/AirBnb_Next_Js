@@ -5,6 +5,8 @@ import { getUsersPaginated, deleteUser } from "@/lib/userService";
 import Link from "next/link";
 import { useAdminConfirm } from "@/components/admin/AdminConfirmDialog";
 import { useAdminToast } from "@/components/admin/AdminToastProvider";
+import AdminPageHeader from "@/components/admin/AdminPageHeader";
+import AdminTableContainer from "@/components/admin/AdminTableContainer";
 
 type RoleFilter = "all" | "ADMIN" | "USER";
 
@@ -331,42 +333,19 @@ export default function AdminUsersPage() {
       {/* Scroll Target */}
       <div ref={topRef} className="h-0" />
 
-      {/* Header */}
-      <div className="bg-white border-b border-gray-200 px-4 py-4 sm:px-6">
-        <div className="flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
-          <div>
-            <h1 className="text-2xl font-bold text-gray-900">
-              Quản lý người dùng
-            </h1>
-            <p className="text-sm text-gray-500 mt-1">
-              Tổng số: {totalCount} người dùng | Trang {currentPage}/
-              {totalPages} | Vai trò: {roleLabels[roleFilter]}
-              {lastSyncedAt && (
-                <>
-                  {" "}
-                  | Lần đồng bộ:{" "}
-                  <span className="font-medium text-gray-700">{lastSyncedAt}</span>
-                </>
-              )}
-            </p>
-          </div>
-          <div className="flex flex-wrap items-center gap-3">
-            <button
-              onClick={handleManualRefresh}
-              disabled={loading || syncing}
-              className="px-5 py-2 border border-gray-300 rounded-lg font-semibold text-gray-700 hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
-            >
-              {syncing ? "Đang đồng bộ..." : "↻ Đồng bộ dữ liệu"}
-            </button>
-            <Link
-              href="/admin/users/create"
-              className="px-6 py-2 bg-blue-600 hover:bg-blue-700 text-white font-semibold rounded-lg shadow-md transition-colors"
-            >
-              + Thêm quản trị viên
-            </Link>
-          </div>
-        </div>
-      </div>
+      <AdminPageHeader
+        title="Quản lý người dùng"
+        subtitle={`Tổng số: ${totalCount} người dùng | Trang ${currentPage}/${totalPages} | Vai trò: ${roleLabels[roleFilter]}`}
+        meta={lastSyncedAt ? `Lần đồng bộ: ${lastSyncedAt}` : undefined}
+        primaryAction={{
+          label: "Thêm quản trị viên",
+          href: "/admin/users/create",
+        }}
+        secondaryAction={{
+          label: syncing ? "Đang đồng bộ..." : "↻ Đồng bộ dữ liệu",
+          onClick: handleManualRefresh,
+        }}
+      />
 
       {/* Main Content */}
       <div className="max-w-7xl mx-auto px-4 py-6 sm:px-6">
@@ -429,20 +408,13 @@ export default function AdminUsersPage() {
           </div>
         </div>
         {/* Table */}
-        <div className="bg-white rounded-lg shadow-sm border border-gray-200 overflow-hidden">
-          {loading ? (
-            <div className="flex items-center justify-center py-20">
-              <div className="text-center">
-                <div className="inline-block animate-spin rounded-full h-12 w-12 border-b-4 border-blue-600 mb-4"></div>
-                <p className="text-gray-600 font-medium">Đang tải dữ liệu...</p>
-              </div>
-            </div>
-          ) : users.length === 0 ? (
-            <div className="text-center py-20">
-              <div className="text-6xl mb-4">👤</div>
-              <p className="text-gray-600 text-lg">Không tìm thấy người dùng</p>
-            </div>
-          ) : (
+        <AdminTableContainer
+          loading={loading}
+          empty={!loading && users.length === 0}
+          emptyIcon="👤"
+          emptyTitle="Không tìm thấy người dùng"
+        >
+          {users.length > 0 && (
             <div className="overflow-x-auto">
               <table className="w-full admin-responsive-table">
                 <thead className="bg-gray-50 border-b border-gray-200">
@@ -604,7 +576,7 @@ export default function AdminUsersPage() {
               </table>
             </div>
           )}
-        </div>
+        </AdminTableContainer>
 
         {/* Pagination */}
         {!loading && users.length > 0 && renderPagination()}

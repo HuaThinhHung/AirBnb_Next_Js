@@ -10,6 +10,8 @@ import {
 } from "@/lib/commentService";
 import { useAdminConfirm } from "@/components/admin/AdminConfirmDialog";
 import { useAdminToast } from "@/components/admin/AdminToastProvider";
+import AdminPageHeader from "@/components/admin/AdminPageHeader";
+import AdminTableContainer from "@/components/admin/AdminTableContainer";
 
 interface CommentItem {
   id: number;
@@ -259,45 +261,26 @@ export default function AdminCommentsPage() {
     <div className="min-h-screen bg-gray-50">
       <div ref={topRef} className="h-0" />
 
-      <div className="bg-white border-b border-gray-200 px-4 py-4 sm:px-6">
-        <div className="flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
-          <div>
-            <h1 className="text-2xl font-bold text-gray-900">Quản lý bình luận</h1>
-            <p className="text-sm text-gray-500 mt-1">
-              {totalRows > 0 ? (
-                <>
-                  Hiển thị {(currentPage - 1) * pageSize + 1} -{" "}
-                  {Math.min(currentPage * pageSize, totalRows)} của {totalRows} bình luận
-                </>
-              ) : (
-                "Chưa có bình luận nào"
-              )}
-              {lastSyncedAt && (
-                <>
-                  {" "}
-                  | Lần đồng bộ:{" "}
-                  <span className="text-gray-700 font-medium">{lastSyncedAt}</span>
-                </>
-              )}
-            </p>
-          </div>
-          <div className="flex flex-wrap items-center gap-3">
-            <button
-              onClick={handleManualRefresh}
-              disabled={loading || syncing}
-              className="px-5 py-2 border border-gray-300 rounded-lg font-semibold text-gray-700 hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
-            >
-              {syncing ? "Đang đồng bộ..." : "↻ Đồng bộ dữ liệu"}
-            </button>
-            <button
-              onClick={openCreateModal}
-              className="px-6 py-2 bg-blue-600 hover:bg-blue-700 text-white font-semibold rounded-lg shadow-md transition-colors"
-            >
-              + Thêm bình luận
-            </button>
-          </div>
-        </div>
-      </div>
+      <AdminPageHeader
+        title="Quản lý bình luận"
+        subtitle={
+          totalRows > 0
+            ? `Hiển thị ${(currentPage - 1) * pageSize + 1} - ${Math.min(
+                currentPage * pageSize,
+                totalRows
+              )} của ${totalRows} bình luận`
+            : "Chưa có bình luận nào"
+        }
+        meta={lastSyncedAt ? `Lần đồng bộ: ${lastSyncedAt}` : undefined}
+        primaryAction={{
+          label: "Thêm bình luận",
+          onClick: openCreateModal,
+        }}
+        secondaryAction={{
+          label: syncing ? "Đang đồng bộ..." : "↻ Đồng bộ dữ liệu",
+          onClick: handleManualRefresh,
+        }}
+      />
 
       <div className="bg-white border-b border-gray-200 px-4 py-4 sm:px-6">
         <div className="max-w-md">
@@ -315,23 +298,15 @@ export default function AdminCommentsPage() {
       </div>
 
       <div className="px-4 py-8 sm:px-6">
-        {loading ? (
-          <div className="flex items-center justify-center py-20">
-            <div className="text-center">
-              <div className="inline-block animate-spin rounded-full h-16 w-16 border-b-4 border-blue-600 mb-4"></div>
-              <p className="text-gray-600">Đang tải...</p>
-            </div>
-          </div>
-        ) : comments.length === 0 ? (
-          <div className="text-center py-20">
-            <div className="text-6xl mb-4">💬</div>
-            <p className="text-xl text-gray-600">Không tìm thấy bình luận nào</p>
-          </div>
-        ) : (
-          <>
-            <div className="bg-white rounded-lg shadow-sm border border-gray-200 overflow-hidden">
-              <div className="overflow-x-auto">
-                <table className="w-full admin-responsive-table">
+        <AdminTableContainer
+          loading={loading}
+          empty={!loading && comments.length === 0}
+          emptyIcon="💬"
+          emptyTitle="Không tìm thấy bình luận nào"
+        >
+          {comments.length > 0 && (
+            <div className="overflow-x-auto">
+              <table className="w-full admin-responsive-table">
                   <thead className="bg-gray-50 border-b border-gray-200">
                     <tr>
                       <th className="px-4 py-3 text-left text-xs font-semibold text-gray-700 uppercase">
@@ -465,10 +440,11 @@ export default function AdminCommentsPage() {
                     ))}
                   </tbody>
                 </table>
-              </div>
             </div>
+          )}
+        </AdminTableContainer>
 
-            {totalPages > 1 && (
+        {totalPages > 1 && (
               <div className="bg-white border-t border-gray-200 px-4 py-4 mt-6 rounded-b-lg sm:px-6">
                 <div className="flex flex-col sm:flex-row items-center justify-between gap-4">
                   <div className="text-sm text-gray-600">
@@ -524,8 +500,6 @@ export default function AdminCommentsPage() {
                 </div>
               </div>
             )}
-          </>
-        )}
       </div>
 
       {modalOpen && (

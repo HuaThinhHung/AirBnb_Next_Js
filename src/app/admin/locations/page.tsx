@@ -6,6 +6,8 @@ import Link from "next/link";
 import { removeVietnameseAccents } from "@/lib/utils";
 import { useAdminConfirm } from "@/components/admin/AdminConfirmDialog";
 import { useAdminToast } from "@/components/admin/AdminToastProvider";
+import AdminPageHeader from "@/components/admin/AdminPageHeader";
+import AdminTableContainer from "@/components/admin/AdminTableContainer";
 
 interface Location {
   id: number;
@@ -366,49 +368,26 @@ export default function AdminLocationsPage() {
       {/* Scroll Target */}
       <div ref={topRef} className="h-0" />
 
-      {/* Header */}
-      <div className="bg-white border-b border-gray-200 px-4 py-4 sm:px-6">
-        <div className="flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
-          <div>
-            <h1 className="text-2xl font-bold text-gray-900">
-              📍 Quản lý vị trí
-            </h1>
-            <p className="text-sm text-gray-500 mt-1">
-              {totalCount > 0 ? (
-                <>
-                  Hiển thị {(currentPage - 1) * pageSize + 1} -{" "}
-                  {Math.min(currentPage * pageSize, totalCount)} trong tổng số{" "}
-                  {totalCount} vị trí
-                </>
-              ) : (
-                "Chưa có vị trí nào"
-              )}
-              {lastSyncedAt && (
-                <>
-                  {" "}
-                  | Lần đồng bộ:{" "}
-                  <span className="text-gray-700 font-medium">{lastSyncedAt}</span>
-                </>
-              )}
-            </p>
-          </div>
-          <div className="flex flex-wrap items-center gap-3">
-            <button
-              onClick={handleManualRefresh}
-              disabled={loading || syncing}
-              className="px-5 py-2 border border-gray-300 rounded-lg font-semibold text-gray-700 hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
-            >
-              {syncing ? "Đang đồng bộ..." : "↻ Đồng bộ dữ liệu"}
-            </button>
-            <Link
-              href="/admin/locations/create"
-              className="px-6 py-2 bg-blue-600 hover:bg-blue-700 text-white font-semibold rounded-lg shadow-md transition-colors"
-            >
-              + Thêm vị trí mới
-            </Link>
-          </div>
-        </div>
-      </div>
+      <AdminPageHeader
+        title="📍 Quản lý vị trí"
+        subtitle={
+          totalCount > 0
+            ? `Hiển thị ${(currentPage - 1) * pageSize + 1} - ${Math.min(
+                currentPage * pageSize,
+                totalCount
+              )} trong tổng số ${totalCount} vị trí`
+            : "Chưa có vị trí nào"
+        }
+        meta={lastSyncedAt ? `Lần đồng bộ: ${lastSyncedAt}` : undefined}
+        primaryAction={{
+          label: "Thêm vị trí mới",
+          href: "/admin/locations/create",
+        }}
+        secondaryAction={{
+          label: syncing ? "Đang đồng bộ..." : "↻ Đồng bộ dữ liệu",
+          onClick: handleManualRefresh,
+        }}
+      />
 
       {/* Main Content */}
       <div className="max-w-7xl mx-auto px-4 py-6 sm:px-6">
@@ -442,21 +421,15 @@ export default function AdminLocationsPage() {
         </div>
 
         {/* Grid View */}
-        {loading ? (
-          <div className="flex items-center justify-center py-20">
-            <div className="text-center">
-              <div className="inline-block animate-spin rounded-full h-12 w-12 border-b-4 border-blue-600 mb-4"></div>
-              <p className="text-gray-600 font-medium">Đang tải...</p>
-            </div>
-          </div>
-        ) : locations.length === 0 ? (
-          <div className="text-center py-20 bg-white rounded-lg shadow-sm">
-            <div className="text-6xl mb-4">📍</div>
-            <p className="text-gray-600 text-lg">Không tìm thấy vị trí nào</p>
-          </div>
-        ) : (
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
-            {locations.map((location) => (
+        <AdminTableContainer
+          loading={loading}
+          empty={!loading && locations.length === 0}
+          emptyIcon="📍"
+          emptyTitle="Không tìm thấy vị trí nào"
+        >
+          {locations.length > 0 && (
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
+              {locations.map((location) => (
               <div
                 key={location.id}
                 className="bg-white rounded-xl shadow-sm hover:shadow-xl border border-gray-200 overflow-hidden transition-all duration-300 hover:scale-105"
@@ -566,8 +539,9 @@ export default function AdminLocationsPage() {
                 </div>
               </div>
             ))}
-          </div>
-        )}
+            </div>
+          )}
+        </AdminTableContainer>
 
         {/* Pagination */}
         {!loading && locations.length > 0 && renderPagination()}

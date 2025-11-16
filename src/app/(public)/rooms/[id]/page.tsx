@@ -8,6 +8,7 @@ import { createBooking } from "@/lib/bookingService";
 import { getCommentsByRoom, createComment } from "@/lib/commentService";
 import RoomMap from "@/components/rooms/RoomMap";
 import Link from "next/link";
+import { useToast } from "@/components/ui/AppToastProvider";
 
 interface Room {
   id: number;
@@ -64,6 +65,7 @@ export default function RoomDetailPage() {
   const params = useParams();
   const router = useRouter();
   const roomId = params.id as string;
+  const { showToast } = useToast();
 
   const [room, setRoom] = useState<Room | null>(null);
   const [location, setLocation] = useState<Location | null>(null);
@@ -160,7 +162,7 @@ export default function RoomDetailPage() {
 
     const userStr = localStorage.getItem("user");
     if (!userStr) {
-      alert("Vui lòng đăng nhập để bình luận");
+      showToast("Vui lòng đăng nhập để bình luận", "warning");
       router.push("/login");
       return;
     }
@@ -168,7 +170,7 @@ export default function RoomDetailPage() {
     // Kiểm tra token
     const token = localStorage.getItem("authToken");
     if (!token) {
-      alert("Phiên đăng nhập đã hết hạn. Vui lòng đăng nhập lại.");
+      showToast("Phiên đăng nhập đã hết hạn. Vui lòng đăng nhập lại.", "warning");
       router.push("/login");
       return;
     }
@@ -178,7 +180,7 @@ export default function RoomDetailPage() {
       user = JSON.parse(userStr);
     } catch (error) {
       console.error("Lỗi parse user data:", error);
-      alert("Lỗi dữ liệu người dùng. Vui lòng đăng nhập lại.");
+      showToast("Lỗi dữ liệu người dùng. Vui lòng đăng nhập lại.", "error");
       router.push("/login");
       return;
     }
@@ -187,7 +189,7 @@ export default function RoomDetailPage() {
     const userId = user.id || user.maNguoiDung;
     if (!userId) {
       console.error("User object:", user);
-      alert("Không tìm thấy ID người dùng. Vui lòng đăng nhập lại.");
+      showToast("Không tìm thấy ID người dùng. Vui lòng đăng nhập lại.", "error");
       router.push("/login");
       return;
     }
@@ -217,7 +219,7 @@ export default function RoomDetailPage() {
         setCommentRating(5);
         setCommentPage(1); // Reset về trang đầu sau khi thêm comment
         fetchComments(); // Reload comments
-        alert("Đã thêm bình luận!");
+        showToast("Đã thêm bình luận!", "success");
       } else {
         // Nếu lỗi đã được xử lý bởi API interceptor (redirect), không hiển thị alert nữa
         if ((result as any).alreadyHandled) {
@@ -226,25 +228,27 @@ export default function RoomDetailPage() {
         }
         
         // Nếu lỗi liên quan đến token nhưng chưa được xử lý, redirect đến login
-        if ((result as any).requiresLogin || 
-            result.message?.includes("token") || 
-            result.message?.includes("hết hạn") ||
-            result.message?.includes("đăng nhập")) {
+        if (
+          (result as any).requiresLogin ||
+          result.message?.includes("token") ||
+          result.message?.includes("hết hạn") ||
+          result.message?.includes("đăng nhập")
+        ) {
           // Chỉ hiển thị alert nếu chưa có alert từ interceptor
-          if (!document.body.getAttribute('data-token-expired')) {
-            alert(result.message);
+          if (!document.body.getAttribute("data-token-expired")) {
+            showToast(result.message || "Phiên đăng nhập đã hết hạn.", "warning");
           }
           setTimeout(() => {
             router.push("/login");
           }, 1000);
         } else {
-          alert("Lỗi: " + result.message);
+          showToast(result.message || "Lỗi khi gửi bình luận", "error");
         }
       }
     } catch (error) {
       setSubmittingComment(false);
       console.error("Lỗi khi gửi bình luận:", error);
-      alert("Có lỗi xảy ra khi gửi bình luận. Vui lòng thử lại.");
+      showToast("Có lỗi xảy ra khi gửi bình luận. Vui lòng thử lại.", "error");
     }
   };
 
@@ -264,18 +268,18 @@ export default function RoomDetailPage() {
 
   const handleBooking = async () => {
     if (!checkIn || !checkOut) {
-      alert("Vui lòng chọn ngày nhận và trả phòng");
+      showToast("Vui lòng chọn ngày nhận và trả phòng", "warning");
       return;
     }
 
     if (new Date(checkOut) <= new Date(checkIn)) {
-      alert("Ngày trả phòng phải sau ngày nhận phòng");
+      showToast("Ngày trả phòng phải sau ngày nhận phòng", "warning");
       return;
     }
 
     const userStr = localStorage.getItem("user");
     if (!userStr) {
-      alert("Vui lòng đăng nhập để đặt phòng");
+      showToast("Vui lòng đăng nhập để đặt phòng", "warning");
       router.push("/login");
       return;
     }
@@ -300,12 +304,12 @@ export default function RoomDetailPage() {
 
     if (result.success) {
       setBookingSuccess(true);
-      alert("Đặt phòng thành công!");
+      showToast("Đặt phòng thành công!", "success");
       setTimeout(() => {
         setBookingSuccess(false);
       }, 3000);
     } else {
-      alert("Đặt phòng thất bại: " + result.message);
+      showToast(result.message || "Đặt phòng thất bại", "error");
     }
   };
 

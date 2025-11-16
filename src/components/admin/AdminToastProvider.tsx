@@ -19,7 +19,18 @@ const ToastContext = createContext<ToastContextValue | undefined>(undefined);
 export function useAdminToast() {
   const ctx = useContext(ToastContext);
   if (!ctx) {
-    throw new Error("useAdminToast must be used within AdminToastProvider");
+    // Fallback an toàn khi hook được dùng ngoài Provider (ví dụ trong layout đặc biệt)
+    return {
+      showToast: (message: string, type: ToastType = "info") => {
+        if (type === "error") {
+          console.error("[Toast:error]", message);
+        } else if (type === "success") {
+          console.log("[Toast:success]", message);
+        } else {
+          console.log("[Toast:info]", message);
+        }
+      },
+    };
   }
   return ctx;
 }

@@ -5,6 +5,8 @@ import FlowbiteInit from "@/components/FlowbiteInit";
 import SmartFloatingActions from "@/components/common/SmartFloatingActions";
 import ConditionalHeader from "@/components/ConditionalHeader";
 import ConditionalFooter from "@/components/ConditionalFooter";
+import { AppToastProvider } from "@/components/ui/AppToastProvider";
+import { AppConfirmProvider } from "@/components/ui/AppConfirmDialog";
 
 const geistSans = Geist({
   variable: "--font-geist-sans",
@@ -39,11 +41,15 @@ export default function RootLayout({
       <body
         className={`${geistSans.variable} ${geistMono.variable} antialiased`}
       >
-        <ConditionalHeader />
-        {children}
-        <ConditionalFooter />
-        <FlowbiteInit />
-        <SmartFloatingActions />
+        <AppToastProvider>
+          <AppConfirmProvider>
+            <ConditionalHeader />
+            {children}
+            <ConditionalFooter />
+            <FlowbiteInit />
+            <SmartFloatingActions />
+          </AppConfirmProvider>
+        </AppToastProvider>
       </body>
     </html>
   );

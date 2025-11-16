@@ -5,6 +5,7 @@ import { useRouter } from 'next/navigation'
 import Link from 'next/link'
 import { logout } from '@/lib/authService'
 import { getCurrentUser } from '@/lib/userService'
+import { useToast } from '@/components/ui/AppToastProvider'
 
 interface AdminNavbarSimpleProps {
   onMenuClick: () => void
@@ -14,6 +15,7 @@ export default function AdminNavbarSimple({ onMenuClick }: AdminNavbarSimpleProp
   const router = useRouter()
   const [showProfile, setShowProfile] = useState(false)
   const [currentUser, setCurrentUser] = useState<Record<string, any> | null>(null)
+  const { showToast } = useToast()
 
   useEffect(() => {
     const storedUser = getCurrentUser()
@@ -28,7 +30,7 @@ export default function AdminNavbarSimple({ onMenuClick }: AdminNavbarSimpleProp
       setShowProfile(false)
       router.push('/login')
     } else {
-      alert(result.message || 'Có lỗi xảy ra khi đăng xuất')
+      showToast(result.message || 'Có lỗi xảy ra khi đăng xuất', 'error')
     }
   }
 

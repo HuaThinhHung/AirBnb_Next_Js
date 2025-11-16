@@ -2,13 +2,15 @@
 
 import Link from "next/link";
 import { useState } from "react";
+import { useToast } from "@/components/ui/AppToastProvider";
 
 export default function Footer() {
   const [email, setEmail] = useState("");
+  const { showToast } = useToast();
 
   const handleSubscribe = (e: React.FormEvent) => {
     e.preventDefault();
-    alert(`Đã đăng ký với email: ${email}`);
+    showToast(`Đã đăng ký với email: ${email}`, "success");
     setEmail("");
   };
 
