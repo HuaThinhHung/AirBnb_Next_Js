@@ -120,12 +120,4 @@ src/
 - **State Management**: React Hooks
 - **API**: Cybersoft Airbnb API
 
-admin123@gmail.com
-HuaHung123
 
-admin1234@gmail.com
-Admin123
-
-admin12345@gmail.com
-admin12345
-#
