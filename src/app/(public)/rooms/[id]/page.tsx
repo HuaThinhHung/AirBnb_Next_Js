@@ -163,7 +163,7 @@ export default function RoomDetailPage() {
 
     const userStr = localStorage.getItem("user");
     if (!userStr) {
-      showToast("Vui lòng đăng nhập để bình luận", "warning");
+      showToast("Vui lòng đăng nhập để bình luận", "info");
       router.push("/login");
       return;
     }
@@ -171,7 +171,7 @@ export default function RoomDetailPage() {
     // Kiểm tra token
     const token = localStorage.getItem("authToken");
     if (!token) {
-      showToast("Phiên đăng nhập đã hết hạn. Vui lòng đăng nhập lại.", "warning");
+      showToast("Phiên đăng nhập đã hết hạn. Vui lòng đăng nhập lại.", "info");
       router.push("/login");
       return;
     }
@@ -237,7 +237,7 @@ export default function RoomDetailPage() {
         ) {
           // Chỉ hiển thị alert nếu chưa có alert từ interceptor
           if (!document.body.getAttribute("data-token-expired")) {
-            showToast(result.message || "Phiên đăng nhập đã hết hạn.", "warning");
+            showToast(result.message || "Phiên đăng nhập đã hết hạn.", "info");
           }
           setTimeout(() => {
             router.push("/login");
@@ -269,18 +269,18 @@ export default function RoomDetailPage() {
 
   const handleBooking = async () => {
     if (!checkIn || !checkOut) {
-      showToast("Vui lòng chọn ngày nhận và trả phòng", "warning");
+      showToast("Vui lòng chọn ngày nhận và trả phòng", "info");
       return;
     }
 
     if (new Date(checkOut) <= new Date(checkIn)) {
-      showToast("Ngày trả phòng phải sau ngày nhận phòng", "warning");
+      showToast("Ngày trả phòng phải sau ngày nhận phòng", "info");
       return;
     }
 
     const userStr = localStorage.getItem("user");
     if (!userStr) {
-      showToast("Vui lòng đăng nhập để đặt phòng", "warning");
+      showToast("Vui lòng đăng nhập để đặt phòng", "info");
       router.push("/login");
       return;
     }
