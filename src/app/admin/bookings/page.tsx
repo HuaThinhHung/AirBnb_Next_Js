@@ -473,29 +473,28 @@ export default function AdminBookingsPage() {
                           key={booking.id}
                           className="hover:bg-gray-50 transition-colors rounded-2xl border border-transparent sm:border-0 sm:rounded-none sm:shadow-none shadow-sm"
                         >
-                          <td className="px-4 py-4" data-label="ID">
-                            <span className="inline-flex items-center gap-1 rounded-full bg-gray-100 px-3 py-1 text-xs font-semibold text-gray-700">
-                              <span>#{booking.id}</span>
-                              <span className="hidden text-gray-400 sm:inline-block">
-                                •
+                          <td className="px-4 py-4 align-top" data-label="ID">
+                            <div className="flex flex-col items-start gap-1 text-xs">
+                              <span className="font-semibold text-gray-800">
+                                #{booking.id}
                               </span>
-                              <span className="text-gray-500">
-                                {calculateNights(booking.ngayDen, booking.ngayDi)} đêm
+                              <span className="inline-flex items-center gap-1 rounded-full bg-gray-100 px-2 py-0.5 text-[11px] text-gray-600">
+                                <span>{calculateNights(booking.ngayDen, booking.ngayDi)}</span>
+                                <span>đêm</span>
                               </span>
-                            </span>
+                            </div>
                           </td>
                           <td className="px-4 py-4" data-label="Phòng">
-                            <div className="flex flex-col gap-3 sm:flex-row sm:items-center">
-                              <div className="w-full h-36 rounded-2xl overflow-hidden bg-gray-100 border border-gray-200 flex-shrink-0 sm:w-16 sm:h-16 sm:rounded-lg">
+                            <div className="flex gap-3">
+                              <div className="w-14 h-14 rounded-xl overflow-hidden bg-gray-100 border border-gray-200 flex-shrink-0">
                                 {loadingAddresses.has(booking.maPhong) ? (
-                                  <div className="w-full h-full flex items-center justify-center text-gray-400 text-xs font-semibold">
-                                    Đang tải
+                                  <div className="w-full h-full flex items-center justify-center text-[11px] text-gray-400">
+                                    ...
                                   </div>
                                 ) : (
                                   <img
                                     src={
-                                      roomImages[booking.maPhong] ||
-                                      defaultRoomImage
+                                      roomImages[booking.maPhong] || defaultRoomImage
                                     }
                                     alt={
                                       roomNames[booking.maPhong] ||
@@ -505,22 +504,25 @@ export default function AdminBookingsPage() {
                                   />
                                 )}
                               </div>
-                              <div>
+                              <div className="min-w-0">
                                 <Link
                                   href={`/admin/rooms/${booking.maPhong}`}
-                                  className="text-base text-blue-600 hover:text-blue-800 font-semibold block mb-1"
+                                  className="text-sm font-semibold text-gray-900 hover:text-blue-600 block truncate"
+                                  title={
+                                    roomNames[booking.maPhong] ||
+                                    `Phòng #${booking.maPhong}`
+                                  }
                                 >
                                   {roomNames[booking.maPhong] ||
                                     `Phòng #${booking.maPhong}`}
                                 </Link>
-                                {loadingAddresses.has(booking.maPhong) ? (
-                                  <span className="text-xs text-gray-400">
-                                    Đang tải...
-                                  </span>
-                                ) : roomAddresses[booking.maPhong] ? (
-                                  <span className="text-xs text-gray-600 flex items-center gap-1">
+                                {roomAddresses[booking.maPhong] && !loadingAddresses.has(booking.maPhong) && (
+                                  <div
+                                    className="mt-1 text-[11px] text-gray-500 truncate flex items-center gap-1"
+                                    title={roomAddresses[booking.maPhong]}
+                                  >
                                     <svg
-                                      className="w-3 h-3 text-gray-400"
+                                      className="w-3 h-3 text-gray-400 flex-shrink-0"
                                       fill="none"
                                       stroke="currentColor"
                                       viewBox="0 0 24 24"
@@ -538,22 +540,22 @@ export default function AdminBookingsPage() {
                                         d="M15 11a3 3 0 11-6 0 3 3 0 016 0z"
                                       />
                                     </svg>
-                                    {roomAddresses[booking.maPhong]}
-                                  </span>
-                                ) : null}
+                                    <span className="truncate">
+                                      {roomAddresses[booking.maPhong]}
+                                    </span>
+                                  </div>
+                                )}
                               </div>
                             </div>
                           </td>
                           <td className="px-4 py-4" data-label="Người đặt">
-                            <div className="inline-flex flex-wrap items-center gap-2 rounded-full bg-blue-50 px-3 py-1 text-sm font-semibold text-blue-700">
-                              <span>👤</span>
-                              <Link
-                                href={`/admin/users/${booking.maNguoiDung}`}
-                                className="hover:text-blue-900"
-                              >
-                                User #{booking.maNguoiDung}
-                              </Link>
-                            </div>
+                            <Link
+                              href={`/admin/users/${booking.maNguoiDung}`}
+                              className="inline-flex items-center gap-2 rounded-full bg-blue-50 px-3 py-1 text-xs font-semibold text-blue-700"
+                            >
+                              <span className="text-sm">👤</span>
+                              <span className="truncate">User #{booking.maNguoiDung}</span>
+                            </Link>
                           </td>
                           <td className="px-4 py-4" data-label="Ngày đến">
                             <div className="flex items-center gap-2 text-sm font-medium text-gray-800">
@@ -592,12 +594,12 @@ export default function AdminBookingsPage() {
                             </div>
                           </td>
                           <td className="px-4 py-4 text-center" data-label="Số đêm">
-                            <span className="inline-flex items-center justify-center px-3 py-1 rounded-full text-sm font-semibold bg-purple-100 text-purple-700">
+                            <span className="inline-flex items-center justify-center px-3 py-1 rounded-full text-xs font-semibold bg-purple-100 text-purple-700">
                               {calculateNights(booking.ngayDen, booking.ngayDi)} đêm
                             </span>
                           </td>
                           <td className="px-4 py-4 text-center" data-label="Khách">
-                            <span className="inline-flex items-center justify-center gap-1 rounded-full bg-pink-50 px-3 py-1 text-sm font-semibold text-pink-700">
+                            <span className="inline-flex items-center justify-center gap-1 rounded-full bg-pink-50 px-3 py-1 text-xs font-semibold text-pink-700">
                               <span>🧑‍🤝‍🧑</span>
                               <span>{booking.soLuongKhach}</span>
                             </span>

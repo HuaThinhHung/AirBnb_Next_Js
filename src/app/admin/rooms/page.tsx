@@ -328,7 +328,6 @@ export default function AdminRoomsPage() {
             {/* Table */}
             <div className="bg-white rounded-lg shadow-sm border border-gray-200 overflow-hidden mb-4">
               <div className="overflow-x-auto">
-                <div className="lg:max-h-[calc(100vh-500px)] overflow-y-auto">
                   <table className="w-full admin-responsive-table">
                     <thead className="bg-gray-50 border-b border-gray-200 sticky top-0 z-10">
                       <tr>
@@ -559,7 +558,6 @@ export default function AdminRoomsPage() {
                     ))}
                     </tbody>
                   </table>
-                </div>
               </div>
             </div>
 
