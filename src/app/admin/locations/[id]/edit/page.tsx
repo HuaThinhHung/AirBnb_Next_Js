@@ -4,6 +4,7 @@ import { useState, useEffect } from "react";
 import { useParams, useRouter } from "next/navigation";
 import { getLocationById, updateLocation } from "@/lib/locationService";
 import Link from "next/link";
+import { useAdminToast } from "@/components/admin/AdminToastProvider";
 
 interface Location {
   id: number;
@@ -28,6 +29,7 @@ export default function EditLocationPage() {
   const [loading, setLoading] = useState(true);
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const { showToast } = useAdminToast();
 
   useEffect(() => {
     fetchLocation();
@@ -49,7 +51,9 @@ export default function EditLocationPage() {
         hinhAnh: result.location.hinhAnh || "",
       });
     } else {
-      setError("Không tìm thấy vị trí");
+      const message = "Không tìm thấy vị trí";
+      setError(message);
+      showToast(message, "error");
     }
     setLoading(false);
   };
@@ -67,10 +71,12 @@ export default function EditLocationPage() {
     setSubmitting(false);
 
     if (result.success) {
-      alert("✅ Cập nhật thành công!");
+      showToast("Cập nhật vị trí thành công!", "success");
       router.push(`/admin/locations/${locationId}`);
     } else {
-      setError(result.message || "Có lỗi xảy ra");
+      const message = result.message || "Có lỗi xảy ra";
+      setError(message);
+      showToast(message, "error");
     }
   };
 

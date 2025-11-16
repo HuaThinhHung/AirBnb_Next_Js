@@ -5,6 +5,7 @@ import { useRouter } from "next/navigation";
 import { createRoom } from "@/lib/roomService";
 import { getLocations } from "@/lib/locationService";
 import Link from "next/link";
+import { useAdminToast } from "@/components/admin/AdminToastProvider";
 
 interface Location {
   id: number;
@@ -38,6 +39,7 @@ export default function CreateRoomPage() {
   });
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const { showToast } = useAdminToast();
 
   useEffect(() => {
     fetchLocations();
@@ -57,7 +59,9 @@ export default function CreateRoomPage() {
     e.preventDefault();
 
     if (formData.maViTri === 0) {
-      setError("Vui lòng chọn vị trí!");
+      const message = "Vui lòng chọn vị trí!";
+      setError(message);
+      showToast(message, "error");
       return;
     }
 
@@ -72,10 +76,12 @@ export default function CreateRoomPage() {
     setLoading(false);
 
     if (result.success) {
-      alert("✅ Thêm phòng thành công!");
+      showToast("Thêm phòng thành công!", "success");
       router.push("/admin/rooms");
     } else {
-      setError(result.message || "Có lỗi xảy ra");
+      const message = result.message || "Có lỗi xảy ra";
+      setError(message);
+      showToast(message, "error");
     }
   };
 

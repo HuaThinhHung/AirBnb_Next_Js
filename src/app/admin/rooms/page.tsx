@@ -5,6 +5,8 @@ import { getRooms, deleteRoom } from "@/lib/roomService";
 import { getLocations } from "@/lib/locationService";
 import Link from "next/link";
 import { removeVietnameseAccents } from "@/lib/utils";
+import { useAdminConfirm } from "@/components/admin/AdminConfirmDialog";
+import { useAdminToast } from "@/components/admin/AdminToastProvider";
 
 interface Room {
   id: number;
@@ -49,6 +51,8 @@ export default function AdminRoomsPage() {
   const [totalRows, setTotalRows] = useState(0);
   const pageSize = 10; // Hiển thị đúng 10 items mỗi trang
   const fetchBatchSize = 100;
+  const { confirm } = useAdminConfirm();
+  const { showToast } = useAdminToast();
 
   const locationMap = useMemo(() => {
     const map = new Map<number, Location>();
@@ -171,17 +175,23 @@ export default function AdminRoomsPage() {
 
   // Filter client-side (chỉ khi có searchTerm hoặc selectedLocation)
   const handleDelete = async (roomId: number, roomName: string) => {
-    if (!confirm(`Bạn có chắc muốn xóa phòng "${roomName}"?`)) return;
+    const isConfirmed = await confirm({
+      title: "Xóa phòng",
+      message: `Bạn có chắc muốn xóa phòng "${roomName}"? Hành động này không thể hoàn tác.`,
+      confirmText: "Xóa",
+      cancelText: "Huỷ",
+    });
+    if (!isConfirmed) return;
 
     const result = (await deleteRoom(roomId)) as {
       success: boolean;
       message?: string;
     };
     if (result.success) {
-      alert("✅ Xóa phòng thành công!");
+      showToast("Xóa phòng thành công!", "success");
       setAllRooms((prev) => prev.filter((room) => room.id !== roomId));
     } else {
-      alert("❌ Lỗi: " + (result.message || "Không thể xóa phòng"));
+      showToast(result.message || "Không thể xóa phòng", "error");
     }
   };
 

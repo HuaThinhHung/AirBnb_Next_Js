@@ -4,6 +4,7 @@ import { useState, useEffect } from "react";
 import { useParams, useRouter } from "next/navigation";
 import { getUserById, updateUser } from "@/lib/userService";
 import Link from "next/link";
+import { useAdminToast } from "@/components/admin/AdminToastProvider";
 
 interface User {
   id: number;
@@ -33,6 +34,7 @@ export default function EditUserPage() {
   const [loading, setLoading] = useState(true);
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const { showToast } = useAdminToast();
 
   useEffect(() => {
     fetchUser();
@@ -56,7 +58,9 @@ export default function EditUserPage() {
         role: result.user.role || "USER",
       });
     } else {
-      setError("Không tìm thấy người dùng");
+      const message = "Không tìm thấy người dùng";
+      setError(message);
+      showToast(message, "error");
     }
     setLoading(false);
   };
@@ -74,10 +78,12 @@ export default function EditUserPage() {
     setSubmitting(false);
 
     if (result.success) {
-      alert("✅ Cập nhật thông tin thành công!");
+      showToast("Cập nhật thông tin người dùng thành công!", "success");
       router.push(`/admin/users/${userId}`);
     } else {
-      setError(result.message || "Có lỗi xảy ra khi cập nhật");
+      const message = result.message || "Có lỗi xảy ra khi cập nhật";
+      setError(message);
+      showToast(message, "error");
     }
   };
 

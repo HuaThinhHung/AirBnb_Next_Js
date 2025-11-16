@@ -3,6 +3,8 @@
 import { useState, useEffect, useRef } from "react";
 import { getUsersPaginated, deleteUser } from "@/lib/userService";
 import Link from "next/link";
+import { useAdminConfirm } from "@/components/admin/AdminConfirmDialog";
+import { useAdminToast } from "@/components/admin/AdminToastProvider";
 
 type RoleFilter = "all" | "ADMIN" | "USER";
 
@@ -28,6 +30,8 @@ export default function AdminUsersPage() {
   const [allUsersCache, setAllUsersCache] = useState<User[]>([]);
   const [lastSyncedAt, setLastSyncedAt] = useState<string>("");
   const [syncing, setSyncing] = useState(false);
+  const { confirm } = useAdminConfirm();
+  const { showToast } = useAdminToast();
   // Số bản ghi trên mỗi trang (chuẩn như các bảng quản trị phổ biến)
   const pageSize = 10;
   const fetchAllPageSize = 100;
@@ -200,7 +204,13 @@ export default function AdminUsersPage() {
 
   // Delete user
   const handleDelete = async (userId: number, userName: string) => {
-    if (!confirm(`Bạn có chắc muốn xóa người dùng "${userName}"?`)) return;
+    const isConfirmed = await confirm({
+      title: "Xóa người dùng",
+      message: `Bạn có chắc muốn xóa người dùng "${userName}"? Hành động này không thể hoàn tác.`,
+      confirmText: "Xóa",
+      cancelText: "Huỷ",
+    });
+    if (!isConfirmed) return;
 
     const result = (await deleteUser(userId)) as {
       success: boolean;
@@ -208,14 +218,14 @@ export default function AdminUsersPage() {
     };
 
     if (result.success) {
-      alert("✅ Xóa người dùng thành công!");
+      showToast("Xóa người dùng thành công!", "success");
       setAllUsersCache((prev) => {
         const updated = prev.filter((user) => user.id !== userId);
         applyFiltersAndPaginate(updated, searchKeyword, currentPage, roleFilter);
         return updated;
       });
     } else {
-      alert("❌ Lỗi: " + (result.message || "Không thể xóa người dùng"));
+      showToast(result.message || "Không thể xóa người dùng", "error");
     }
   };
 

@@ -8,6 +8,8 @@ import {
   deleteLocation,
 } from "@/lib/locationService";
 import Link from "next/link";
+import { useAdminConfirm } from "@/components/admin/AdminConfirmDialog";
+import { useAdminToast } from "@/components/admin/AdminToastProvider";
 
 interface Location {
   id: number;
@@ -25,6 +27,8 @@ export default function LocationDetailPage() {
   const [location, setLocation] = useState<Location | null>(null);
   const [loading, setLoading] = useState(true);
   const [uploading, setUploading] = useState(false);
+  const { confirm } = useAdminConfirm();
+  const { showToast } = useAdminToast();
 
   useEffect(() => {
     fetchLocation();
@@ -40,7 +44,7 @@ export default function LocationDetailPage() {
     if (result.success) {
       setLocation(result.location);
     } else {
-      alert("Không tìm thấy vị trí");
+      showToast("Không tìm thấy vị trí", "error");
       router.push("/admin/locations");
     }
     setLoading(false);
@@ -51,12 +55,12 @@ export default function LocationDetailPage() {
     if (!file) return;
 
     if (!file.type.startsWith("image/")) {
-      alert("Vui lòng chọn file ảnh!");
+      showToast("Vui lòng chọn file ảnh!", "error");
       return;
     }
 
     if (file.size > 5 * 1024 * 1024) {
-      alert("File quá lớn! Vui lòng chọn ảnh dưới 5MB.");
+      showToast("File quá lớn! Vui lòng chọn ảnh dưới 5MB.", "error");
       return;
     }
 
@@ -68,26 +72,33 @@ export default function LocationDetailPage() {
     setUploading(false);
 
     if (result.success) {
-      alert("✅ Upload ảnh thành công!");
+      showToast("Upload ảnh thành công!", "success");
       fetchLocation();
     } else {
-      alert("❌ Lỗi: " + (result.message || "Không thể upload ảnh"));
+      showToast(result.message || "Không thể upload ảnh", "error");
     }
   };
 
   const handleDelete = async () => {
-    if (!confirm(`Bạn có chắc muốn xóa vị trí "${location?.tenViTri}"?`))
-      return;
+    if (!location) return;
+
+    const isConfirmed = await confirm({
+      title: "Xóa vị trí",
+      message: `Bạn có chắc muốn xóa vị trí "${location.tenViTri}"? Hành động này không thể hoàn tác.`,
+      confirmText: "Xóa",
+      cancelText: "Huỷ",
+    });
+    if (!isConfirmed) return;
 
     const result = (await deleteLocation(Number(locationId))) as {
       success: boolean;
       message?: string;
     };
     if (result.success) {
-      alert("✅ Xóa vị trí thành công!");
+      showToast("Xóa vị trí thành công!", "success");
       router.push("/admin/locations");
     } else {
-      alert("❌ Lỗi: " + (result.message || "Không thể xóa vị trí"));
+      showToast(result.message || "Không thể xóa vị trí", "error");
     }
   };
 

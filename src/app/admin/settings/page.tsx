@@ -1,14 +1,16 @@
 "use client";
 
 import { useState } from "react";
+import { useAdminToast } from "@/components/admin/AdminToastProvider";
 
 export default function SettingsPage() {
   const [saved, setSaved] = useState(false);
+  const { showToast } = useAdminToast();
 
   const handleSave = (section: string) => {
     setSaved(true);
     setTimeout(() => setSaved(false), 3000);
-    alert(`✅ Đã lưu cài đặt ${section} thành công!`);
+    showToast(`Đã lưu cài đặt ${section} thành công!`, "success");
   };
 
   return (

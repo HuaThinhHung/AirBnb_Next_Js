@@ -4,6 +4,8 @@ import { useState, useEffect } from "react";
 import { useParams, useRouter } from "next/navigation";
 import { getUserById, uploadAvatar, deleteUser } from "@/lib/userService";
 import Link from "next/link";
+import { useAdminConfirm } from "@/components/admin/AdminConfirmDialog";
+import { useAdminToast } from "@/components/admin/AdminToastProvider";
 
 interface User {
   id: number;
@@ -24,6 +26,8 @@ export default function UserDetailPage() {
   const [user, setUser] = useState<User | null>(null);
   const [loading, setLoading] = useState(true);
   const [uploading, setUploading] = useState(false);
+  const { confirm } = useAdminConfirm();
+  const { showToast } = useAdminToast();
 
   useEffect(() => {
     fetchUser();
@@ -39,7 +43,7 @@ export default function UserDetailPage() {
     if (result.success) {
       setUser(result.user || null);
     } else {
-      alert("Không tìm thấy người dùng");
+      showToast(result.message || "Không tìm thấy người dùng", "error");
       router.push("/admin/users");
     }
     setLoading(false);
@@ -47,8 +51,14 @@ export default function UserDetailPage() {
 
   const handleDelete = async () => {
     if (!user) return;
-    
-    if (!confirm(`Bạn có chắc muốn xóa người dùng "${user.name}"?`)) return;
+
+    const isConfirmed = await confirm({
+      title: "Xóa người dùng",
+      message: `Bạn có chắc muốn xóa người dùng "${user.name}"? Hành động này không thể hoàn tác.`,
+      confirmText: "Xóa",
+      cancelText: "Huỷ",
+    });
+    if (!isConfirmed) return;
 
     const result = (await deleteUser(user.id)) as {
       success: boolean;
@@ -56,10 +66,10 @@ export default function UserDetailPage() {
     };
 
     if (result.success) {
-      alert("✅ Xóa người dùng thành công!");
+      showToast("Xóa người dùng thành công!", "success");
       router.push("/admin/users");
     } else {
-      alert("❌ Lỗi: " + (result.message || "Không thể xóa người dùng"));
+      showToast(result.message || "Không thể xóa người dùng", "error");
     }
   };
 
@@ -69,13 +79,13 @@ export default function UserDetailPage() {
 
     // Validate file type
     if (!file.type.startsWith("image/")) {
-      alert("Vui lòng chọn file ảnh!");
+      showToast("Vui lòng chọn file ảnh!", "error");
       return;
     }
 
     // Validate file size (max 5MB)
     if (file.size > 5 * 1024 * 1024) {
-      alert("File quá lớn! Vui lòng chọn ảnh dưới 5MB.");
+      showToast("File quá lớn! Vui lòng chọn ảnh dưới 5MB.", "error");
       return;
     }
 
@@ -88,14 +98,14 @@ export default function UserDetailPage() {
     setUploading(false);
 
     if (result.success) {
-      alert("Upload avatar thành công!");
+      showToast("Upload avatar thành công!", "success");
       // Update user avatar in state
       if (user) {
         setUser({ ...user, avatar: result.avatar || user.avatar });
       }
       fetchUser(); // Refresh user data
     } else {
-      alert("Lỗi upload: " + result.message);
+      showToast(result.message || "Lỗi upload avatar", "error");
     }
   };
 

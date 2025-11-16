@@ -4,6 +4,7 @@ import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { createUser } from "@/lib/userService";
 import Link from "next/link";
+import { useAdminToast } from "@/components/admin/AdminToastProvider";
 
 export default function CreateUserPage() {
   const router = useRouter();
@@ -18,6 +19,7 @@ export default function CreateUserPage() {
   });
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const { showToast } = useAdminToast();
 
   // Validate phone number
   const validatePhone = (phone: string): boolean => {
@@ -33,7 +35,10 @@ export default function CreateUserPage() {
 
     // Validate phone number
     if (!validatePhone(formData.phone)) {
-      setError("Số điện thoại không hợp lệ. Vui lòng nhập số điện thoại 10 chữ số bắt đầu bằng 0 (ví dụ: 0123456789)");
+      const message =
+        "Số điện thoại không hợp lệ. Vui lòng nhập số điện thoại 10 chữ số bắt đầu bằng 0 (ví dụ: 0123456789)";
+      setError(message);
+      showToast(message, "error");
       setLoading(false);
       return;
     }
@@ -50,10 +55,12 @@ export default function CreateUserPage() {
     setLoading(false);
 
     if (result.success) {
-      alert("Thêm người dùng thành công!");
+      showToast("Thêm người dùng thành công!", "success");
       router.push("/admin/users");
     } else {
-      setError(result.message || "Có lỗi xảy ra");
+      const message = result.message || "Có lỗi xảy ra";
+      setError(message);
+      showToast(message, "error");
     }
   };
 

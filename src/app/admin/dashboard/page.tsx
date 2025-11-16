@@ -8,6 +8,7 @@ import { getAllBookings } from "@/lib/bookingService";
 import { logout } from "@/lib/authService";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
+import { useAdminToast } from "@/components/admin/AdminToastProvider";
 import {
   Chart as ChartJS,
   CategoryScale,
@@ -95,6 +96,7 @@ export default function DashboardPage() {
   const [bookingChartError, setBookingChartError] = useState<string | null>(
     null
   );
+  const { showToast } = useAdminToast();
 
   useEffect(() => {
     // Get current user
@@ -169,7 +171,9 @@ export default function DashboardPage() {
       }
     } catch (error) {
       console.error("Lỗi tải thống kê:", error);
-      setBookingChartError("Không thể tải thống kê đặt phòng theo vị trí");
+      const msg = "Không thể tải thống kê đặt phòng theo vị trí";
+      setBookingChartError(msg);
+      showToast(msg, "error");
     } finally {
       setLoading(false);
       setBookingChartLoading(false);
@@ -179,9 +183,10 @@ export default function DashboardPage() {
   const handleLogout = () => {
     const result = logout();
     if (result.success) {
+      showToast("Đăng xuất thành công!", "success");
       router.push("/login");
     } else {
-      alert(result.message || "Có lỗi xảy ra khi đăng xuất");
+      showToast(result.message || "Có lỗi xảy ra khi đăng xuất", "error");
     }
   };
 

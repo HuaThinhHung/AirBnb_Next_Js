@@ -4,6 +4,7 @@ import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { createLocation } from "@/lib/locationService";
 import Link from "next/link";
+import { useAdminToast } from "@/components/admin/AdminToastProvider";
 
 export default function CreateLocationPage() {
   const router = useRouter();
@@ -15,6 +16,7 @@ export default function CreateLocationPage() {
   });
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const { showToast } = useAdminToast();
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -28,10 +30,12 @@ export default function CreateLocationPage() {
     setLoading(false);
 
     if (result.success) {
-      alert("✅ Thêm vị trí thành công!");
+      showToast("Thêm vị trí thành công!", "success");
       router.push("/admin/locations");
     } else {
-      setError(result.message || "Có lỗi xảy ra");
+      const message = result.message || "Có lỗi xảy ra";
+      setError(message);
+      showToast(message, "error");
     }
   };
 

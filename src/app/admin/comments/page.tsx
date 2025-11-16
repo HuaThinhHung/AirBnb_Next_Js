@@ -8,6 +8,8 @@ import {
   updateComment,
   deleteComment,
 } from "@/lib/commentService";
+import { useAdminConfirm } from "@/components/admin/AdminConfirmDialog";
+import { useAdminToast } from "@/components/admin/AdminToastProvider";
 
 interface CommentItem {
   id: number;
@@ -46,6 +48,8 @@ export default function AdminCommentsPage() {
     noiDung: "",
     saoBinhLuan: 5,
   });
+  const { confirm } = useAdminConfirm();
+  const { showToast } = useAdminToast();
 
   useEffect(() => {
     const initialize = async () => {
@@ -158,13 +162,20 @@ export default function AdminCommentsPage() {
   };
 
   const handleDelete = async (commentId: number) => {
-    if (!confirm(`Bạn có chắc muốn xóa bình luận #${commentId}?`)) return;
+    const isConfirmed = await confirm({
+      title: "Xóa bình luận",
+      message: `Bạn có chắc muốn xóa bình luận #${commentId}? Hành động này không thể hoàn tác.`,
+      confirmText: "Xóa",
+      cancelText: "Huỷ",
+    });
+    if (!isConfirmed) return;
+
     const result = (await deleteComment(commentId)) as CommentMutationResult;
     if (result.success) {
-      alert("✅ Xóa bình luận thành công!");
+      showToast("Xóa bình luận thành công!", "success");
       setAllComments((prev) => prev.filter((comment) => comment.id !== commentId));
     } else {
-      alert(result.message || "❌ Không thể xóa bình luận");
+      showToast(result.message || "Không thể xóa bình luận", "error");
     }
   };
 
@@ -224,11 +235,17 @@ export default function AdminCommentsPage() {
 
     setSaving(false);
     if (result.success) {
-      alert(isEditing ? "✅ Cập nhật bình luận thành công!" : "✅ Thêm bình luận thành công!");
+      showToast(
+        isEditing
+          ? "Cập nhật bình luận thành công!"
+          : "Thêm bình luận thành công!",
+        "success"
+      );
       setModalOpen(false);
       await handleManualRefresh();
     } else {
       setFormError(result.message || "Đã xảy ra lỗi, vui lòng thử lại.");
+      showToast(result.message || "Đã xảy ra lỗi, vui lòng thử lại.", "error");
     }
   };
 

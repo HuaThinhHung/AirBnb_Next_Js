@@ -5,6 +5,7 @@ import { useParams, useRouter } from "next/navigation";
 import { getRoomById, updateRoom } from "@/lib/roomService";
 import { getLocations } from "@/lib/locationService";
 import Link from "next/link";
+import { useAdminToast } from "@/components/admin/AdminToastProvider";
 
 interface Room {
   id: number;
@@ -65,6 +66,7 @@ export default function EditRoomPage() {
   const [loading, setLoading] = useState(true);
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const { showToast } = useAdminToast();
 
   useEffect(() => {
     fetchLocations();
@@ -111,7 +113,9 @@ export default function EditRoomPage() {
         hinhAnh: result.room.hinhAnh || "",
       });
     } else {
-      setError("Không tìm thấy phòng");
+      const message = "Không tìm thấy phòng";
+      setError(message);
+      showToast(message, "error");
     }
     setLoading(false);
   };
@@ -120,7 +124,9 @@ export default function EditRoomPage() {
     e.preventDefault();
 
     if (formData.maViTri === 0) {
-      setError("Vui lòng chọn vị trí!");
+      const message = "Vui lòng chọn vị trí!";
+      setError(message);
+      showToast(message, "error");
       return;
     }
 
@@ -134,10 +140,12 @@ export default function EditRoomPage() {
     setSubmitting(false);
 
     if (result.success) {
-      alert("✅ Cập nhật thành công!");
+      showToast("Cập nhật phòng thành công!", "success");
       router.push(`/admin/rooms/${roomId}`);
     } else {
-      setError(result.message || "Có lỗi xảy ra");
+      const message = result.message || "Có lỗi xảy ra";
+      setError(message);
+      showToast(message, "error");
     }
   };
 

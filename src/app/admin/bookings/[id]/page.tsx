@@ -6,6 +6,8 @@ import { getBookingById, deleteBooking } from "@/lib/bookingService";
 import { getRoomById } from "@/lib/roomService";
 import { getUserById } from "@/lib/userService";
 import Link from "next/link";
+import { useAdminConfirm } from "@/components/admin/AdminConfirmDialog";
+import { useAdminToast } from "@/components/admin/AdminToastProvider";
 
 interface Booking {
   id: number;
@@ -39,6 +41,8 @@ export default function BookingDetailPage() {
   const [room, setRoom] = useState<Room | null>(null);
   const [user, setUser] = useState<User | null>(null);
   const [loading, setLoading] = useState(true);
+  const { confirm } = useAdminConfirm();
+  const { showToast } = useAdminToast();
 
   useEffect(() => {
     fetchBookingDetail();
@@ -76,7 +80,7 @@ export default function BookingDetailPage() {
         setUser(userResult.user);
       }
     } else {
-      alert("Không tìm thấy đặt phòng");
+      showToast("Không tìm thấy đặt phòng", "error");
       router.push("/admin/bookings");
     }
 
@@ -84,17 +88,25 @@ export default function BookingDetailPage() {
   };
 
   const handleDelete = async () => {
-    if (!confirm(`Bạn có chắc muốn xóa đặt phòng #${booking?.id}?`)) return;
+    if (!booking) return;
+
+    const isConfirmed = await confirm({
+      title: "Xóa đặt phòng",
+      message: `Bạn có chắc muốn xóa đặt phòng #${booking.id}? Hành động này không thể hoàn tác.`,
+      confirmText: "Xóa",
+      cancelText: "Huỷ",
+    });
+    if (!isConfirmed) return;
 
     const result = (await deleteBooking(Number(bookingId))) as {
       success: boolean;
       message?: string;
     };
     if (result.success) {
-      alert("✅ Xóa đặt phòng thành công!");
+      showToast("Xóa đặt phòng thành công!", "success");
       router.push("/admin/bookings");
     } else {
-      alert("❌ Lỗi: " + result.message);
+      showToast(result.message || "Không thể xóa đặt phòng", "error");
     }
   };
 

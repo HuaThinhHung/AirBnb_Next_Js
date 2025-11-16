@@ -10,6 +10,8 @@ import {
 import { getRoomById } from "@/lib/roomService";
 import { getLocationById } from "@/lib/locationService";
 import Link from "next/link";
+import { useAdminConfirm } from "@/components/admin/AdminConfirmDialog";
+import { useAdminToast } from "@/components/admin/AdminToastProvider";
 
 interface Booking {
   id: number;
@@ -61,6 +63,8 @@ export default function AdminBookingsPage() {
     ngayDi: "",
     soLuongKhach: 1,
   });
+  const { confirm } = useAdminConfirm();
+  const { showToast } = useAdminToast();
 
   useEffect(() => {
     const initialize = async () => {
@@ -202,13 +206,20 @@ export default function AdminBookingsPage() {
   };
 
   const handleDelete = async (bookingId: number) => {
-    if (!confirm(`Bạn có chắc muốn xóa đặt phòng #${bookingId}?`)) return;
+    const isConfirmed = await confirm({
+      title: "Xóa đặt phòng",
+      message: `Bạn có chắc muốn xóa đặt phòng #${bookingId}? Hành động này không thể hoàn tác.`,
+      confirmText: "Xóa",
+      cancelText: "Huỷ",
+    });
+    if (!isConfirmed) return;
+
     const result = (await deleteBooking(bookingId)) as BookingMutationResult;
     if (result.success) {
-      alert("✅ Xóa đặt phòng thành công!");
+      showToast("Xóa đặt phòng thành công!", "success");
       await handleManualRefresh();
     } else {
-      alert(result.message || "❌ Không thể xóa đặt phòng");
+      showToast(result.message || "Không thể xóa đặt phòng", "error");
     }
   };
 
@@ -260,11 +271,17 @@ export default function AdminBookingsPage() {
 
     setSaving(false);
     if (result.success) {
-      alert(isEditing ? "✅ Cập nhật đặt phòng thành công!" : "✅ Thêm đặt phòng thành công!");
+      showToast(
+        isEditing
+          ? "Cập nhật đặt phòng thành công!"
+          : "Thêm đặt phòng thành công!",
+        "success"
+      );
       setModalOpen(false);
       await handleManualRefresh();
     } else {
       setFormError(result.message || "Đã xảy ra lỗi, vui lòng thử lại.");
+      showToast(result.message || "Đã xảy ra lỗi, vui lòng thử lại.", "error");
     }
   };
 

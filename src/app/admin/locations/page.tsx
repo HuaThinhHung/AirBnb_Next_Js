@@ -4,6 +4,8 @@ import { useState, useEffect, useRef } from "react";
 import { getLocationsPagedSearch, deleteLocation } from "@/lib/locationService";
 import Link from "next/link";
 import { removeVietnameseAccents } from "@/lib/utils";
+import { useAdminConfirm } from "@/components/admin/AdminConfirmDialog";
+import { useAdminToast } from "@/components/admin/AdminToastProvider";
 
 interface Location {
   id: number;
@@ -26,6 +28,8 @@ export default function AdminLocationsPage() {
   const [totalCount, setTotalCount] = useState(0);
   const pageSize = 12; // Tăng lên 12 items mỗi trang để hiển thị nhiều hơn
   const topRef = useRef<HTMLDivElement>(null);
+  const { confirm } = useAdminConfirm();
+  const { showToast } = useAdminToast();
 
   const applyFiltersAndPaginate = (
     source: Location[],
@@ -126,17 +130,23 @@ export default function AdminLocationsPage() {
 
   // Delete
   const handleDelete = async (id: number, name: string) => {
-    if (!confirm(`Bạn có chắc muốn xóa vị trí "${name}"?`)) return;
+    const isConfirmed = await confirm({
+      title: "Xóa vị trí",
+      message: `Bạn có chắc muốn xóa vị trí "${name}"? Hành động này không thể hoàn tác.`,
+      confirmText: "Xóa",
+      cancelText: "Huỷ",
+    });
+    if (!isConfirmed) return;
 
     const result = (await deleteLocation(id)) as {
       success: boolean;
       message?: string;
     };
     if (result.success) {
-      alert("✅ Xóa vị trí thành công!");
+      showToast("Xóa vị trí thành công!", "success");
       setAllLocations((prev) => prev.filter((loc) => loc.id !== id));
     } else {
-      alert("❌ Lỗi: " + (result.message || "Không thể xóa vị trí"));
+      showToast(result.message || "Không thể xóa vị trí", "error");
     }
   };
 

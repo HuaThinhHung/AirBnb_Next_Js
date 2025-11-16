@@ -5,6 +5,8 @@ import { useParams, useRouter } from "next/navigation";
 import { getRoomById, uploadRoomImage, deleteRoom } from "@/lib/roomService";
 import { getLocationById } from "@/lib/locationService";
 import Link from "next/link";
+import { useAdminConfirm } from "@/components/admin/AdminConfirmDialog";
+import { useAdminToast } from "@/components/admin/AdminToastProvider";
 
 interface Room {
   id: number;
@@ -44,6 +46,8 @@ export default function RoomDetailPage() {
   const [location, setLocation] = useState<Location | null>(null);
   const [loading, setLoading] = useState(true);
   const [uploading, setUploading] = useState(false);
+  const { confirm } = useAdminConfirm();
+  const { showToast } = useAdminToast();
 
   useEffect(() => {
     fetchRoom();
@@ -68,7 +72,7 @@ export default function RoomDetailPage() {
         setLocation(locationResult.location);
       }
     } else {
-      alert("Không tìm thấy phòng");
+      showToast("Không tìm thấy phòng", "error");
       router.push("/admin/rooms");
     }
     setLoading(false);
@@ -79,12 +83,12 @@ export default function RoomDetailPage() {
     if (!file) return;
 
     if (!file.type.startsWith("image/")) {
-      alert("Vui lòng chọn file ảnh!");
+      showToast("Vui lòng chọn file ảnh!", "error");
       return;
     }
 
     if (file.size > 5 * 1024 * 1024) {
-      alert("File quá lớn! Vui lòng chọn ảnh dưới 5MB.");
+      showToast("File quá lớn! Vui lòng chọn ảnh dưới 5MB.", "error");
       return;
     }
 
@@ -96,25 +100,33 @@ export default function RoomDetailPage() {
     setUploading(false);
 
     if (result.success) {
-      alert("✅ Upload ảnh thành công!");
+      showToast("Upload ảnh thành công!", "success");
       fetchRoom();
     } else {
-      alert("❌ Lỗi: " + result.message);
+      showToast(result.message || "Lỗi upload ảnh", "error");
     }
   };
 
   const handleDelete = async () => {
-    if (!confirm(`Bạn có chắc muốn xóa phòng "${room?.tenPhong}"?`)) return;
+    if (!room) return;
+
+    const isConfirmed = await confirm({
+      title: "Xóa phòng",
+      message: `Bạn có chắc muốn xóa phòng "${room.tenPhong}"? Hành động này không thể hoàn tác.`,
+      confirmText: "Xóa",
+      cancelText: "Huỷ",
+    });
+    if (!isConfirmed) return;
 
     const result = (await deleteRoom(Number(roomId))) as {
       success: boolean;
       message?: string;
     };
     if (result.success) {
-      alert("✅ Xóa phòng thành công!");
+      showToast("Xóa phòng thành công!", "success");
       router.push("/admin/rooms");
     } else {
-      alert("❌ Lỗi: " + result.message);
+      showToast(result.message || "Không thể xóa phòng", "error");
     }
   };
 
