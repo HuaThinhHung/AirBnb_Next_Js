@@ -47,6 +47,7 @@ export default function ProfilePage() {
     phone: "",
     birthday: "",
     gender: true,
+    avatar: "",
   });
 
   useEffect(() => {
@@ -63,6 +64,7 @@ export default function ProfilePage() {
       phone: currentUser.phone || "",
       birthday: currentUser.birthday || "",
       gender: currentUser.gender !== undefined ? currentUser.gender : true,
+      avatar: currentUser.avatar || "",
     });
 
     fetchUserBookings(currentUser.id);
@@ -161,7 +163,13 @@ export default function ProfilePage() {
               <h1 className="text-3xl font-bold text-gray-900">
                 Xin chào, tôi là {user.name}
               </h1>
-              <p className="text-gray-500 mt-1">Bắt đầu tham gia vào 2021</p>
+              <p className="text-gray-500 mt-1 flex items-center gap-2">
+                Bắt đầu tham gia vào 2021
+                <span className="text-gray-400 text-sm">•</span>
+                <span className="text-sm text-blue-600 bg-blue-50 px-2 py-1 rounded-full">
+                  User ID: #{user.id}
+                </span>
+              </p>
             </div>
             <button
               onClick={handleLogout}
@@ -199,7 +207,12 @@ export default function ProfilePage() {
                 <h2 className="text-2xl font-bold text-gray-900 mt-4">
                   {user.name}
                 </h2>
-                <p className="text-gray-500 text-sm mt-1">{user.email}</p>
+                <p className="text-gray-500 text-sm mt-1">
+                  {user.email}
+                  <span className="block text-xs text-gray-400 mt-1">
+                    ID: #{user.id}
+                  </span>
+                </p>
 
                 <div className="mt-6 pt-6 border-t border-gray-200">
                   <div className="space-y-3 text-left">
@@ -307,6 +320,50 @@ export default function ProfilePage() {
                         <option value="true">Nam</option>
                         <option value="false">Nữ</option>
                       </select>
+                    </div>
+                    <div>
+                      <label className="block text-sm font-bold text-gray-900 mb-2">
+                        Ảnh đại diện
+                      </label>
+                      <div className="flex gap-3">
+                        <input
+                          type="url"
+                          value={formData.avatar}
+                          onChange={(e) =>
+                            setFormData({ ...formData, avatar: e.target.value })
+                          }
+                          placeholder="Nhập URL hình ảnh"
+                          className="flex-1 px-4 py-3 border-2 border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 text-gray-900"
+                        />
+                        <button
+                          type="button"
+                          onClick={() => {
+                            const input = document.createElement("input");
+                            input.type = "file";
+                            input.accept = "image/*";
+                            input.onchange = (event) => {
+                              const file =
+                                (event.target as HTMLInputElement).files?.[0];
+                              if (!file) return;
+                              const reader = new FileReader();
+                              reader.onload = () => {
+                                setFormData({
+                                  ...formData,
+                                  avatar: reader.result as string,
+                                });
+                              };
+                              reader.readAsDataURL(file);
+                            };
+                            input.click();
+                          }}
+                          className="px-4 py-3 bg-gray-100 border-2 border-gray-300 rounded-lg text-sm font-semibold text-gray-700 hover:bg-gray-200"
+                        >
+                          Tải lên
+                        </button>
+                      </div>
+                      <p className="text-xs text-gray-500 mt-2">
+                        Dán URL ảnh hoặc tải ảnh từ máy (ảnh sẽ được lưu dưới dạng base64).
+                      </p>
                     </div>
                   </div>
 

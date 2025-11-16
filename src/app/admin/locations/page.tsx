@@ -26,14 +26,6 @@ export default function AdminLocationsPage() {
   const [totalCount, setTotalCount] = useState(0);
   const pageSize = 12; // Tăng lên 12 items mỗi trang để hiển thị nhiều hơn
   const topRef = useRef<HTMLDivElement>(null);
-  const [searchSuggestions, setSearchSuggestions] = useState<string[]>([]);
-
-  const buildSuggestions = (list: Location[]) =>
-    list
-      .slice(0, 20)
-      .map(
-        (loc) => `${loc.id} - ${loc.tenViTri}, ${loc.tinhThanh || ""}`.trim()
-      );
 
   const applyFiltersAndPaginate = (
     source: Location[],
@@ -69,7 +61,6 @@ export default function AdminLocationsPage() {
     if (safePage !== page) {
       setCurrentPage(safePage);
     }
-    setSearchSuggestions(buildSuggestions(filtered));
   };
 
   const syncLocations = async () => {
@@ -419,8 +410,7 @@ export default function AdminLocationsPage() {
               value={searchKeyword}
               onChange={(e) => setSearchKeyword(e.target.value)}
               onKeyPress={(e) => e.key === "Enter" && handleSearch()}
-              placeholder="Tìm kiếm theo tên vị trí, tỉnh thành hoặc quốc gia..."
-              list="locations-suggestions"
+              placeholder="Tìm theo ID, tên vị trí, tỉnh thành hoặc quốc gia..."
               className="flex-1 px-4 py-3 border-2 border-gray-200 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 text-gray-900"
             />
             <div className="flex items-center gap-3">
@@ -439,11 +429,6 @@ export default function AdminLocationsPage() {
               </button>
             </div>
           </div>
-        <datalist id="locations-suggestions">
-          {searchSuggestions.map((suggestion) => (
-            <option key={suggestion} value={suggestion} />
-          ))}
-        </datalist>
         </div>
 
         {/* Grid View */}

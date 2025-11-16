@@ -28,10 +28,10 @@ export default function AdminUsersPage() {
   const [allUsersCache, setAllUsersCache] = useState<User[]>([]);
   const [lastSyncedAt, setLastSyncedAt] = useState<string>("");
   const [syncing, setSyncing] = useState(false);
+  // Số bản ghi trên mỗi trang (chuẩn như các bảng quản trị phổ biến)
   const pageSize = 10;
   const fetchAllPageSize = 100;
   const topRef = useRef<HTMLDivElement>(null);
-  const [searchSuggestions, setSearchSuggestions] = useState<string[]>([]);
 
   const roleLabels: Record<RoleFilter, string> = {
     all: "Tất cả",
@@ -40,29 +40,10 @@ export default function AdminUsersPage() {
   };
   const roleOptions: RoleFilter[] = ["all", "ADMIN", "USER"];
 
-  const buildSuggestionList = (list: User[]) =>
-    list.slice(0, 20).map((user) => {
-      const safeName = user.name || "Không tên";
-      const safeEmail = user.email || "Không email";
-      return `${user.id} - ${safeName} | ${safeEmail}`;
-    });
-
-  const extractSearchTerm = (value: string) => {
-    if (!value) return "";
-    const trimmed = value.trim();
-    if (!trimmed) return "";
-    if (trimmed.includes("|")) {
-      return trimmed.split("|").pop()?.trim() || "";
-    }
-    if (/^\d+\s*-\s*/.test(trimmed)) {
-      return trimmed.replace(/^\d+\s*-\s*/, "").trim();
-    }
-    return trimmed;
-  };
-
   const filterUsersByKeyword = (list: User[], keyword: string) => {
-    if (!keyword) return list;
-    const normalized = keyword.toLowerCase();
+    const normalized = keyword.trim().toLowerCase();
+    if (!normalized) return list;
+
     return list.filter((user) => {
       const matchesName = user.name?.toLowerCase().includes(normalized);
       const matchesEmail = user.email?.toLowerCase().includes(normalized);
@@ -95,7 +76,6 @@ export default function AdminUsersPage() {
     setTotalPages(totalPagesCalc);
     setTotalCount(total);
     setCurrentPage(safePage);
-    setSearchSuggestions(buildSuggestionList(list));
   };
 
   const fetchAllUsers = async (keyword: string) => {
@@ -141,9 +121,8 @@ export default function AdminUsersPage() {
     page: number,
     role: RoleFilter
   ) => {
-    const processedKeyword = extractSearchTerm(keyword);
     const filteredList = filterUsersByRole(
-      filterUsersByKeyword(sourceList, processedKeyword),
+      filterUsersByKeyword(sourceList, keyword),
       role
     );
     applySearchPagination(filteredList, page);
@@ -394,8 +373,7 @@ export default function AdminUsersPage() {
                   value={searchKeyword}
                   onChange={(e) => setSearchKeyword(e.target.value)}
                   onKeyDown={(e) => e.key === "Enter" && handleSearch()}
-                  placeholder="Nhập tên, email (ví dụ: gmail), số điện thoại hoặc ID người dùng"
-                  list="users-suggestions"
+                  placeholder="Nhập tên, email, số điện thoại, role hoặc ID người dùng..."
                   className="mt-1 w-full px-4 py-3 border-2 border-gray-200 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 text-gray-900"
                 />
               </div>
@@ -440,12 +418,6 @@ export default function AdminUsersPage() {
             </div>
           </div>
         </div>
-        <datalist id="users-suggestions">
-          {searchSuggestions.map((suggestion) => (
-            <option key={suggestion} value={suggestion} />
-          ))}
-        </datalist>
-
         {/* Table */}
         <div className="bg-white rounded-lg shadow-sm border border-gray-200 overflow-hidden">
           {loading ? (

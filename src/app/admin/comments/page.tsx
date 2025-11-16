@@ -34,7 +34,6 @@ export default function AdminCommentsPage() {
   const [totalPages, setTotalPages] = useState(1);
   const [pageSize] = useState(10);
   const [totalRows, setTotalRows] = useState(0);
-  const [searchSuggestions, setSearchSuggestions] = useState<string[]>([]);
   const [modalOpen, setModalOpen] = useState(false);
   const [isEditing, setIsEditing] = useState(false);
   const [saving, setSaving] = useState(false);
@@ -69,14 +68,6 @@ export default function AdminCommentsPage() {
     }
   }, [currentPage]);
 
-  const buildSuggestions = (list: CommentItem[]) =>
-    list
-      .slice(0, 30)
-      .map(
-        (comment) =>
-          `${comment.id} - Phòng ${comment.maPhong} - User ${comment.maNguoiBinhLuan}`
-      );
-
   const applyFiltersAndPaginate = (
     source: CommentItem[],
     keyword: string,
@@ -102,7 +93,6 @@ export default function AdminCommentsPage() {
     setComments(filtered.slice(startIndex, startIndex + pageSize));
     setTotalRows(total);
     setTotalPages(totalPagesCalc);
-    setSearchSuggestions(buildSuggestions(filtered));
     if (safePage !== page) {
       setCurrentPage(safePage);
     }
@@ -296,13 +286,12 @@ export default function AdminCommentsPage() {
         <div className="max-w-md">
           <input
             type="text"
-            placeholder="🔍 Tìm theo ID, phòng, người dùng, nội dung..."
+            placeholder="🔍 Tìm theo ID, phòng, người dùng hoặc nội dung..."
             value={searchTerm}
             onChange={(e) => {
               setSearchTerm(e.target.value);
               setCurrentPage(1);
             }}
-            list="comments-suggestions"
             className="w-full px-4 py-2 border-2 border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 text-gray-900"
           />
         </div>
@@ -521,12 +510,6 @@ export default function AdminCommentsPage() {
           </>
         )}
       </div>
-
-      <datalist id="comments-suggestions">
-        {searchSuggestions.map((suggestion) => (
-          <option key={suggestion} value={suggestion} />
-        ))}
-      </datalist>
 
       {modalOpen && (
         <div className="fixed inset-0 bg-gray-900/50 flex items-center justify-center z-50 px-4">

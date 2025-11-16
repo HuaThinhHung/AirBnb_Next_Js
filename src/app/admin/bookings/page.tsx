@@ -49,7 +49,6 @@ export default function AdminBookingsPage() {
     "https://images.unsplash.com/photo-1566073771259-6a8506099945?q=80&w=400&auto=format&fit=crop";
   const pageSize = 10;
   const topRef = useRef<HTMLDivElement>(null);
-  const [searchSuggestions, setSearchSuggestions] = useState<string[]>([]);
   const [modalOpen, setModalOpen] = useState(false);
   const [isEditing, setIsEditing] = useState(false);
   const [saving, setSaving] = useState(false);
@@ -85,14 +84,6 @@ export default function AdminBookingsPage() {
     }
   }, [currentPage]);
 
-  const buildSuggestions = (list: Booking[]) =>
-    list
-      .slice(0, 30)
-      .map(
-        (booking) =>
-          `${booking.id} - Phòng ${booking.maPhong} - User ${booking.maNguoiDung}`
-      );
-
   const applyFiltersAndPaginate = (
     source: Booking[],
     keyword: string,
@@ -124,7 +115,6 @@ export default function AdminBookingsPage() {
     setBookings(paginatedBookings);
     setTotalRows(total);
     setTotalPages(totalPagesCalc);
-    setSearchSuggestions(buildSuggestions(filteredBookings));
     if (safePage !== page) {
       setCurrentPage(safePage);
     }
@@ -391,22 +381,16 @@ export default function AdminBookingsPage() {
         <div className="max-w-md">
           <input
             type="text"
-            placeholder="🔍 Tìm kiếm theo ID, Mã phòng, Mã người dùng..."
+            placeholder="🔍 Tìm theo ID booking, mã phòng hoặc mã người dùng..."
             value={searchTerm}
             onChange={(e) => {
               setSearchTerm(e.target.value);
               setCurrentPage(1);
             }}
-            list="bookings-suggestions"
             className="w-full px-4 py-2 border-2 border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 text-gray-900"
           />
         </div>
       </div>
-      <datalist id="bookings-suggestions">
-        {searchSuggestions.map((suggestion) => (
-          <option key={suggestion} value={suggestion} />
-        ))}
-      </datalist>
 
       {/* Content */}
       <div className="px-4 py-8 sm:px-6">

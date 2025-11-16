@@ -43,7 +43,6 @@ export default function AdminRoomsPage() {
   const [syncing, setSyncing] = useState(false);
   const [lastSyncedAt, setLastSyncedAt] = useState<string>("");
   const [searchTerm, setSearchTerm] = useState("");
-  const [searchSuggestions, setSearchSuggestions] = useState<string[]>([]);
   const [selectedLocation, setSelectedLocation] = useState<number | null>(null);
   const [currentPage, setCurrentPage] = useState(1);
   const [totalPages, setTotalPages] = useState(1);
@@ -123,14 +122,6 @@ export default function AdminRoomsPage() {
     }
   };
 
-  const buildSearchSuggestions = (list: Room[]) =>
-    list.slice(0, 30).map((room) => {
-      const locationName = getLocationName(room.maViTri);
-      return `#${room.id} • ${room.tenPhong} • ${locationName} • ${formatPrice(
-        room.giaTien
-      )}`;
-    });
-
   const applyFiltersAndPaginate = (
     sourceRooms: Room[],
     keyword: string,
@@ -173,7 +164,6 @@ export default function AdminRoomsPage() {
     setRooms(paginated);
     setTotalRows(total);
     setTotalPages(totalPagesCalculated);
-    setSearchSuggestions(buildSearchSuggestions(filteredRooms));
     if (safePage !== page) {
       setCurrentPage(safePage);
     }
@@ -272,20 +262,14 @@ export default function AdminRoomsPage() {
           <div className="md:col-span-2">
             <input
               type="text"
-              placeholder="🔍 Tìm theo tên phòng, vị trí hoặc giá..."
+              placeholder="🔍 Tìm theo ID phòng, tên phòng, vị trí hoặc giá..."
               value={searchTerm}
               onChange={(e) => {
                 setSearchTerm(e.target.value);
                 setCurrentPage(1);
               }}
-              list="rooms-suggestions"
               className="w-full px-4 py-2 border-2 border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 text-gray-900 font-medium placeholder-gray-400"
             />
-            <datalist id="rooms-suggestions">
-              {searchSuggestions.map((suggestion) => (
-                <option key={suggestion} value={suggestion} />
-              ))}
-            </datalist>
           </div>
 
           {/* Filter by Location */}
