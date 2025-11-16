@@ -81,6 +81,11 @@ export default function AdminProfilePage() {
           address: fetchedUser.address || "",
           avatar: fetchedUser.avatar || "",
         });
+        // Đồng bộ lại localStorage (dạng phẳng) + bắn sự kiện để Header cập nhật avatar
+        if (typeof window !== "undefined") {
+          localStorage.setItem("user", JSON.stringify(fetchedUser));
+          window.dispatchEvent(new Event("user-updated"));
+        }
       } else {
         setMessage(result.message || "Không thể tải thông tin người dùng.");
       }
@@ -102,8 +107,23 @@ export default function AdminProfilePage() {
   const handleAvatarChange = async (
     e: React.ChangeEvent<HTMLInputElement>
   ) => {
+    if (!user) {
+      setMessage("❌ Không tìm thấy thông tin người dùng. Vui lòng đăng nhập lại.");
+      return;
+    }
     if (!e.target.files || e.target.files.length === 0) return;
     const file = e.target.files[0];
+
+    // Validate file
+    if (!file.type.startsWith("image/")) {
+      setMessage("❌ Vui lòng chọn file ảnh hợp lệ (jpg, png...)");
+      return;
+    }
+    if (file.size > 5 * 1024 * 1024) {
+      setMessage("❌ File quá lớn! Vui lòng chọn ảnh dưới 5MB.");
+      return;
+    }
+
     setAvatarUploading(true);
     setMessage(null);
     const result = (await uploadAvatar(file)) as {
@@ -112,16 +132,47 @@ export default function AdminProfilePage() {
       message?: string;
     };
     setAvatarUploading(false);
+
     if (result.success && result.avatar) {
       const newAvatar = result.avatar ?? "";
-      setFormData((prev) => ({ ...prev, avatar: newAvatar }));
-      setUser((prev) => (prev ? { ...prev, avatar: newAvatar } : prev));
-      const currentUser = getCurrentUser();
-      if (currentUser) {
-        const updatedUser = { ...currentUser, avatar: newAvatar };
-        localStorage.setItem("user", JSON.stringify(updatedUser));
+
+      // Sau khi upload file, gọi luôn updateUser để lưu avatar mới vào hồ sơ (giống public profile)
+      const payload = {
+        name: formData.name,
+        email: formData.email,
+        phone: formData.phone,
+        birthday: formData.birthday || null,
+        gender: formData.gender === "true",
+        avatar: newAvatar,
+        address: formData.address,
+      };
+
+      const updateResult = (await updateUser(user.id, payload)) as {
+        success: boolean;
+        user?: UserProfile;
+        message?: string;
+      };
+
+      if (updateResult.success && updateResult.user) {
+        const updatedUser = updateResult.user;
+        setUser(updatedUser);
+        setFormData((prev) => ({
+          ...prev,
+          avatar: updatedUser.avatar || newAvatar,
+        }));
+
+        if (typeof window !== "undefined") {
+          localStorage.setItem("user", JSON.stringify(updatedUser));
+          window.dispatchEvent(new Event("user-updated"));
+        }
+
+        setMessage("✅ Upload avatar thành công!");
+      } else {
+        setMessage(
+          updateResult.message ||
+            "❌ Upload thành công nhưng không thể lưu avatar mới."
+        );
       }
-      setMessage("✅ Upload avatar thành công!");
     } else {
       setMessage(result.message || "❌ Không thể upload avatar.");
     }
@@ -148,8 +199,31 @@ export default function AdminProfilePage() {
     };
     setSaving(false);
     if (result.success && result.user) {
-      setUser(result.user);
-      setMessage("✅ Cập nhật hồ sơ thành công!");
+    const updatedUser = result.user;
+    setUser(updatedUser);
+    // Đồng bộ lại formData (phòng trường hợp backend thay đổi dữ liệu)
+    setFormData((prev) => ({
+      ...prev,
+      name: updatedUser.name || prev.name,
+      email: updatedUser.email || prev.email,
+      phone: updatedUser.phone || prev.phone,
+      birthday: updatedUser.birthday
+        ? updatedUser.birthday.split("T")[0]
+        : prev.birthday,
+      gender:
+        typeof updatedUser.gender === "boolean"
+          ? String(updatedUser.gender)
+          : prev.gender,
+      address: updatedUser.address || prev.address,
+      avatar: updatedUser.avatar || prev.avatar,
+    }));
+
+    if (typeof window !== "undefined") {
+      localStorage.setItem("user", JSON.stringify(updatedUser));
+      window.dispatchEvent(new Event("user-updated"));
+    }
+
+    setMessage("✅ Cập nhật hồ sơ thành công!");
     } else {
       setMessage(result.message || "❌ Không thể cập nhật hồ sơ.");
     }

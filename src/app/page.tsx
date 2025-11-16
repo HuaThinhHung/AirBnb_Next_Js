@@ -3,8 +3,6 @@
 import { useEffect, useState } from "react";
 import Link from "next/link";
 import Hero from "@/components/home/Hero";
-import SearchBarAutocomplete from "@/components/home/SearchBarAutocomplete";
-import RoomCard from "@/components/home/RoomCard";
 import GoogleMap from "@/components/home/GoogleMap";
 import LocationCard from "@/components/home/LocationCard";
 import PropertyTypeCard from "@/components/home/PropertyTypeCard";

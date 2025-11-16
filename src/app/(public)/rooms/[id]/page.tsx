@@ -81,6 +81,7 @@ export default function RoomDetailPage() {
   const [commentPage, setCommentPage] = useState(1);
   const [commentTotalPages, setCommentTotalPages] = useState(1);
   const [commentTotalRows, setCommentTotalRows] = useState(0);
+  const [expandedComments, setExpandedComments] = useState<Record<number, boolean>>({});
   const commentPageSize = 5;
 
   // Booking form state
@@ -411,7 +412,8 @@ export default function RoomDetailPage() {
       : undefined;
 
   return (
-    <div className="min-h-screen bg-gray-50">
+    // Thêm khoảng trống cố định phía trên để tránh header (sticky) dính sát vào Google Map
+    <div className="min-h-screen bg-gray-50 pt-28 md:pt-32">
       {/* Header */}
       <div className="bg-white border-b border-gray-200">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-4">
@@ -658,9 +660,29 @@ export default function RoomDetailPage() {
                               </span>
                             ))}
                           </div>
-                          <p className="text-gray-700 leading-relaxed">
+                          <p
+                            className={`text-gray-700 leading-relaxed ${
+                              expandedComments[comment.id]
+                                ? ""
+                                : "line-clamp-4 md:line-clamp-5"
+                            }`}
+                          >
                             {comment.noiDung}
                           </p>
+                          {comment.noiDung && comment.noiDung.length > 200 && (
+                            <button
+                              type="button"
+                              onClick={() =>
+                                setExpandedComments((prev) => ({
+                                  ...prev,
+                                  [comment.id]: !prev[comment.id],
+                                }))
+                              }
+                              className="mt-2 text-sm font-semibold text-blue-600 hover:text-blue-700"
+                            >
+                              {expandedComments[comment.id] ? "Thu gọn" : "Xem thêm"}
+                            </button>
+                          )}
                         </div>
                       </div>
                     </div>

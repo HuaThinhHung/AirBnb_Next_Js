@@ -7,6 +7,7 @@ import { getRooms, getRoomsByLocation } from "@/lib/roomService";
 import { getLocationById } from "@/lib/locationService";
 import { searchWithoutAccents } from "@/lib/utils";
 import type { LocationResponse } from "@/types/api";
+import RoomMap from "@/components/rooms/RoomMap";
 
 type RoomItem = {
   id: number;
@@ -520,6 +521,7 @@ function RoomsContent() {
         )}
 
         {/* Rooms Grid */}
+        {/* Rooms Grid */}
         {!loading && !error && (
           <>
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
@@ -727,6 +729,24 @@ function RoomsContent() {
                 >
                   Sau →
                 </button>
+              </div>
+            )}
+
+            {/* Map for specific location (near footer) */}
+            {location && (
+              <div className="mt-16">
+                <div className="bg-white rounded-2xl shadow-sm border border-gray-200 p-6">
+                  <RoomMap
+                    roomId={-1}
+                    roomName={`Khu vực: ${location.tenViTri}`}
+                    address={`${location.tenViTri}, ${location.tinhThanh}, ${location.quocGia}`}
+                    locationMeta={{
+                      tenViTri: location.tenViTri,
+                      tinhThanh: location.tinhThanh,
+                      quocGia: location.quocGia,
+                    }}
+                  />
+                </div>
               </div>
             )}
           </>

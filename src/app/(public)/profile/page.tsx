@@ -469,45 +469,18 @@ export default function ProfilePage() {
                       <label className="block text-sm font-bold text-gray-900 mb-2">
                         Ảnh đại diện
                       </label>
-                      <div className="flex gap-3">
+                      <div className="space-y-2">
                         <input
-                          type="url"
-                          value={formData.avatar}
-                          onChange={(e) =>
-                            setFormData({ ...formData, avatar: e.target.value })
-                          }
-                          placeholder="Nhập URL hình ảnh"
-                          className="flex-1 px-4 py-3 border-2 border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 text-gray-900"
+                          type="file"
+                          accept="image/*"
+                          onChange={handleAvatarChange}
+                          className="block w-full text-sm text-gray-900 file:mr-4 file:py-2 file:px-4 file:rounded-lg file:border-0 file:text-sm file:font-semibold file:bg-blue-50 file:text-blue-700 hover:file:bg-blue-100"
                         />
-                        <button
-                          type="button"
-                          onClick={() => {
-                            const input = document.createElement("input");
-                            input.type = "file";
-                            input.accept = "image/*";
-                            input.onchange = (event) => {
-                              const file =
-                                (event.target as HTMLInputElement).files?.[0];
-                              if (!file) return;
-                              const reader = new FileReader();
-                              reader.onload = () => {
-                                setFormData({
-                                  ...formData,
-                                  avatar: reader.result as string,
-                                });
-                              };
-                              reader.readAsDataURL(file);
-                            };
-                            input.click();
-                          }}
-                          className="px-4 py-3 bg-gray-100 border-2 border-gray-300 rounded-lg text-sm font-semibold text-gray-700 hover:bg-gray-200"
-                        >
-                          Tải lên
-                        </button>
+                        <p className="text-xs text-gray-500">
+                          Chọn file ảnh (tối đa 5MB). Ảnh sẽ được upload và lưu ngay,
+                          không cần tải lại trang.
+                        </p>
                       </div>
-                      <p className="text-xs text-gray-500 mt-2">
-                        Dán URL ảnh hoặc tải ảnh từ máy (ảnh sẽ được lưu dưới dạng base64).
-                      </p>
                     </div>
                   </div>
 
