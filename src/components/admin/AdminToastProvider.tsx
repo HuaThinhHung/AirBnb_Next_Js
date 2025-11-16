@@ -2,7 +2,7 @@
 
 import { createContext, useCallback, useContext, useState } from "react";
 
-type ToastType = "success" | "error" | "info";
+type ToastType = "success" | "error" | "info" | "warning";
 
 type Toast = {
   id: number;
@@ -52,6 +52,7 @@ export function AdminToastProvider({ children }: { children: React.ReactNode }) 
     success: "bg-emerald-600",
     error: "bg-red-600",
     info: "bg-slate-800",
+    warning: "bg-amber-500",
   };
 
   const iconByType: Record<ToastType, JSX.Element> = {
@@ -68,6 +69,11 @@ export function AdminToastProvider({ children }: { children: React.ReactNode }) 
     info: (
       <span className="text-lg" aria-hidden="true">
         ℹ️
+      </span>
+    ),
+    warning: (
+      <span className="text-lg" aria-hidden="true">
+        ⚠️
       </span>
     ),
   };
