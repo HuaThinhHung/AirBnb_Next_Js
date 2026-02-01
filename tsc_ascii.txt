@@ -1,2 +1,0 @@
-src/components/admin/AdminNavbarSimple.tsx(23,33): error TS2339: Property 'user' does not exist on type 'Object'.
-src/components/admin/AdminToastProvider.tsx(58,39): error TS2503: Cannot find namespace 'JSX'.
