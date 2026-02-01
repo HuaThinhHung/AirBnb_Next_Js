@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState, useMemo } from "react";
+import { Suspense, useEffect, useState, useMemo } from "react";
 import { useSearchParams, useRouter } from "next/navigation";
 import Link from "next/link";
 import { getLocationsPagedSearch, getLocations } from "@/lib/locationService";
@@ -24,7 +24,7 @@ type RoomItem = {
   maViTri: number;
 };
 
-export default function SearchPage() {
+function SearchContent() {
   const searchParams = useSearchParams();
   const router = useRouter();
   const [keyword, setKeyword] = useState("");
@@ -41,11 +41,11 @@ export default function SearchPage() {
   useEffect(() => {
     const urlKeyword = searchParams.get("keyword");
     const urlLocation = searchParams.get("location");
-    
+
     if (urlKeyword) {
       setKeyword(urlKeyword);
     }
-    
+
     if (urlLocation) {
       // Nếu có location ID, load rooms thay vì locations
       loadRoomsByLocation(Number(urlLocation));
@@ -55,7 +55,7 @@ export default function SearchPage() {
   // Load all locations for client-side filtering
   useEffect(() => {
     if (showRooms) return; // Không load locations nếu đang hiển thị rooms
-    
+
     let mounted = true;
     const loadAllLocations = async () => {
       setLoading(true);
@@ -122,14 +122,14 @@ export default function SearchPage() {
     setLoading(true);
     setError(null);
     setShowRooms(true);
-    
+
     try {
       const res = (await getRoomsByLocation(locationId)) as {
         success: boolean;
         rooms: RoomItem[];
         message?: string;
       };
-      
+
       if (res.success) {
         setRooms(res.rooms || []);
       } else {
@@ -398,5 +398,22 @@ export default function SearchPage() {
         )}
       </div>
     </div>
+  );
+}
+
+export default function SearchPage() {
+  return (
+    <Suspense
+      fallback={
+        <div className="min-h-screen flex items-center justify-center">
+          <div className="text-center">
+            <div className="inline-block animate-spin rounded-full h-16 w-16 border-b-4 border-blue-600 mb-4"></div>
+            <p className="text-gray-900 font-semibold text-lg">Đang tải...</p>
+          </div>
+        </div>
+      }
+    >
+      <SearchContent />
+    </Suspense>
   );
 }
