@@ -1,0 +1,187 @@
+
+> du-an-airbnb@0.1.0 lint
+> eslint
+
+
+D:\Bai_Tap_Frontend\AirBnb_Next_Js\src\app\(auth)\login\page.tsx
+  157:21  warning  Using `<img>` could result in slower LCP and higher bandwidth. Consider using `<Image />` from `next/image` or a custom image loader to automatically optimize images. This may incur additional usage or cost from your provider. See: https://nextjs.org/docs/messages/no-img-element  @next/next/no-img-element
+  273:23  warning  Using `<img>` could result in slower LCP and higher bandwidth. Consider using `<Image />` from `next/image` or a custom image loader to automatically optimize images. This may incur additional usage or cost from your provider. See: https://nextjs.org/docs/messages/no-img-element  @next/next/no-img-element
+  575:26  error    `'` can be escaped with `&apos;`, `&lsquo;`, `&#39;`, `&rsquo;`                                                                                                                                                                                                                          react/no-unescaped-entities
+
+D:\Bai_Tap_Frontend\AirBnb_Next_Js\src\app\(auth)\register\page.tsx
+  219:23  warning  Using `<img>` could result in slower LCP and higher bandwidth. Consider using `<Image />` from `next/image` or a custom image loader to automatically optimize images. This may incur additional usage or cost from your provider. See: https://nextjs.org/docs/messages/no-img-element  @next/next/no-img-element
+  337:23  warning  Using `<img>` could result in slower LCP and higher bandwidth. Consider using `<Image />` from `next/image` or a custom image loader to automatically optimize images. This may incur additional usage or cost from your provider. See: https://nextjs.org/docs/messages/no-img-element  @next/next/no-img-element
+
+D:\Bai_Tap_Frontend\AirBnb_Next_Js\src\app\(public)\about\page.tsx
+   51:13  warning  Using `<img>` could result in slower LCP and higher bandwidth. Consider using `<Image />` from `next/image` or a custom image loader to automatically optimize images. This may incur additional usage or cost from your provider. See: https://nextjs.org/docs/messages/no-img-element  @next/next/no-img-element
+  143:19  warning  Using `<img>` could result in slower LCP and higher bandwidth. Consider using `<Image />` from `next/image` or a custom image loader to automatically optimize images. This may incur additional usage or cost from your provider. See: https://nextjs.org/docs/messages/no-img-element  @next/next/no-img-element
+
+D:\Bai_Tap_Frontend\AirBnb_Next_Js\src\app\(public)\blog\[slug]\page.tsx
+  100:9   warning  'router' is assigned a value but never used                                                                                                                                                                                                                                              @typescript-eslint/no-unused-vars
+  126:9   warning  Using `<img>` could result in slower LCP and higher bandwidth. Consider using `<Image />` from `next/image` or a custom image loader to automatically optimize images. This may incur additional usage or cost from your provider. See: https://nextjs.org/docs/messages/no-img-element  @next/next/no-img-element
+  249:19  warning  Using `<img>` could result in slower LCP and higher bandwidth. Consider using `<Image />` from `next/image` or a custom image loader to automatically optimize images. This may incur additional usage or cost from your provider. See: https://nextjs.org/docs/messages/no-img-element  @next/next/no-img-element
+
+D:\Bai_Tap_Frontend\AirBnb_Next_Js\src\app\(public)\blog\page.tsx
+  196:19  warning  Using `<img>` could result in slower LCP and higher bandwidth. Consider using `<Image />` from `next/image` or a custom image loader to automatically optimize images. This may incur additional usage or cost from your provider. See: https://nextjs.org/docs/messages/no-img-element  @next/next/no-img-element
+
+D:\Bai_Tap_Frontend\AirBnb_Next_Js\src\app\(public)\contact\page.tsx
+    4:8   warning  'Link' is defined but never used                                                                                                                                                                     @typescript-eslint/no-unused-vars
+   10:10  warning  'map' is assigned a value but never used                                                                                                                                                             @typescript-eslint/no-unused-vars
+  197:6   warning  React Hook useEffect has missing dependencies: 'officeLocation.address', 'officeLocation.lat', 'officeLocation.lng', and 'officeLocation.title'. Either include them or remove the dependency array  react-hooks/exhaustive-deps
+
+D:\Bai_Tap_Frontend\AirBnb_Next_Js\src\app\(public)\location\[locationId]\page.tsx
+   50:20  warning  'setRoomType' is assigned a value but never used                                                                                                                                                                                                                                         @typescript-eslint/no-unused-vars
+   51:18  warning  'setGuests' is assigned a value but never used                                                                                                                                                                                                                                           @typescript-eslint/no-unused-vars
+   79:21  error    Unexpected any. Specify a different type                                                                                                                                                                                                                                                 @typescript-eslint/no-explicit-any
+  327:23  warning  Using `<img>` could result in slower LCP and higher bandwidth. Consider using `<Image />` from `next/image` or a custom image loader to automatically optimize images. This may incur additional usage or cost from your provider. See: https://nextjs.org/docs/messages/no-img-element  @next/next/no-img-element
+
+D:\Bai_Tap_Frontend\AirBnb_Next_Js\src\app\(public)\profile\page.tsx
+  116:6  warning  React Hook useEffect has a missing dependency: 'router'. Either include it or remove the dependency array  react-hooks/exhaustive-deps
+
+D:\Bai_Tap_Frontend\AirBnb_Next_Js\src\app\(public)\rooms\[id]\page.tsx
+  101:6   warning  React Hook useEffect has missing dependencies: 'fetchComments' and 'fetchRoomDetail'. Either include them or remove the dependency array                                                                                                                                                 react-hooks/exhaustive-deps
+  107:6   warning  React Hook useEffect has a missing dependency: 'fetchComments'. Either include it or remove the dependency array                                                                                                                                                                         react-hooks/exhaustive-deps
+  226:24  error    Unexpected any. Specify a different type                                                                                                                                                                                                                                                 @typescript-eslint/no-explicit-any
+  233:22  error    Unexpected any. Specify a different type                                                                                                                                                                                                                                                 @typescript-eslint/no-explicit-any
+  454:15  warning  Using `<img>` could result in slower LCP and higher bandwidth. Consider using `<Image />` from `next/image` or a custom image loader to automatically optimize images. This may incur additional usage or cost from your provider. See: https://nextjs.org/docs/messages/no-img-element  @next/next/no-img-element
+
+D:\Bai_Tap_Frontend\AirBnb_Next_Js\src\app\(public)\rooms\page.tsx
+  535:21  warning  Using `<img>` could result in slower LCP and higher bandwidth. Consider using `<Image />` from `next/image` or a custom image loader to automatically optimize images. This may incur additional usage or cost from your provider. See: https://nextjs.org/docs/messages/no-img-element  @next/next/no-img-element
+
+D:\Bai_Tap_Frontend\AirBnb_Next_Js\src\app\(public)\search\[id]\page.tsx
+  214:11  warning  Using `<img>` could result in slower LCP and higher bandwidth. Consider using `<Image />` from `next/image` or a custom image loader to automatically optimize images. This may incur additional usage or cost from your provider. See: https://nextjs.org/docs/messages/no-img-element  @next/next/no-img-element
+  295:21  warning  Using `<img>` could result in slower LCP and higher bandwidth. Consider using `<Image />` from `next/image` or a custom image loader to automatically optimize images. This may incur additional usage or cost from your provider. See: https://nextjs.org/docs/messages/no-img-element  @next/next/no-img-element
+
+D:\Bai_Tap_Frontend\AirBnb_Next_Js\src\app\(public)\search\page.tsx
+    6:10  warning  'getLocationsPagedSearch' is defined but never used                                                                                                                                                                                                                                      @typescript-eslint/no-unused-vars
+    9:15  warning  'LocationsResponse' is defined but never used                                                                                                                                                                                                                                            @typescript-eslint/no-unused-vars
+   77:16  warning  'err' is defined but never used                                                                                                                                                                                                                                                          @typescript-eslint/no-unused-vars
+  139:14  warning  'err' is defined but never used                                                                                                                                                                                                                                                          @typescript-eslint/no-unused-vars
+  249:21  warning  Using `<img>` could result in slower LCP and higher bandwidth. Consider using `<Image />` from `next/image` or a custom image loader to automatically optimize images. This may incur additional usage or cost from your provider. See: https://nextjs.org/docs/messages/no-img-element  @next/next/no-img-element
+  299:21  warning  Using `<img>` could result in slower LCP and higher bandwidth. Consider using `<Image />` from `next/image` or a custom image loader to automatically optimize images. This may incur additional usage or cost from your provider. See: https://nextjs.org/docs/messages/no-img-element  @next/next/no-img-element
+
+D:\Bai_Tap_Frontend\AirBnb_Next_Js\src\app\admin\bookings\[id]\page.tsx
+   49:6   warning  React Hook useEffect has a missing dependency: 'fetchBookingDetail'. Either include it or remove the dependency array                                                                                                                                                                    react-hooks/exhaustive-deps
+  213:21  warning  Using `<img>` could result in slower LCP and higher bandwidth. Consider using `<Image />` from `next/image` or a custom image loader to automatically optimize images. This may incur additional usage or cost from your provider. See: https://nextjs.org/docs/messages/no-img-element  @next/next/no-img-element
+
+D:\Bai_Tap_Frontend\AirBnb_Next_Js\src\app\admin\bookings\page.tsx
+   83:5   warning  Unused eslint-disable directive (no problems were reported from 'react-hooks/exhaustive-deps')
+  306:17  warning  'maViTri' is assigned a value but never used                                                                                                                                                                                                                                             @typescript-eslint/no-unused-vars
+  347:6   warning  React Hook useEffect has a missing dependency: 'fetchRoomDetails'. Either include it or remove the dependency array                                                                                                                                                                      react-hooks/exhaustive-deps
+  462:35  warning  Using `<img>` could result in slower LCP and higher bandwidth. Consider using `<Image />` from `next/image` or a custom image loader to automatically optimize images. This may incur additional usage or cost from your provider. See: https://nextjs.org/docs/messages/no-img-element  @next/next/no-img-element
+
+D:\Bai_Tap_Frontend\AirBnb_Next_Js\src\app\admin\dashboard\page.tsx
+   89:36  error    Unexpected any. Specify a different type                                                                       @typescript-eslint/no-explicit-any
+  109:6   warning  React Hook useEffect has a missing dependency: 'fetchStats'. Either include it or remove the dependency array  react-hooks/exhaustive-deps
+
+D:\Bai_Tap_Frontend\AirBnb_Next_Js\src\app\admin\locations\[id]\edit\page.tsx
+   36:6   warning  React Hook useEffect has a missing dependency: 'fetchLocation'. Either include it or remove the dependency array                                                                                                                                                                         react-hooks/exhaustive-deps
+  213:19  warning  Using `<img>` could result in slower LCP and higher bandwidth. Consider using `<Image />` from `next/image` or a custom image loader to automatically optimize images. This may incur additional usage or cost from your provider. See: https://nextjs.org/docs/messages/no-img-element  @next/next/no-img-element
+
+D:\Bai_Tap_Frontend\AirBnb_Next_Js\src\app\admin\locations\[id]\page.tsx
+   35:6   warning  React Hook useEffect has a missing dependency: 'fetchLocation'. Either include it or remove the dependency array                                                                                                                                                                         react-hooks/exhaustive-deps
+  169:17  warning  Using `<img>` could result in slower LCP and higher bandwidth. Consider using `<Image />` from `next/image` or a custom image loader to automatically optimize images. This may incur additional usage or cost from your provider. See: https://nextjs.org/docs/messages/no-img-element  @next/next/no-img-element
+
+D:\Bai_Tap_Frontend\AirBnb_Next_Js\src\app\admin\locations\create\page.tsx
+  140:19  warning  Using `<img>` could result in slower LCP and higher bandwidth. Consider using `<Image />` from `next/image` or a custom image loader to automatically optimize images. This may incur additional usage or cost from your provider. See: https://nextjs.org/docs/messages/no-img-element  @next/next/no-img-element
+
+D:\Bai_Tap_Frontend\AirBnb_Next_Js\src\app\admin\locations\page.tsx
+  180:5   warning  Unused eslint-disable directive (no problems were reported from 'react-hooks/exhaustive-deps')
+  440:21  warning  Using `<img>` could result in slower LCP and higher bandwidth. Consider using `<Image />` from `next/image` or a custom image loader to automatically optimize images. This may incur additional usage or cost from your provider. See: https://nextjs.org/docs/messages/no-img-element  @next/next/no-img-element
+
+D:\Bai_Tap_Frontend\AirBnb_Next_Js\src\app\admin\rooms\[id]\edit\page.tsx
+  74:6  warning  React Hook useEffect has a missing dependency: 'fetchRoom'. Either include it or remove the dependency array  react-hooks/exhaustive-deps
+
+D:\Bai_Tap_Frontend\AirBnb_Next_Js\src\app\admin\rooms\[id]\page.tsx
+   54:6   warning  React Hook useEffect has a missing dependency: 'fetchRoom'. Either include it or remove the dependency array                                                                                                                                                                             react-hooks/exhaustive-deps
+  219:19  warning  Using `<img>` could result in slower LCP and higher bandwidth. Consider using `<Image />` from `next/image` or a custom image loader to automatically optimize images. This may incur additional usage or cost from your provider. See: https://nextjs.org/docs/messages/no-img-element  @next/next/no-img-element
+
+D:\Bai_Tap_Frontend\AirBnb_Next_Js\src\app\admin\rooms\page.tsx
+   74:6   warning  React Hook useEffect has a missing dependency: 'syncRooms'. Either include it or remove the dependency array                                                                                                                                                                             react-hooks/exhaustive-deps
+  335:29  warning  Using `<img>` could result in slower LCP and higher bandwidth. Consider using `<Image />` from `next/image` or a custom image loader to automatically optimize images. This may incur additional usage or cost from your provider. See: https://nextjs.org/docs/messages/no-img-element  @next/next/no-img-element
+
+D:\Bai_Tap_Frontend\AirBnb_Next_Js\src\app\admin\settings\page.tsx
+  7:10  warning  'saved' is assigned a value but never used  @typescript-eslint/no-unused-vars
+
+D:\Bai_Tap_Frontend\AirBnb_Next_Js\src\app\admin\users\[id]\edit\page.tsx
+  41:6  warning  React Hook useEffect has a missing dependency: 'fetchUser'. Either include it or remove the dependency array  react-hooks/exhaustive-deps
+
+D:\Bai_Tap_Frontend\AirBnb_Next_Js\src\app\admin\users\[id]\page.tsx
+   34:6   warning  React Hook useEffect has a missing dependency: 'fetchUser'. Either include it or remove the dependency array                                                                                                                                                                             react-hooks/exhaustive-deps
+  174:19  warning  Using `<img>` could result in slower LCP and higher bandwidth. Consider using `<Image />` from `next/image` or a custom image loader to automatically optimize images. This may incur additional usage or cost from your provider. See: https://nextjs.org/docs/messages/no-img-element  @next/next/no-img-element
+
+D:\Bai_Tap_Frontend\AirBnb_Next_Js\src\app\admin\users\page.tsx
+  187:9   warning  'handleReset' is assigned a value but never used                                                                                                                                                                                                                                         @typescript-eslint/no-unused-vars
+  461:27  warning  Using `<img>` could result in slower LCP and higher bandwidth. Consider using `<Image />` from `next/image` or a custom image loader to automatically optimize images. This may incur additional usage or cost from your provider. See: https://nextjs.org/docs/messages/no-img-element  @next/next/no-img-element
+
+D:\Bai_Tap_Frontend\AirBnb_Next_Js\src\app\page.tsx
+  148:9   warning  'handleViewAllProperties' is assigned a value but never used                                                                                                                                                                                                                             @typescript-eslint/no-unused-vars
+  261:21  warning  Using `<img>` could result in slower LCP and higher bandwidth. Consider using `<Image />` from `next/image` or a custom image loader to automatically optimize images. This may incur additional usage or cost from your provider. See: https://nextjs.org/docs/messages/no-img-element  @next/next/no-img-element
+  382:19  warning  Using `<img>` could result in slower LCP and higher bandwidth. Consider using `<Image />` from `next/image` or a custom image loader to automatically optimize images. This may incur additional usage or cost from your provider. See: https://nextjs.org/docs/messages/no-img-element  @next/next/no-img-element
+  406:50  error    `"` can be escaped with `&quot;`, `&ldquo;`, `&#34;`, `&rdquo;`                                                                                                                                                                                                                          react/no-unescaped-entities
+  406:69  error    `"` can be escaped with `&quot;`, `&ldquo;`, `&#34;`, `&rdquo;`                                                                                                                                                                                                                          react/no-unescaped-entities
+  540:15  warning  Using `<img>` could result in slower LCP and higher bandwidth. Consider using `<Image />` from `next/image` or a custom image loader to automatically optimize images. This may incur additional usage or cost from your provider. See: https://nextjs.org/docs/messages/no-img-element  @next/next/no-img-element
+
+D:\Bai_Tap_Frontend\AirBnb_Next_Js\src\components\admin\AdminNavbar.tsx
+  19:18  error    Unexpected any. Specify a different type                                                                                                                                                                                                                                                 @typescript-eslint/no-explicit-any
+  82:19  warning  Using `<img>` could result in slower LCP and higher bandwidth. Consider using `<Image />` from `next/image` or a custom image loader to automatically optimize images. This may incur additional usage or cost from your provider. See: https://nextjs.org/docs/messages/no-img-element  @next/next/no-img-element
+
+D:\Bai_Tap_Frontend\AirBnb_Next_Js\src\components\admin\AdminNavbarSimple.tsx
+  17:65  error    Unexpected any. Specify a different type                                                                                                                                                                                                                                                 @typescript-eslint/no-explicit-any
+  23:35  error    Unexpected any. Specify a different type                                                                                                                                                                                                                                                 @typescript-eslint/no-explicit-any
+  75:19  warning  Using `<img>` could result in slower LCP and higher bandwidth. Consider using `<Image />` from `next/image` or a custom image loader to automatically optimize images. This may incur additional usage or cost from your provider. See: https://nextjs.org/docs/messages/no-img-element  @next/next/no-img-element
+
+D:\Bai_Tap_Frontend\AirBnb_Next_Js\src\components\auth\AuthCard.tsx
+  18:13  warning  Using `<img>` could result in slower LCP and higher bandwidth. Consider using `<Image />` from `next/image` or a custom image loader to automatically optimize images. This may incur additional usage or cost from your provider. See: https://nextjs.org/docs/messages/no-img-element  @next/next/no-img-element
+
+D:\Bai_Tap_Frontend\AirBnb_Next_Js\src\components\common\SmartFloatingActions.tsx
+  8:10  warning  'isChatOpen' is assigned a value but never used     @typescript-eslint/no-unused-vars
+  8:22  warning  'setIsChatOpen' is assigned a value but never used  @typescript-eslint/no-unused-vars
+
+D:\Bai_Tap_Frontend\AirBnb_Next_Js\src\components\home\Footer.tsx
+  63:17  warning  Using `<img>` could result in slower LCP and higher bandwidth. Consider using `<Image />` from `next/image` or a custom image loader to automatically optimize images. This may incur additional usage or cost from your provider. See: https://nextjs.org/docs/messages/no-img-element  @next/next/no-img-element
+
+D:\Bai_Tap_Frontend\AirBnb_Next_Js\src\components\home\GoogleMap.tsx
+   18:10  warning  'map' is assigned a value but never used                                                                      @typescript-eslint/no-unused-vars
+   20:10  warning  'markers' is assigned a value but never used                                                                  @typescript-eslint/no-unused-vars
+  330:6   warning  React Hook useEffect has a missing dependency: 'locations'. Either include it or remove the dependency array  react-hooks/exhaustive-deps
+
+D:\Bai_Tap_Frontend\AirBnb_Next_Js\src\components\home\Hero.tsx
+   5:8   warning  'LocationSearchDropdown' is defined but never used                                                                                                                                                                                                                                       @typescript-eslint/no-unused-vars
+   6:8   warning  'GuestsDropdown' is defined but never used                                                                                                                                                                                                                                               @typescript-eslint/no-unused-vars
+  10:9   warning  'router' is assigned a value but never used                                                                                                                                                                                                                                              @typescript-eslint/no-unused-vars
+  11:10  warning  'guestCount' is assigned a value but never used                                                                                                                                                                                                                                          @typescript-eslint/no-unused-vars
+  11:22  warning  'setGuestCount' is assigned a value but never used                                                                                                                                                                                                                                       @typescript-eslint/no-unused-vars
+  49:15  warning  Using `<img>` could result in slower LCP and higher bandwidth. Consider using `<Image />` from `next/image` or a custom image loader to automatically optimize images. This may incur additional usage or cost from your provider. See: https://nextjs.org/docs/messages/no-img-element  @next/next/no-img-element
+
+D:\Bai_Tap_Frontend\AirBnb_Next_Js\src\components\home\LocationCard.tsx
+  31:11  warning  Using `<img>` could result in slower LCP and higher bandwidth. Consider using `<Image />` from `next/image` or a custom image loader to automatically optimize images. This may incur additional usage or cost from your provider. See: https://nextjs.org/docs/messages/no-img-element  @next/next/no-img-element
+
+D:\Bai_Tap_Frontend\AirBnb_Next_Js\src\components\home\LocationSearchDropdown.tsx
+   39:45  error    Unexpected any. Specify a different type                                                                                                                                                                                                                                                 @typescript-eslint/no-explicit-any
+  119:25  warning  Using `<img>` could result in slower LCP and higher bandwidth. Consider using `<Image />` from `next/image` or a custom image loader to automatically optimize images. This may incur additional usage or cost from your provider. See: https://nextjs.org/docs/messages/no-img-element  @next/next/no-img-element
+
+D:\Bai_Tap_Frontend\AirBnb_Next_Js\src\components\home\PropertyTypeCard.tsx
+  19:11  warning  Using `<img>` could result in slower LCP and higher bandwidth. Consider using `<Image />` from `next/image` or a custom image loader to automatically optimize images. This may incur additional usage or cost from your provider. See: https://nextjs.org/docs/messages/no-img-element  @next/next/no-img-element
+
+D:\Bai_Tap_Frontend\AirBnb_Next_Js\src\components\home\RoomCard.tsx
+  50:9  warning  Using `<img>` could result in slower LCP and higher bandwidth. Consider using `<Image />` from `next/image` or a custom image loader to automatically optimize images. This may incur additional usage or cost from your provider. See: https://nextjs.org/docs/messages/no-img-element  @next/next/no-img-element
+
+D:\Bai_Tap_Frontend\AirBnb_Next_Js\src\components\home\SearchBarAutocomplete.tsx
+   36:47  error    Unexpected any. Specify a different type                                                                                                                                                                                                                                                 @typescript-eslint/no-explicit-any
+  184:31  warning  Using `<img>` could result in slower LCP and higher bandwidth. Consider using `<Image />` from `next/image` or a custom image loader to automatically optimize images. This may incur additional usage or cost from your provider. See: https://nextjs.org/docs/messages/no-img-element  @next/next/no-img-element
+  355:29  warning  Using `<img>` could result in slower LCP and higher bandwidth. Consider using `<Image />` from `next/image` or a custom image loader to automatically optimize images. This may incur additional usage or cost from your provider. See: https://nextjs.org/docs/messages/no-img-element  @next/next/no-img-element
+
+D:\Bai_Tap_Frontend\AirBnb_Next_Js\src\components\rooms\RoomMap.tsx
+  199:6  warning  React Hook useEffect has a missing dependency: 'locationMeta'. Either include it or remove the dependency array  react-hooks/exhaustive-deps
+
+D:\Bai_Tap_Frontend\AirBnb_Next_Js\src\lib\api.js
+  41:11  warning  'errorData' is assigned a value but never used    @typescript-eslint/no-unused-vars
+  42:11  warning  'errorStatus' is assigned a value but never used  @typescript-eslint/no-unused-vars
+
+D:\Bai_Tap_Frontend\AirBnb_Next_Js\src\lib\commentService.js
+  93:14  warning  'paginationError' is defined but never used  @typescript-eslint/no-unused-vars
+
+??? 95 problems (12 errors, 83 warnings)
+  0 errors and 2 warnings potentially fixable with the `--fix` option.
+

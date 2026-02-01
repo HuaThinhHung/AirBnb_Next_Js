@@ -49,12 +49,12 @@ export default function Home() {
         // Chỉ log error chi tiết nếu không phải network error
         const errorMessage =
           err instanceof Error ? err.message : "Có lỗi xảy ra khi tải dữ liệu";
-        
+
         // Chỉ log nếu có response (server error) hoặc không phải network error
         if (err instanceof Error && !errorMessage.includes("Network error")) {
           console.error("❌ Lỗi fetch rooms:", errorMessage);
         }
-        
+
         setError(errorMessage);
       } finally {
         setLoadingRooms(false);
@@ -181,9 +181,8 @@ export default function Home() {
                   province={location.tinhThanh}
                   country={location.quocGia}
                   image={location.hinhAnh}
-                  distance={`${
-                    Math.floor(Math.random() * 50) + 10
-                  } phút lái xe`}
+                  distance={`${Math.floor(Math.random() * 50) + 10
+                    } phút lái xe`}
                 />
               ))}
             </div>
@@ -403,7 +402,7 @@ export default function Home() {
                     </svg>
                   ))}
                 </div>
-                <p className="text-black italic">"{testimonial.text}"</p>
+                <p className="text-black italic">&quot;{testimonial.text}&quot;</p>
               </div>
             ))}
           </div>

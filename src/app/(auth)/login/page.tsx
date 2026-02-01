@@ -315,11 +315,10 @@ export default function LoginPage() {
                         name="email"
                         value={formData.email}
                         onChange={handleInputChange}
-                        className={`bg-white/70 border-2 border-gray-200 text-gray-900 text-base rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-blue-500 block w-full pl-12 pr-4 py-4 transition-all duration-200 ${
-                          errors.email
+                        className={`bg-white/70 border-2 border-gray-200 text-gray-900 text-base rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-blue-500 block w-full pl-12 pr-4 py-4 transition-all duration-200 ${errors.email
                             ? "border-red-400 focus:ring-red-500 focus:border-red-500"
                             : "hover:border-gray-300"
-                        }`}
+                          }`}
                         placeholder="Enter your email address"
                       />
                     </div>
@@ -371,11 +370,10 @@ export default function LoginPage() {
                         name="password"
                         value={formData.password}
                         onChange={handleInputChange}
-                        className={`bg-white/70 border-2 border-gray-200 text-gray-900 text-base rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-blue-500 block w-full pl-12 pr-12 py-4 transition-all duration-200 ${
-                          errors.password
+                        className={`bg-white/70 border-2 border-gray-200 text-gray-900 text-base rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-blue-500 block w-full pl-12 pr-12 py-4 transition-all duration-200 ${errors.password
                             ? "border-red-400 focus:ring-red-500 focus:border-red-500"
                             : "hover:border-gray-300"
-                        }`}
+                          }`}
                         placeholder="Enter your password"
                       />
                       <button
@@ -572,7 +570,7 @@ export default function LoginPage() {
                   {/* Sign Up Link */}
                   <div className="text-center pt-6">
                     <p className="text-gray-600">
-                      Don't have an account?{" "}
+                      Don&apos;t have an account?{" "}
                       <Link
                         href="/register"
                         className="font-semibold text-blue-600 hover:text-blue-500 transition-colors duration-200"

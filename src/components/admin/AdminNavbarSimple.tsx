@@ -14,12 +14,14 @@ interface AdminNavbarSimpleProps {
 export default function AdminNavbarSimple({ onMenuClick }: AdminNavbarSimpleProps) {
   const router = useRouter()
   const [showProfile, setShowProfile] = useState(false)
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const [currentUser, setCurrentUser] = useState<Record<string, any> | null>(null)
   const { showToast } = useToast()
 
   useEffect(() => {
     const storedUser = getCurrentUser()
     if (storedUser) {
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
       const user = (storedUser as any).user || storedUser;
       setCurrentUser(user);
     }
