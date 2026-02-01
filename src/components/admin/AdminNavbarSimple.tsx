@@ -20,7 +20,7 @@ export default function AdminNavbarSimple({ onMenuClick }: AdminNavbarSimpleProp
   useEffect(() => {
     const storedUser = getCurrentUser()
     if (storedUser) {
-      const user = (storedUser as any).user || storedUser; // Force update for Vercel
+      const user = (storedUser as any).user || storedUser;
       setCurrentUser(user);
     }
   }, [])
