@@ -20,7 +20,8 @@ export default function AdminNavbarSimple({ onMenuClick }: AdminNavbarSimpleProp
   useEffect(() => {
     const storedUser = getCurrentUser()
     if (storedUser) {
-      setCurrentUser(storedUser.user || storedUser)
+      const user = (storedUser as any).user || storedUser;
+      setCurrentUser(user);
     }
   }, [])
 
@@ -113,7 +114,7 @@ export default function AdminNavbarSimple({ onMenuClick }: AdminNavbarSimpleProp
                     >
                       Back to Website
                     </Link>
-                    <button 
+                    <button
                       onClick={handleSignOut}
                       className="block w-full text-left px-4 py-2 text-sm text-red-600 hover:bg-red-50 transition-colors duration-200"
                     >

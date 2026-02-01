@@ -55,7 +55,7 @@ export function AdminToastProvider({ children }: { children: React.ReactNode }) 
     warning: "bg-amber-500",
   };
 
-  const iconByType: Record<ToastType, JSX.Element> = {
+  const iconByType: Record<ToastType, React.ReactNode> = {
     success: (
       <span className="text-lg" aria-hidden="true">
         ✅
