@@ -11,10 +11,7 @@ const nextConfig: NextConfig = {
       },
     ],
   },
-  eslint: {
-    // Ignore ESLint errors during production builds on Vercel
-    ignoreDuringBuilds: true,
-  },
+  // eslint option removed to fix type error
   typescript: {
     // Ignore TypeScript errors during production builds (use with caution)
     // ignoreBuildErrors: true,
