@@ -7,7 +7,12 @@ import { getRooms, getRoomsByLocation } from "@/lib/roomService";
 import { getLocationById } from "@/lib/locationService";
 import { searchWithoutAccents } from "@/lib/utils";
 import type { LocationResponse } from "@/types/api";
-import RoomMap from "@/components/rooms/RoomMap";
+import dynamic from "next/dynamic";
+
+const RoomMap = dynamic(() => import("@/components/rooms/RoomMap"), {
+  ssr: false,
+  loading: () => <div>Loading map...</div>,
+});
 
 type RoomItem = {
   id: number;
@@ -349,9 +354,8 @@ function RoomsContent() {
           </button>
         </div>
         <div
-          className={`bg-white rounded-2xl shadow-sm border border-gray-200 p-6 mb-12 ${
-            showMobileFilters ? "block" : "hidden"
-          } lg:block`}
+          className={`bg-white rounded-2xl shadow-sm border border-gray-200 p-6 mb-12 ${showMobileFilters ? "block" : "hidden"
+            } lg:block`}
         >
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
             {/* Search */}
@@ -440,11 +444,10 @@ function RoomsContent() {
                 <button
                   key={amenity.value}
                   onClick={() => toggleAmenity(amenity.value)}
-                    className={`px-4 py-2 rounded-xl font-semibold transition-all duration-200 ${
-                    amenities.includes(amenity.value)
+                  className={`px-4 py-2 rounded-xl font-semibold transition-all duration-200 ${amenities.includes(amenity.value)
                       ? "bg-blue-600 text-white shadow-md"
                       : "bg-gray-100 text-gray-900 hover:bg-gray-200"
-                  }`}
+                    }`}
                 >
                   {amenity.icon} {amenity.label}
                 </button>
@@ -532,141 +535,141 @@ function RoomsContent() {
                 >
                   <Link href={`/rooms/${room.id}`} className="block">
                     <div className="relative aspect-[4/3] overflow-hidden bg-gray-100">
-                    <img
-                      src={
-                        room.hinhAnh ||
-                        "https://images.unsplash.com/photo-1566073771259-6a8506099945?q=80&w=800"
-                      }
-                      alt={room.tenPhong}
-                      className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-700"
-                    />
-                    <div className="absolute top-4 right-4 px-4 py-2 bg-white rounded-full shadow-lg">
-                      <span className="text-lg font-bold text-gray-900">
-                        ${room.giaTien}
-                      </span>
-                      <span className="text-sm text-gray-900">/đêm</span>
+                      <img
+                        src={
+                          room.hinhAnh ||
+                          "https://images.unsplash.com/photo-1566073771259-6a8506099945?q=80&w=800"
+                        }
+                        alt={room.tenPhong}
+                        className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-700"
+                      />
+                      <div className="absolute top-4 right-4 px-4 py-2 bg-white rounded-full shadow-lg">
+                        <span className="text-lg font-bold text-gray-900">
+                          ${room.giaTien}
+                        </span>
+                        <span className="text-sm text-gray-900">/đêm</span>
+                      </div>
                     </div>
+
+                    <div className="p-6">
+                      <h3 className="font-bold text-xl text-gray-900 mb-2 line-clamp-1 group-hover:text-blue-600 transition-colors">
+                        {room.tenPhong}
+                      </h3>
+                      {/* Location */}
+                      <div className="flex items-center gap-1.5 mb-3 text-gray-900">
+                        <svg
+                          className="w-4 h-4 text-gray-400 flex-shrink-0"
+                          fill="none"
+                          stroke="currentColor"
+                          viewBox="0 0 24 24"
+                        >
+                          <path
+                            strokeLinecap="round"
+                            strokeLinejoin="round"
+                            strokeWidth={2}
+                            d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z"
+                          />
+                          <path
+                            strokeLinecap="round"
+                            strokeLinejoin="round"
+                            strokeWidth={2}
+                            d="M15 11a3 3 0 11-6 0 3 3 0 016 0z"
+                          />
+                        </svg>
+                        <span className="text-sm font-medium text-gray-900 line-clamp-1">
+                          {getLocationName(room.maViTri)}
+                        </span>
+                      </div>
+                      <p className="text-gray-900 line-clamp-2 mb-4">
+                        {room.moTa || "Chỗ ở tuyệt vời"}
+                      </p>
+
+                      <div className="flex items-center gap-6 text-gray-900 border-t border-gray-100 pt-4 mb-4">
+                        <span className="flex items-center gap-1.5">
+                          <svg
+                            className="w-5 h-5"
+                            fill="none"
+                            stroke="currentColor"
+                            viewBox="0 0 24 24"
+                          >
+                            <path
+                              strokeLinecap="round"
+                              strokeLinejoin="round"
+                              strokeWidth={2}
+                              d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z"
+                            />
+                          </svg>
+                          <span className="font-semibold text-gray-900">
+                            {room.khach}
+                          </span>
+                        </span>
+                        <span className="flex items-center gap-1.5">
+                          <svg
+                            className="w-5 h-5"
+                            fill="none"
+                            stroke="currentColor"
+                            viewBox="0 0 24 24"
+                          >
+                            <path
+                              strokeLinecap="round"
+                              strokeLinejoin="round"
+                              strokeWidth={2}
+                              d="M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-6 0a1 1 0 001-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 001 1m-6 0h6"
+                            />
+                          </svg>
+                          <span className="font-semibold text-gray-900">
+                            {room.phongNgu}
+                          </span>
+                        </span>
+                        <span className="flex items-center gap-1.5">
+                          <svg
+                            className="w-5 h-5"
+                            fill="none"
+                            stroke="currentColor"
+                            viewBox="0 0 24 24"
+                          >
+                            <path
+                              strokeLinecap="round"
+                              strokeLinejoin="round"
+                              strokeWidth={2}
+                              d="M3 3h2l.4 2M7 13h10l4-8H5.4M7 13L5.4 5M7 13l-2.293 2.293c-.63.63-.184 1.707.707 1.707H17m0 0a2 2 0 100 4 2 2 0 000-4zm-8 2a2 2 0 11-4 0 2 2 0 014 0z"
+                            />
+                          </svg>
+                          <span className="font-semibold text-gray-900">
+                            {room.giuong}
+                          </span>
+                        </span>
+                      </div>
+
+                      <div className="flex items-center gap-2">
+                        {room.wifi && (
+                          <span className="px-3 py-1 bg-blue-50 text-blue-700 rounded-full text-xs font-semibold">
+                            WiFi
+                          </span>
+                        )}
+                        {room.dieuHoa && (
+                          <span className="px-3 py-1 bg-blue-50 text-blue-700 rounded-full text-xs font-semibold">
+                            AC
+                          </span>
+                        )}
+                        {room.hoBoi && (
+                          <span className="px-3 py-1 bg-blue-50 text-blue-700 rounded-full text-xs font-semibold">
+                            Pool
+                          </span>
+                        )}
+                      </div>
+                    </div>
+                  </Link>
+                  <div className="px-6 pb-6">
+                    <button
+                      type="button"
+                      onClick={() => handleBookNow(room.id)}
+                      className="w-full py-3 px-4 bg-blue-600 hover:bg-blue-700 text-white font-semibold rounded-xl transition-colors"
+                    >
+                      Đặt phòng ngay
+                    </button>
                   </div>
-
-                  <div className="p-6">
-                    <h3 className="font-bold text-xl text-gray-900 mb-2 line-clamp-1 group-hover:text-blue-600 transition-colors">
-                      {room.tenPhong}
-                    </h3>
-                    {/* Location */}
-                    <div className="flex items-center gap-1.5 mb-3 text-gray-900">
-                      <svg
-                        className="w-4 h-4 text-gray-400 flex-shrink-0"
-                        fill="none"
-                        stroke="currentColor"
-                        viewBox="0 0 24 24"
-                      >
-                        <path
-                          strokeLinecap="round"
-                          strokeLinejoin="round"
-                          strokeWidth={2}
-                          d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z"
-                        />
-                        <path
-                          strokeLinecap="round"
-                          strokeLinejoin="round"
-                          strokeWidth={2}
-                          d="M15 11a3 3 0 11-6 0 3 3 0 016 0z"
-                        />
-                      </svg>
-                      <span className="text-sm font-medium text-gray-900 line-clamp-1">
-                        {getLocationName(room.maViTri)}
-                      </span>
-                    </div>
-                    <p className="text-gray-900 line-clamp-2 mb-4">
-                      {room.moTa || "Chỗ ở tuyệt vời"}
-                    </p>
-
-                    <div className="flex items-center gap-6 text-gray-900 border-t border-gray-100 pt-4 mb-4">
-                      <span className="flex items-center gap-1.5">
-                        <svg
-                          className="w-5 h-5"
-                          fill="none"
-                          stroke="currentColor"
-                          viewBox="0 0 24 24"
-                        >
-                          <path
-                            strokeLinecap="round"
-                            strokeLinejoin="round"
-                            strokeWidth={2}
-                            d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z"
-                          />
-                        </svg>
-                        <span className="font-semibold text-gray-900">
-                          {room.khach}
-                        </span>
-                      </span>
-                      <span className="flex items-center gap-1.5">
-                        <svg
-                          className="w-5 h-5"
-                          fill="none"
-                          stroke="currentColor"
-                          viewBox="0 0 24 24"
-                        >
-                          <path
-                            strokeLinecap="round"
-                            strokeLinejoin="round"
-                            strokeWidth={2}
-                            d="M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-6 0a1 1 0 001-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 001 1m-6 0h6"
-                          />
-                        </svg>
-                        <span className="font-semibold text-gray-900">
-                          {room.phongNgu}
-                        </span>
-                      </span>
-                      <span className="flex items-center gap-1.5">
-                        <svg
-                          className="w-5 h-5"
-                          fill="none"
-                          stroke="currentColor"
-                          viewBox="0 0 24 24"
-                        >
-                          <path
-                            strokeLinecap="round"
-                            strokeLinejoin="round"
-                            strokeWidth={2}
-                            d="M3 3h2l.4 2M7 13h10l4-8H5.4M7 13L5.4 5M7 13l-2.293 2.293c-.63.63-.184 1.707.707 1.707H17m0 0a2 2 0 100 4 2 2 0 000-4zm-8 2a2 2 0 11-4 0 2 2 0 014 0z"
-                          />
-                        </svg>
-                        <span className="font-semibold text-gray-900">
-                          {room.giuong}
-                        </span>
-                      </span>
-                    </div>
-
-                    <div className="flex items-center gap-2">
-                      {room.wifi && (
-                        <span className="px-3 py-1 bg-blue-50 text-blue-700 rounded-full text-xs font-semibold">
-                          WiFi
-                        </span>
-                      )}
-                      {room.dieuHoa && (
-                        <span className="px-3 py-1 bg-blue-50 text-blue-700 rounded-full text-xs font-semibold">
-                          AC
-                        </span>
-                      )}
-                      {room.hoBoi && (
-                        <span className="px-3 py-1 bg-blue-50 text-blue-700 rounded-full text-xs font-semibold">
-                          Pool
-                        </span>
-                      )}
-                    </div>
-                  </div>
-                </Link>
-                <div className="px-6 pb-6">
-                  <button
-                    type="button"
-                    onClick={() => handleBookNow(room.id)}
-                    className="w-full py-3 px-4 bg-blue-600 hover:bg-blue-700 text-white font-semibold rounded-xl transition-colors"
-                  >
-                    Đặt phòng ngay
-                  </button>
                 </div>
-              </div>
               ))}
             </div>
 
@@ -708,11 +711,10 @@ function RoomsContent() {
                           setPage(pageNumber);
                           window.scrollTo({ top: 0, behavior: "smooth" });
                         }}
-                        className={`w-10 h-10 rounded-full font-semibold transition-all ${
-                          pageNumber === page
+                        className={`w-10 h-10 rounded-full font-semibold transition-all ${pageNumber === page
                             ? "bg-blue-600 text-white shadow-lg"
                             : "border-2 border-gray-200 text-gray-900 hover:border-blue-600 hover:text-blue-600"
-                        }`}
+                          }`}
                       >
                         {pageNumber}
                       </button>
